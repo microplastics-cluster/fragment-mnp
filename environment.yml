@@ -2,8 +2,11 @@ name: fmnp
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.10
   - numpy
   - scipy
   - pandas
   - plotly
+  - matplotlib
+  - ipywidgets
+  - ipykernel
