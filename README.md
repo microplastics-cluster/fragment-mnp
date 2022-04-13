@@ -35,7 +35,7 @@ $ pytest
 
 ### Talking of Conda...
 
-[Check out this doc](./conda.md) for specifics of using Conda to manage your environment.
+[Check out this doc](./doc/conda.md) for specifics of using Conda to manage your environment.
 
 ## Acknowledgements
 

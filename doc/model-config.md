@@ -29,3 +29,15 @@ The mean diameter of each particle size class. If `particle_size_classes` is not
 *Optional, list/tuple of int or floats of length 2, units: m.*
 
 The particle size range that should be included in the model in the format [min, max]. The values given are used as the exponent of 10, so, for example, `[-9, -3]` results in a size range of 10e-9 m to 10e-3 m (1 nm to 1 mm). The size class bins themselves will be deduced by evenly splitting the range by `n_size_classes` on a log scale. If neither `particle_size_range` nor `particle_size_classes` is specified, you will get an error.
+
+### `n_timesteps`
+
+*Required, int.*
+
+The number of timesteps to run the model for. Each timestep is of length `dt`, which can be provided as a parameter and defaults to 1 second.
+
+### `dt`
+
+*Optional, int, units: s, default: 1*.
+
+The length of each timestep. Defaults to 1 second.

@@ -19,12 +19,13 @@ config_schema = Schema({
     # Size classes should be a list of ints of floats
     Optional('particle_size_classes'): And([Or(int, float)]),
     # Timesteps should be an integer
-    'n_timesteps': int
+    'n_timesteps': int,
+    # Length of timesteps should be an integer (unit of seconds)
+    Optional('dt', default=1): int
 })
 
 
 # The schema that the data dict should follow
-# TODO implement array length checks based on config
 data_schema = Schema({
     # Initial concs must be a list and >= 0
     'initial_concs': [And(Or(int, float), lambda x: x >= 0.0)],

@@ -4,6 +4,7 @@ Tests for the config and data validation
 from fragmentmnp.validation import validate_config
 from schema import SchemaError
 
+# TODO load config from example module
 
 def test_correct_config_validation():
     """
