@@ -11,5 +11,5 @@ from .fragmentmnp import FragmentMNP
 # Get the version from the installed package metadata
 __version__ = version(__name__)
 
-# Let type checkers know what is part of the package 
+# Let type checkers know what is part of the package
 __all__ = ['FragmentMNP']

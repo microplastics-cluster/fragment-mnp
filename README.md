@@ -8,6 +8,13 @@ FRAGMENT-MNP is a mechanistic model of Micro and NanoPlastic FRAGMentation in th
 
 FRAGMENT-MNP is in active development at the moment - results should be viewed with caution! That being said, you are welcome to check out the package using the developer instructions below to install it.
 
+```python
+from fragmentmnp import FragmentMNP
+from fragmentmnp.examples import config, data
+
+fmnp = FragmentMNP(config, data)
+```
+
 ## Developing FRAGMENT-MNP
 
 We are using [Poetry](https://python-poetry.org/) for packaging and dependency management and this is the easiest way to get started. You can install Poetry following [these instructions](https://python-poetry.org/docs/#installation). This presumes you already have Python installed.
