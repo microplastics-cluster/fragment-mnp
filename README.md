@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 # Create the model, pass it config and data, then run it
 fmnp = FragmentMNP(minimal_config, data)
 output = fmnp.run()
+
 # Plot the results
 plt.plot(output.t, output.n.T)
 plt.legend([f'{d} m' for d in fmnp.psd])

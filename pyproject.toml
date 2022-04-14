@@ -13,11 +13,11 @@ scipy = "^1.8.0"
 numpy = "^1.22.3"
 matplotlib = "^3.5.1"
 schema = "^0.7.5"
-pytest-cov = "^3.0.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
 pytest = "^7.1.1"
+pytest-cov = "^3.0.0"
 ipykernel = "^6.13.0"
 ipywidgets = "^7.7.0"
 
