@@ -6,7 +6,7 @@ To make packaging and publishing easier, we are using [Poetry](https://python-po
 
 When Poetry installs your package's dependencies, it checks whether you are already in a virtual environment (including a Conda environment) and, if so, uses that as the virtual environment for your project. This means that you can use Poetry as a package manager from within a Conda environment.
 
-For example, for this project, your could create a Conda env with just Python 3.9 installed:
+For example, for this project, you could create a Conda env with just Python 3.9 installed:
 
 ```shell
 $ conda create -n fmnp python=3.9 --no-default-packages
