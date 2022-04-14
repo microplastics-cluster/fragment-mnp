@@ -38,8 +38,9 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Logging
+# Logging etc
 *.log
+.coverage
 
 # Environments
 .env

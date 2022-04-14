@@ -10,7 +10,7 @@ particle_size_range_schema = And(Or((int, float), [int, float]),
                                            'be a length-2 iterable'))
 
 
-# The schema that the config dict should follow
+'''The schema that the config dict should follow'''
 config_schema = Schema({
     # There should be <= 100 size classes
     'n_size_classes': And(int, lambda d: d <= 100),
@@ -21,17 +21,21 @@ config_schema = Schema({
     # Timesteps should be an integer
     'n_timesteps': int,
     # Length of timesteps should be an integer (unit of seconds)
-    Optional('dt', default=1): int
+    Optional('dt', default=1): int,
+    # Loss flag should be a bool
+    Optional('allow_loss', default=False): bool
 })
 
 
-# The schema that the data dict should follow
+'''The schema that the data dict should follow'''
 data_schema = Schema({
     # Initial concs must be a list and >= 0
     'initial_concs': [And(Or(int, float), lambda x: x >= 0.0)],
     # k_frag must either be a float/int, or a list of flaots/ints,
     # and greater than 0
-    'k_frag': And(Or(int, float), lambda x: x >= 0.0)
+    'k_frag': And(Or(int, float), lambda x: x >= 0.0),
+    # theta1 (surface energy empirical parameter) must be a float or int
+    Optional('theta_1', default=0.0): Or(int, float)
 })
 
 

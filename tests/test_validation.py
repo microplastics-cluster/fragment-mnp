@@ -1,16 +1,19 @@
 """
 Tests for the config and data validation
 """
-from fragmentmnp.validation import validate_config
+from fragmentmnp.validation import validate_config, validate_data
 import fragmentmnp.examples
 from schema import SchemaError
 
 
 # Get some valid config from the examples module
-valid_config = fragmentmnp.examples.config
+valid_config = fragmentmnp.examples.full_config
+valid_minimal_config = fragmentmnp.examples.minimal_config
+valid_data = fragmentmnp.examples.full_data
+valid_minimal_data = fragmentmnp.examples.minimal_data
 
 
-def test_correct_config_validation():
+def test_valid_config():
     """
     Test for validating a correct config dict
     """
@@ -20,7 +23,17 @@ def test_correct_config_validation():
     assert validated == valid_config
 
 
-def test_incorrect_config_validation_missing_key():
+def test_valid_minimal_config():
+    """
+    Test the minimal config example passes with
+    defaults filled in
+    """
+    validated = validate_config(valid_minimal_config)
+    # dt should have been defaulted to 1
+    assert validated['dt'] == 1
+
+
+def test_invalid_config_missing_key():
     """
     Test for validating an incorrect config dict with
     a missing key
@@ -38,7 +51,7 @@ def test_incorrect_config_validation_missing_key():
         assert True
 
 
-def test_incorrect_config_validation_bad_datatype():
+def test_invalid_config_bad_datatype():
     """
     Test for validating an incorrect config dict with
     incorrect data type
@@ -54,7 +67,7 @@ def test_incorrect_config_validation_bad_datatype():
         assert True
 
 
-def test_incorrect_config_too_many_size_classes():
+def test_invalid_config_too_many_size_classes():
     """
     Test for validating an incorrect config dict with
     too many size classes (over 1000)
@@ -70,7 +83,7 @@ def test_incorrect_config_too_many_size_classes():
         assert True
 
 
-def test_incorrect_config_size_range_not_length_2():
+def test_invalid_config_size_range_not_length_2():
     """
     Test for validating an incorrect config dict with
     particle_size_range not as a length-2 iterable
@@ -84,3 +97,21 @@ def test_incorrect_config_size_range_not_length_2():
     except SchemaError:
         # If an exception has been raised, this test should pass
         assert True
+
+
+def test_valid_data():
+    """
+    Test for validating a correct data dict
+    """
+    validated = validate_data(valid_data)
+    assert validated == valid_data
+
+
+def test_valid_minimal_data():
+    """
+    Test the minimal config example passes with
+    defaults filled in
+    """
+    validated = validate_data(valid_minimal_data)
+    # theta_1 should have been defaulted to 0
+    assert validated['theta_1'] == 0.0

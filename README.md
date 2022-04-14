@@ -6,13 +6,20 @@ FRAGMENT-MNP is a mechanistic model of Micro and NanoPlastic FRAGMentation in th
 
 ## Usage
 
-FRAGMENT-MNP is in active development at the moment - results should be viewed with caution! That being said, you are welcome to check out the package using the developer instructions below to install it.
+FRAGMENT-MNP is in active development at the moment - results should be viewed with caution! That being said, you are welcome to check out the package using the developer instructions below to install it. Also checkout the [example usage notebook](./doc/example-usage.ipynb).
 
 ```python
 from fragmentmnp import FragmentMNP
-from fragmentmnp.examples import config, data
+from fragmentmnp.examples import minimal_config, data
+import matplotlib.pyplot as plt
 
-fmnp = FragmentMNP(config, data)
+# Create the model, pass it config and data, then run it
+fmnp = FragmentMNP(minimal_config, data)
+output = fmnp.run()
+# Plot the results
+plt.plot(output.t, output.n.T)
+plt.legend([f'{d} m' for d in fmnp.psd])
+plt.show()
 ```
 
 ## Developing FRAGMENT-MNP
