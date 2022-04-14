@@ -6,6 +6,10 @@ dependencies:
   - numpy
   - scipy
   - matplotlib
+  - schema
   # Development
   - pytest
+  - pytest-cov
   - flake8
+  - ipykernel
+  - ipywidgets
