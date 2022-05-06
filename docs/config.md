@@ -1,16 +1,17 @@
-# Model config
+# Configuration
 
-When initialising the `FragmentMNP` model class, a config dict must be provided:
+When initialising the {class}`fragmentmnp.FragmentMNP` model class, a config dict must be provided. Examples are given in the {mod}`fragmentmnp.examples` module:
 
 ```python
-config = {
-    'n_size_classes': 7,
-    'particle_size_range': [-9, -3]
-}
-fmnp = FragmentMNP(config, data)
+>>> from fragmentmnp.examples import minimal_config, full_config
+>>> minimal_config
+{'n_size_classes': 7, 'particle_size_range': [-9, -3], 'n_timesteps': 100}
+>>> full_config
+{'n_size_classes': 7, 'particle_size_range': [-9, -3], 'n_timesteps': 100,
+'dt': 1, 'allow_loss': False}
 ```
 
-Here we take a look at the schema for this config dict.
+The `minimal_config` contains only required variables, whilst `full_config` includes variables that have defaults. Here we take a look at the schema for this config dict.
 
 `n_size_classes`
 : *Required, int, less than or equal to 100.*
@@ -31,3 +32,7 @@ Here we take a look at the schema for this config dict.
 `dt`
 : *Optional, int, units: s, default: 1*.
 : The length of each timestep. Defaults to 1 second.
+
+`allow_loss`
+: *Optional, bool, default: False*.
+: Whether loss (fragmentation) from the smallest size class is allowed.

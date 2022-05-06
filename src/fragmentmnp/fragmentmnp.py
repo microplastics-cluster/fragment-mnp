@@ -139,14 +139,14 @@ class FragmentMNP():
                     n_size_classes: int,
                     loss: bool = False) -> npt.NDArray[np.float64]:
         r"""
-        Set the fragmentation rate ``k_frag`` based on
-        the average k_frag for the median particle size bin,
-        and theta_1 (surface energy empirical parameter)
+        Set the fragmentation rate :math:`k_frag` based on
+        the average :math:`k_frag` for the median particle size bin,
+        and :math:`\theta_1` (surface energy empirical parameter)
 
         Parameters
         ----------
         k_frag_av : float
-            The average k_frag for the median particle size bin
+            The average :math:`k_frag` for the median particle size bin
         theta_1 : float
             The surface energy empirical parameter :math:`\theta_1`
         psd : np.ndarray
