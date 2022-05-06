@@ -1,12 +1,17 @@
 # FRAGMENT-MNP
 
+:::{caution}
 🏗️ *Currently in development* 🏗️
+:::
 
 FRAGMENT-MNP is a mechanistic model of Micro and NanoPlastic FRAGMentation in the ENvironmenT.
 
+```{tableofcontents}
+```
+
 ## Usage
 
-FRAGMENT-MNP is in active development at the moment - results should be viewed with caution! That being said, you are welcome to check out the package using the developer instructions below to install it. Also checkout the [example usage notebook](./docs/example-usage.ipynb).
+FRAGMENT-MNP is in active development at the moment - results should be viewed with caution! That being said, you are welcome to check out the package using the developer instructions below to install it. Also checkout the [example usage section](example-usage.ipynb).
 
 ```python
 from fragmentmnp import FragmentMNP
@@ -50,7 +55,7 @@ $ pytest
 
 ### Talking of Conda...
 
-[Check out this doc](./docs/conda.md) for specifics of using Conda to manage your environment.
+[Check out this section](conda.md) for specifics of using Conda to manage your environment.
 
 ## Acknowledgements
 

@@ -1,4 +1,7 @@
 """
+Validation of config and data (:mod:`fragmentmnp.validation`)
+=============================================================
+
 Provides config and input data validation for the FRAGMENT-MNP model
 """
 from schema import Schema, Or, And, Optional
@@ -10,7 +13,7 @@ particle_size_range_schema = And(Or((int, float), [int, float]),
                                            'be a length-2 iterable'))
 
 
-'''The schema that the config dict should follow'''
+# The schema that the config dict should follow
 config_schema = Schema({
     # There should be <= 100 size classes
     'n_size_classes': And(int, lambda d: d <= 100),
@@ -27,7 +30,7 @@ config_schema = Schema({
 })
 
 
-'''The schema that the data dict should follow'''
+# The schema that the data dict should follow
 data_schema = Schema({
     # Initial concs must be a list and >= 0
     'initial_concs': [And(Or(int, float), lambda x: x >= 0.0)],

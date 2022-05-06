@@ -35,10 +35,12 @@ Note that it is highly recommended that you do not use Conda to install any pack
 
 ## Just use Conda, do not use Poetry
 
-If you do not wish to use Poetry at all, then that is fine too! A Conda [environment file](../environment.yml) is provided and you can simply use this to install the project dependencies:
+If you do not wish to use Poetry at all, then that is fine too! A Conda [environment file](https://github.com/microplastics-cluster/fragment-mnp/blob/develop/environment.yml) is provided and you can simply use this to install the project dependencies:
 
 ```shell
 $ conda create -f environment.yml
 ```
 
-Whilst this is fine for development, you will not be able to package or publish the project without relying on a different tool. In particularly, the project will not be installed as a package in editable mode, which may cause issues when running tests.
+:::{caution}
+Whilst this is fine for development, you will not be able to package or publish the project without relying on a different tool. In particularly, the project will not be installed as a package in editable mode, which may cause issues when running tests. If you add extra dependencies whilst developing the code, you will not be able to add these to the `pyproject.toml` file automatically via Poetry, and you won't be able to build a `poetry.lock` file for other users to use. In short, if you will be adding dependencies, please use Poetry.
+:::

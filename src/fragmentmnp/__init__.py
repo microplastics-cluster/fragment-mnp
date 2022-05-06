@@ -1,6 +1,6 @@
 """
-FRAGMENT-MNP
-===========
+FRAGMENT-MNP model
+==================
 Mechanistic model of Micro and NanoPlastic FRAGMentation in the ENvironmenT.
 """
 from importlib.metadata import version

@@ -1,5 +1,18 @@
 """
-Example config and data for use in the FRAGMENT-MNP model
+Example config and data (:mod:`fragmentmnp.examples`)
+=====================================================
+
+Provides example config and data dictionaries for use
+in the FRAGMENT-MNP model.
+
+Dictionaries
+------------
+- ``full_config``: Config with all variables complete
+- ``minimal_config``: Config with only variables that
+  don't have defaults
+- ``full_data``: Data with all variables complete
+- ``mininal_data``: Data with only variables that don't
+  have defaults
 """
 
 # Example model config specifying all options

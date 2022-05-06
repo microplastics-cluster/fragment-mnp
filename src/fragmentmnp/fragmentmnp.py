@@ -71,16 +71,16 @@ class FragmentMNP():
         -----
         Internally the model numerically solves the following differential
         equation for each size class, to give a time series of particle number
-        concentrations ``n``. ``k`` is the current size class, ``i`` are the
+        concentrations `n`. `k` is the current size class, `i` are the
         daughter size classes.
 
-        ..math::
+        .. math::
             \frac{dn_k}{dt} = -k_{\text{frag},k} n_k +
-            \Sum_i f_{i,k} k_{\text{frag},i} n_i
+            \Sigma_i f_{i,k} k_{\text{frag},i} n_i
 
-        Here, :math:`k_\text{frag},k` is the fragmentation rate of size class
-        ``k``, and :math:`f_i_k` is the fraction of daughter fragments produced
-        from a fragmenting particle of size ``i`` that are of size ``k``
+        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size class
+        `k`, and :math:`f_{i,k}` is the fraction of daughter fragments produced
+        from a fragmenting particle of size `i` that are of size `k`
         """
         # Define the initial value problem to pass to SciPy to solve.
         # This must satisfy n'(t) = f(t, n) with initial value given in data
