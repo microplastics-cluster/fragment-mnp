@@ -5,6 +5,7 @@ on:
   push:
     branches:
     - develop
+    - main
     # If your git repository has the Jupyter Book within some-subfolder next to
     # unrelated files, you can make this run only if a file within that specific
     # folder has been modified.
@@ -20,10 +21,10 @@ jobs:
     - uses: actions/checkout@v2
 
     # Install Python
-    - name: Set up Python 3.8
+    - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.9
 
     # Install Poetry
     - name: Install Poetry
