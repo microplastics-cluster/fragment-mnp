@@ -3,9 +3,14 @@
 
 format: jb-book
 root: intro
-chapters:
-- file: example-usage
-- file: config
-- file: input-data
-- file: conda
-- file: api
+parts:
+  - caption: Users
+    chapters:
+    - file: example-usage
+    - file: config
+    - file: input-data
+  - caption: Developers
+    chapters:
+    - file: developers/quickstart
+    - file: developers/conda
+    - file: developers/api

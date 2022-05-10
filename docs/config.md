@@ -1,4 +1,4 @@
-# Configuration
+# Model configuration
 
 When initialising the {class}`fragmentmnp.FragmentMNP` model class, a config dict must be provided. Examples are given in the {mod}`fragmentmnp.examples` module:
 
