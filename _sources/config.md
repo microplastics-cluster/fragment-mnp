@@ -7,8 +7,7 @@ When initialising the {class}`fragmentmnp.FragmentMNP` model class, a config dic
 >>> minimal_config
 {'n_size_classes': 7, 'particle_size_range': [-9, -3], 'n_timesteps': 100}
 >>> full_config
-{'n_size_classes': 7, 'particle_size_range': [-9, -3], 'n_timesteps': 100,
-'dt': 1, 'allow_loss': False}
+{'n_size_classes': 7, 'particle_size_range': [-9, -3], 'n_timesteps': 100, 'dt': 1}
 ```
 
 The `minimal_config` contains only required variables, whilst `full_config` includes variables that have defaults. Here we take a look at the schema for this config dict.
@@ -32,7 +31,3 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 `dt`
 : *Optional, int, units: s, default: 1*.
 : The length of each timestep. Defaults to 1 second.
-
-`allow_loss`
-: *Optional, bool, default: False*.
-: Whether loss (fragmentation) from the smallest size class is allowed.

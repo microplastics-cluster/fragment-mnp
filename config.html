@@ -248,8 +248,7 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="gp">&gt;&gt;&gt; </span><span class="n">minimal_config</span>
 <span class="go">{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">full_config</span>
-<span class="go">{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100,</span>
-<span class="go">&#39;dt&#39;: 1, &#39;allow_loss&#39;: False}</span>
+<span class="go">{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100, &#39;dt&#39;: 1}</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">minimal_config</span></code> contains only required variables, whilst <code class="docutils literal notranslate"><span class="pre">full_config</span></code> includes variables that have defaults. Here we take a look at the schema for this config dict.</p>
@@ -273,10 +272,6 @@ const thebe_selector_output = ".output, .cell_output"
 <dt><code class="docutils literal notranslate"><span class="pre">dt</span></code></dt><dd><p><em>Optional, int, units: s, default: 1</em>.</p>
 </dd>
 <dd><p>The length of each timestep. Defaults to 1 second.</p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">allow_loss</span></code></dt><dd><p><em>Optional, bool, default: False</em>.</p>
-</dd>
-<dd><p>Whether loss (fragmentation) from the smallest size class is allowed.</p>
 </dd>
 </dl>
 </div>

@@ -249,7 +249,7 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;n_size_classes&#39;</span><span class="p">,</span> <span class="s1">&#39;psd&#39;</span><span class="p">,</span> <span class="s1">&#39;fsd&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;n_timesteps&#39;</span><span class="p">,</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;theta_1&#39;</span><span class="p">]</span>
+                 <span class="s1">&#39;n_timesteps&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;theta_1&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -271,10 +271,12 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="bp">self</span><span class="o">.</span><span class="n">psd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_psd</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_fsd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;theta_1&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_diss</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_diss&#39;</span><span class="p">],</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span>
                                        <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
-                                       <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span>
-                                       <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;allow_loss&#39;</span><span class="p">])</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NamedTuple</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -288,9 +290,8 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">        n : np.ndarray, shape (n_size_classes, n_timesteps)</span>
 <span class="sd">            Particle number concentrations for each size class over</span>
 <span class="sd">            this time series</span>
-<span class="sd">        n_loss : np.ndarray, shape (n_timesteps, )</span>
-<span class="sd">            Particle number concentration lost from the smallest</span>
-<span class="sd">            size class</span>
+<span class="sd">        c_diss : np.ndarray, shape (n_timesteps, )</span>
+<span class="sd">            Mass concentrations of dissolved organics</span>
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
@@ -301,11 +302,12 @@ const thebe_selector_output = ".output, .cell_output"
 
 <span class="sd">        .. math::</span>
 <span class="sd">            \frac{dn_k}{dt} = -k_{\text{frag},k} n_k +</span>
-<span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i} n_i</span>
+<span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i} n_i - k_{\text{diss},k} n_k</span>
 
 <span class="sd">        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size class</span>
-<span class="sd">        `k`, and :math:`f_{i,k}` is the fraction of daughter fragments produced</span>
-<span class="sd">        from a fragmenting particle of size `i` that are of size `k`</span>
+<span class="sd">        `k`, :math:`f_{i,k}` is the fraction of daughter fragments produced</span>
+<span class="sd">        from a fragmenting particle of size `i` that are of size `k`, and</span>
+<span class="sd">        :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Define the initial value problem to pass to SciPy to solve.</span>
         <span class="c1"># This must satisfy n&#39;(t) = f(t, n) with initial value given in data</span>
@@ -316,7 +318,8 @@ const thebe_selector_output = ".output, .cell_output"
             <span class="c1"># Loop over the size classes and perform the calculation</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
                 <span class="n">dndt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> \
-                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> \
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
             <span class="c1"># Return the solution for all of the size classes</span>
             <span class="k">return</span> <span class="n">dndt</span>
 
@@ -329,15 +332,20 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="k">if</span> <span class="ow">not</span> <span class="n">soln</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FMNPNumericalError</span><span class="p">(</span><span class="s1">&#39;Model solution could not be &#39;</span> <span class="o">+</span>
                                      <span class="sa">f</span><span class="s1">&#39;found: </span><span class="si">{</span><span class="n">soln</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="c1"># If k_frag != for the smallest size class, then there will be a loss</span>
-        <span class="c1"># from the system, so keep track of that here</span>
-        <span class="n">n_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;initial_concs&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># If dissolution rate is non-zero, then there will be a loss of</span>
+        <span class="c1"># dissolved organics from the system, so keep track of that here.</span>
+        <span class="c1"># First, we get the number concentration lost from each size</span>
+        <span class="c1"># class over time</span>
+        <span class="n">n_diss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;initial_concs&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">T</span>
+        <span class="c1"># Now we need to convert from a number concentration to a mass</span>
+        <span class="c1"># concentration, by assuming sphere and the given polymer density</span>
+        <span class="n">c_diss</span> <span class="o">=</span> <span class="n">n_diss</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
         <span class="c1"># Create a named tuple to return the results in</span>
         <span class="n">FMNPOutput</span> <span class="o">=</span> <span class="n">NamedTuple</span><span class="p">(</span><span class="s1">&#39;FMNPOutput&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
                                                <span class="p">(</span><span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
-                                               <span class="p">(</span><span class="s1">&#39;n_loss&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)])</span>
+                                               <span class="p">(</span><span class="s1">&#39;c_diss&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)])</span>
         <span class="c1"># Return the solution in this named tuple</span>
-        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n_loss</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_set_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -361,8 +369,7 @@ const thebe_selector_output = ".output, .cell_output"
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_set_k_frag</span><span class="p">(</span><span class="n">k_frag_av</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta_1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                     <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
-                    <span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                    <span class="n">loss</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+                    <span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the fragmentation rate :math:`k_frag` based on</span>
 <span class="sd">        the average :math:`k_frag` for the median particle size bin,</span>
@@ -388,10 +395,10 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="n">k_prop</span> <span class="o">=</span> <span class="n">k_frag_av</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span><span class="p">))</span>
         <span class="c1"># Now create the array of k_frags</span>
         <span class="n">k_frag</span> <span class="o">=</span> <span class="n">k_prop</span> <span class="o">*</span> <span class="n">psd</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span><span class="p">)</span>
-        <span class="c1"># If fragmentation from the smallest size class isn&#39;t allowed,</span>
-        <span class="c1"># then set k_frag for that class to zero</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">loss</span><span class="p">:</span>
-            <span class="n">k_frag</span><span class="p">[</span><span class="n">n_size_classes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># We presume fragmentation from the smallest size class</span>
+        <span class="c1"># can&#39;t happen, and the only loss from this size class</span>
+        <span class="c1"># is from dissolution</span>
+        <span class="n">k_frag</span><span class="p">[</span><span class="n">n_size_classes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">return</span> <span class="n">k_frag</span>
 
     <span class="nd">@staticmethod</span>
@@ -420,6 +427,31 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="c1"># Get the upper triangle of this matrix, which effectively sets fsd</span>
         <span class="c1"># to zero for size classes larger or equal to the current one</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">fsd</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_set_k_diss</span><span class="p">(</span><span class="n">k_diss_av</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the dissolution rate for each of the size classes,</span>
+<span class="sd">        based on an average dissolution rate</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k_diss_av : float</span>
+<span class="sd">            Average dissolution rate across size classes</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Dissolution rates for all size classes</span>
+<span class="sd">            </span>
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        At the moment, we just treat the dissolution rate as the</span>
+<span class="sd">        same across size classes and so the average is used. This</span>
+<span class="sd">        method exists in case the data suggest we need different</span>
+<span class="sd">        dissolution rates for different sized plastic particles.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_size_classes</span><span class="p">,),</span> <span class="n">k_diss_av</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_validate_inputs</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
