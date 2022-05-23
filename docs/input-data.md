@@ -5,9 +5,10 @@ Input data must be passed to the {class}`fragmentmnp.FragmentMNP` model class. E
 ```python
 >>> from fragmentmnp.examples import minimal_data, full_data
 >>> minimal_data
-{'initial_concs': [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0], 'k_frag': 0.01}
+{'initial_concs': [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0], 'density': 1380, 'k_frag': 0.01}
 >>> full_data
-{'initial_concs': [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0], 'k_frag': 0.01, 'theta_1': 0.0}
+{'initial_concs': [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0], 'density': 1380, 'k_frag': 0.01,
+'theta_1': 0.0, 'k_diss': 0.0}
 ```
 
 The `minimal_data` contains only required variables, whilst `full_data` includes variables that have defaults. Here we take a look at the schema for this data dict.
@@ -16,6 +17,10 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 : *Required, list of floats with length equal to `n_size_classes`, units: particles/m3.*
 : The intial particle number concentration in each model size class. 
 
+`density`
+: *Required, float, units: kg/m3.*
+: The density of the polymer being modelled.
+
 `k_frag`
 : *Required, float, units: s<sup>-1</sup>.*
 : The average fragmentation rate $k_\text{frag}$ across the size classes.
@@ -23,3 +28,7 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 `theta_1`
 : *Optional, float, default: 0.*
 : Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d_{2\theta_1}$, meaning if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles.
+
+`k_diss`
+: *Optional, float, default: 0.*
+: The dissolution rate $k_\text{diss}$ for all of the size classes, which is the rate of loss to dissolved organics from each size class.

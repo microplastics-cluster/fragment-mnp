@@ -24,7 +24,7 @@ class FragmentMNP():
     """
 
     __slots__ = ['config', 'data', 'n_size_classes', 'psd', 'fsd',
-                 'n_timesteps', 'k_frag', 'theta_1']
+                 'n_timesteps', 'density', 'k_frag', 'theta_1', 'k_diss']
 
     def __init__(self,
                  config: dict,
@@ -46,10 +46,12 @@ class FragmentMNP():
         self.psd = self._set_psd()
         self.fsd = self._set_fsd(self.n_size_classes)
         self.theta_1 = data['theta_1']
+        self.density = data['density']
+        self.k_diss = self._set_k_diss(data['k_diss'],
+                                       self.n_size_classes)
         self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1,
                                        self.psd,
-                                       self.n_size_classes,
-                                       self.config['allow_loss'])
+                                       self.n_size_classes)
 
     def run(self) -> NamedTuple:
         r"""
@@ -63,9 +65,8 @@ class FragmentMNP():
         n : np.ndarray, shape (n_size_classes, n_timesteps)
             Particle number concentrations for each size class over
             this time series
-        n_loss : np.ndarray, shape (n_timesteps, )
-            Particle number concentration lost from the smallest
-            size class
+        c_diss : np.ndarray, shape (n_timesteps, )
+            Mass concentrations of dissolved organics
 
         Notes
         -----
@@ -76,11 +77,12 @@ class FragmentMNP():
 
         .. math::
             \frac{dn_k}{dt} = -k_{\text{frag},k} n_k +
-            \Sigma_i f_{i,k} k_{\text{frag},i} n_i
+            \Sigma_i f_{i,k} k_{\text{frag},i} n_i - k_{\text{diss},k} n_k
 
         Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size class
-        `k`, and :math:`f_{i,k}` is the fraction of daughter fragments produced
-        from a fragmenting particle of size `i` that are of size `k`
+        `k`, :math:`f_{i,k}` is the fraction of daughter fragments produced
+        from a fragmenting particle of size `i` that are of size `k`, and
+        :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.
         """
         # Define the initial value problem to pass to SciPy to solve.
         # This must satisfy n'(t) = f(t, n) with initial value given in data
@@ -91,7 +93,8 @@ class FragmentMNP():
             # Loop over the size classes and perform the calculation
             for k in np.arange(N):
                 dndt[k] = - self.k_frag[k] * n[k] \
-                    + np.sum(self.fsd[:, k] * self.k_frag * n)
+                    + np.sum(self.fsd[:, k] * self.k_frag * n) \
+                    - self.k_diss[k] * n[k]
             # Return the solution for all of the size classes
             return dndt
 
@@ -104,15 +107,20 @@ class FragmentMNP():
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be ' +
                                      f'found: {soln.message}')
-        # If k_frag != for the smallest size class, then there will be a loss
-        # from the system, so keep track of that here
-        n_loss = np.sum(self.data['initial_concs']) - np.sum(soln.y, axis=0)
+        # If dissolution rate is non-zero, then there will be a loss of
+        # dissolved organics from the system, so keep track of that here.
+        # First, we get the number concentration lost from each size
+        # class over time
+        n_diss = self.data['initial_concs'] - soln.y.T
+        # Now we need to convert from a number concentration to a mass
+        # concentration, by assuming sphere and the given polymer density
+        c_diss = n_diss * self.density * (4/3) * np.pi * (self.psd / 2) ** 3
         # Create a named tuple to return the results in
         FMNPOutput = NamedTuple('FMNPOutput', [('t', npt.NDArray),
                                                ('n', npt.NDArray),
-                                               ('n_loss', npt.NDArray)])
+                                               ('c_diss', npt.NDArray)])
         # Return the solution in this named tuple
-        return FMNPOutput(soln.t, soln.y, n_loss)
+        return FMNPOutput(soln.t, soln.y, c_diss)
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """
@@ -136,8 +144,7 @@ class FragmentMNP():
     @staticmethod
     def _set_k_frag(k_frag_av: float, theta_1: float,
                     psd: npt.NDArray[np.float64],
-                    n_size_classes: int,
-                    loss: bool = False) -> npt.NDArray[np.float64]:
+                    n_size_classes: int) -> npt.NDArray[np.float64]:
         r"""
         Set the fragmentation rate :math:`k_frag` based on
         the average :math:`k_frag` for the median particle size bin,
@@ -163,10 +170,10 @@ class FragmentMNP():
         k_prop = k_frag_av / (np.median(psd) ** (2 * theta_1))
         # Now create the array of k_frags
         k_frag = k_prop * psd ** (2 * theta_1)
-        # If fragmentation from the smallest size class isn't allowed,
-        # then set k_frag for that class to zero
-        if not loss:
-            k_frag[n_size_classes - 1] = 0.0
+        # We presume fragmentation from the smallest size class
+        # can't happen, and the only loss from this size class
+        # is from dissolution
+        k_frag[n_size_classes - 1] = 0.0
         return k_frag
 
     @staticmethod
@@ -195,6 +202,31 @@ class FragmentMNP():
         # Get the upper triangle of this matrix, which effectively sets fsd
         # to zero for size classes larger or equal to the current one
         return np.triu(fsd, k=1)
+
+    @staticmethod
+    def _set_k_diss(k_diss_av: float, n_size_classes: int) -> npt.NDArray[np.float64]:
+        """
+        Set the dissolution rate for each of the size classes,
+        based on an average dissolution rate
+        
+        Parameters
+        ----------
+        k_diss_av : float
+            Average dissolution rate across size classes
+            
+        Returns
+        -------
+        np.ndarray
+            Dissolution rates for all size classes
+            
+        Notes
+        -----
+        At the moment, we just treat the dissolution rate as the
+        same across size classes and so the average is used. This
+        method exists in case the data suggest we need different
+        dissolution rates for different sized plastic particles.
+        """
+        return np.full((n_size_classes,), k_diss_av)
 
     @staticmethod
     def _validate_inputs(config: dict, data: dict) -> Tuple[dict, dict]:
