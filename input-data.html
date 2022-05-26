@@ -245,13 +245,13 @@ const thebe_selector_output = ".output, .cell_output"
                 
   <div class="tex2jax_ignore mathjax_ignore section" id="input-data">
 <h1>Input data<a class="headerlink" href="#input-data" title="Permalink to this headline">¶</a></h1>
-<p>Input data must be passed to the <a class="reference internal" href="developers/api.html#fragmentmnp.FragmentMNP" title="fragmentmnp.FragmentMNP"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.FragmentMNP</span></code></a> model class. Example are given in the <a class="reference internal" href="developers/api.html#module-fragmentmnp.examples" title="fragmentmnp.examples"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fragmentmnp.examples</span></code></a> module:</p>
+<p>Input data must be passed to the <a class="reference internal" href="developers/api.html#fragmentmnp.FragmentMNP" title="fragmentmnp.FragmentMNP"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.FragmentMNP</span></code></a> model class. Examples are given in the <a class="reference internal" href="developers/api.html#module-fragmentmnp.examples" title="fragmentmnp.examples"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fragmentmnp.examples</span></code></a> module:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fragmentmnp.examples</span> <span class="kn">import</span> <span class="n">minimal_data</span><span class="p">,</span> <span class="n">full_data</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">minimal_data</span>
 <span class="go">{&#39;initial_concs&#39;: [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0], &#39;density&#39;: 1380, &#39;k_frag&#39;: 0.01}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">full_data</span>
 <span class="go">{&#39;initial_concs&#39;: [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0], &#39;density&#39;: 1380, &#39;k_frag&#39;: 0.01,</span>
-<span class="go">&#39;theta_1&#39;: 0.0, &#39;k_diss&#39;: 0.0}</span>
+<span class="go">&#39;theta_1&#39;: 0.0, &#39;k_diss&#39;: 0.0, &#39;k_diss_gamma&#39;: 1.0}</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">minimal_data</span></code> contains only required variables, whilst <code class="docutils literal notranslate"><span class="pre">full_data</span></code> includes variables that have defaults. Here we take a look at the schema for this data dict.</p>
@@ -274,7 +274,11 @@ const thebe_selector_output = ".output, .cell_output"
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">k_diss</span></code></dt><dd><p><em>Optional, float, default: 0.</em></p>
 </dd>
-<dd><p>The dissolution rate <span class="math notranslate nohighlight">\(k_\text{diss}\)</span> for all of the size classes, which is the rate of loss to dissolved organics from each size class.</p>
+<dd><p>The average (median) dissolution rate <span class="math notranslate nohighlight">\(k_\text{diss}\)</span>, which describes the rate of loss to dissolved organics from each size class. How this average is distributed across size classes is determined by the <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> in the <a class="reference internal" href="config.html"><span class="doc std std-doc">model configuration</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code></dt><dd><p><em>Optional, float, default: 1.</em></p>
+</dd>
+<dd><p>If the config option <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> is set to <code class="docutils literal notranslate"><span class="pre">surface_area</span></code>, then <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> <span class="math notranslate nohighlight">\(\gamma\)</span> is an empirical parameter that scales how dependent the distribution of <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> across size classes is on the particle surface area to volume ratio. In short, <span class="math notranslate nohighlight">\(k_\text{diss} \propto s^\gamma\)</span>, where <span class="math notranslate nohighlight">\(s\)</span> is the surface area to volume ratio. In other words, if <span class="math notranslate nohighlight">\(\gamma = 1\)</span>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> scales directly with the surface area to volume ratio, and if <span class="math notranslate nohighlight">\(\gamma = 0\)</span>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is constant across size classes (i.e. it has the same effect as setting <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> to <code class="docutils literal notranslate"><span class="pre">constant</span></code>).</p>
 </dd>
 </dl>
 </div>
@@ -327,7 +331,7 @@ const thebe_selector_output = ".output, .cell_output"
     
       By Sam Harrison<br/>
     
-        &copy; Copyright 2021.<br/>
+        &copy; Copyright 2022.<br/>
   </p>
 </footer>
 </main>

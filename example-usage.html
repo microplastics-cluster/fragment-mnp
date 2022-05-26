@@ -240,6 +240,19 @@ const thebe_selector_output = ".output, .cell_output"
         <!-- Table of contents -->
         <div class="d-none d-md-block col-md-2 bd-toc show noprint">
             
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#dissolution">
+   Dissolution
+  </a>
+ </li>
+</ul>
+
+            </nav>
         </div>
     </div>
 </div>
@@ -252,6 +265,19 @@ const thebe_selector_output = ".output, .cell_output"
                 <div id="print-main-content">
                     <div id="jb-print-toc">
                         
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#dissolution">
+   Dissolution
+  </a>
+ </li>
+</ul>
+
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -265,6 +291,8 @@ const thebe_selector_output = ".output, .cell_output"
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fragmentmnp</span> <span class="kn">import</span> <span class="n">FragmentMNP</span>
 <span class="kn">from</span> <span class="nn">fragmentmnp.examples</span> <span class="kn">import</span> <span class="n">minimal_config</span><span class="p">,</span> <span class="n">minimal_data</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="c1"># Create the model and pass it config and data. minimal_config and</span>
 <span class="c1"># minimal_data are an examples of a dicts with only required values.</span>
@@ -279,9 +307,7 @@ const thebe_selector_output = ".output, .cell_output"
 <p>The returned <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> object contains a timeseries <code class="docutils literal notranslate"><span class="pre">t</span></code>, particle number concentrations for each size class <code class="docutils literal notranslate"><span class="pre">n</span></code> and particle number concentration lost from the smallest size class <code class="docutils literal notranslate"><span class="pre">n_loss</span></code>. We can easily plot these to show model outputs:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-
-<span class="c1"># We transpose the particle number concentrations `n` to be able to pass</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We transpose the particle number concentrations `n` to be able to pass</span>
 <span class="c1"># all the size classes to matplotlib in one line, but we could just have</span>
 <span class="c1"># looped through the size classes</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">n</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
@@ -294,6 +320,52 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 <div class="cell_output docutils container">
 <img alt="_images/example-usage_3_0.png" src="_images/example-usage_3_0.png" />
+</div>
+</div>
+<div class="section" id="dissolution">
+<h2>Dissolution<a class="headerlink" href="#dissolution" title="Permalink to this headline">¶</a></h2>
+<p>The example data has a dissolution rate <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> of 0. Let’s simulate dissolution by setting this to an average (median) of 0.001, and use the <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> config parameter set to <code class="docutils literal notranslate"><span class="pre">surface_area</span></code> to scale this by the surface area to volume ratio (the default is <code class="docutils literal notranslate"><span class="pre">constant</span></code>). We will keep <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> set to the default of 1, such that <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is directly proportional to surface area to volume ratio.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Change the dissolution parameters</span>
+<span class="n">minimal_data</span><span class="p">[</span><span class="s1">&#39;k_diss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0005</span>
+<span class="n">minimal_config</span><span class="p">[</span><span class="s1">&#39;k_diss_scaling_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;surface_area&#39;</span>
+
+<span class="c1"># Rerun the model</span>
+<span class="n">fmnp</span> <span class="o">=</span> <span class="n">FragmentMNP</span><span class="p">(</span><span class="n">minimal_config</span><span class="p">,</span> <span class="n">minimal_data</span><span class="p">)</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Dissolution data is included in the <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> class: <code class="docutils literal notranslate"><span class="pre">n_diss</span></code> is a timeseries of particle number concentrations lost from each size class, and <code class="docutils literal notranslate"><span class="pre">c_diss</span></code> is corresponding mass concentration assuming spherical particles. Let’s sum the mass concentration across size classes and plot that as well as the particle number concentrations given by <code class="docutils literal notranslate"><span class="pre">n</span></code>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create the figure and axes - we need to this because we need to</span>
+<span class="c1"># add a second axis for the dissolution data</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+<span class="c1"># Add labels to the particle number concentration axis</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;particle number concentration [particles/volume]&#39;</span><span class="p">)</span>
+<span class="c1"># Plot the particle number concentrations</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">n</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1"> m&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">psd</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">)</span>
+
+<span class="c1"># Create and format the dissolution y axis</span>
+<span class="n">ax2</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;dissolution mass concentration [mass/volume]&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">c_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;--&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;c_diss&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
+
+<span class="c1"># Show the plot</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/example-usage_7_0.png" src="_images/example-usage_7_0.png" />
+</div>
 </div>
 </div>
 </div>
@@ -346,7 +418,7 @@ const thebe_selector_output = ".output, .cell_output"
     
       By Sam Harrison<br/>
     
-        &copy; Copyright 2021.<br/>
+        &copy; Copyright 2022.<br/>
   </p>
 </footer>
 </main>

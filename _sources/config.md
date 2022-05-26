@@ -7,7 +7,8 @@ When initialising the {class}`fragmentmnp.FragmentMNP` model class, a config dic
 >>> minimal_config
 {'n_size_classes': 7, 'particle_size_range': [-9, -3], 'n_timesteps': 100}
 >>> full_config
-{'n_size_classes': 7, 'particle_size_range': [-9, -3], 'n_timesteps': 100, 'dt': 1}
+{'n_size_classes': 7, 'particle_size_range': [-9, -3], 'n_timesteps': 100, 'dt': 1,
+'k_diss_scaling_method': 'constant'}
 ```
 
 The `minimal_config` contains only required variables, whilst `full_config` includes variables that have defaults. Here we take a look at the schema for this config dict.
@@ -31,3 +32,7 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 `dt`
 : *Optional, int, units: s, default: 1*.
 : The length of each timestep. Defaults to 1 second.
+
+`k_diss_scaling_method`
+: *Optional, str equal to `constant` or `surface_area`, default: `constant`.*
+: The method by which the dissolution rate `k_diss` is scaled across size classes. If `constant`, then `k_diss` is the same across all size classes. If `surface_area`, then `k_diss` scales as $s^\gamma$, where $s$ is the surface area to volume ratio of the polymer particles, and $\gamma$ is an empirical scaling parameter set by the `k_diss_gamma` variable in the [model input data dict](input-data).

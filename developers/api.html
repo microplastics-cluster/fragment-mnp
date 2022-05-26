@@ -357,7 +357,9 @@ config and data are correct and wish to speed up model initialisation</p></li>
 <li><p><strong>t</strong> (<em>np.ndarray, shape (n_timesteps,)</em>) – Time series over which the model was run</p></li>
 <li><p><strong>n</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Particle number concentrations for each size class over
 this time series</p></li>
-<li><p><strong>c_diss</strong> (<em>np.ndarray, shape (n_timesteps, )</em>) – Mass concentrations of dissolved organics</p></li>
+<li><p><strong>n_diss</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Particle number concentrations lost from size classes due
+to dissolution</p></li>
+<li><p><strong>c_diss</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Mass concentrations of dissolved organics</p></li>
 </ul>
 </p>
 </dd>
@@ -476,7 +478,7 @@ have defaults</p></li>
     
       By Sam Harrison<br/>
     
-        &copy; Copyright 2021.<br/>
+        &copy; Copyright 2022.<br/>
   </p>
 </footer>
 </main>

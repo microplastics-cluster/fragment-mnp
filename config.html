@@ -51,6 +51,8 @@ const thebe_selector_input = "pre"
 const thebe_selector_output = ".output, .cell_output"
 </script>
     <script async="async" src="_static/sphinx-thebe.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Input data" href="input-data.html" />
@@ -248,7 +250,8 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="gp">&gt;&gt;&gt; </span><span class="n">minimal_config</span>
 <span class="go">{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">full_config</span>
-<span class="go">{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100, &#39;dt&#39;: 1}</span>
+<span class="go">{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100, &#39;dt&#39;: 1,</span>
+<span class="go">&#39;k_diss_scaling_method&#39;: &#39;constant&#39;}</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">minimal_config</span></code> contains only required variables, whilst <code class="docutils literal notranslate"><span class="pre">full_config</span></code> includes variables that have defaults. Here we take a look at the schema for this config dict.</p>
@@ -272,6 +275,10 @@ const thebe_selector_output = ".output, .cell_output"
 <dt><code class="docutils literal notranslate"><span class="pre">dt</span></code></dt><dd><p><em>Optional, int, units: s, default: 1</em>.</p>
 </dd>
 <dd><p>The length of each timestep. Defaults to 1 second.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code></dt><dd><p><em>Optional, str equal to <code class="docutils literal notranslate"><span class="pre">constant</span></code> or <code class="docutils literal notranslate"><span class="pre">surface_area</span></code>, default: <code class="docutils literal notranslate"><span class="pre">constant</span></code>.</em></p>
+</dd>
+<dd><p>The method by which the dissolution rate <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is scaled across size classes. If <code class="docutils literal notranslate"><span class="pre">constant</span></code>, then <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is the same across all size classes. If <code class="docutils literal notranslate"><span class="pre">surface_area</span></code>, then <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> scales as <span class="math notranslate nohighlight">\(s^\gamma\)</span>, where <span class="math notranslate nohighlight">\(s\)</span> is the surface area to volume ratio of the polymer particles, and <span class="math notranslate nohighlight">\(\gamma\)</span> is an empirical scaling parameter set by the <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> variable in the <a class="reference internal" href="input-data.html"><span class="doc std std-doc">model input data dict</span></a>.</p>
 </dd>
 </dl>
 </div>
@@ -324,7 +331,7 @@ const thebe_selector_output = ".output, .cell_output"
     
       By Sam Harrison<br/>
     
-        &copy; Copyright 2021.<br/>
+        &copy; Copyright 2022.<br/>
   </p>
 </footer>
 </main>
