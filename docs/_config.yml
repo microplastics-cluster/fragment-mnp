@@ -3,6 +3,7 @@
 
 title: FRAGMENT-MNP
 author: Sam Harrison
+copyright: "2022"
 logo: logo.svg
 
 # Force re-execution of notebooks on each build.

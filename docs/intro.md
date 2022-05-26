@@ -8,7 +8,15 @@ FRAGMENT-MNP is a mechanistic model of Micro and NanoPlastic FRAGMentation in th
 
 ## Quickstart
 
-FRAGMENT-MNP is in active development at the moment - results should be viewed with caution! That being said, you are welcome to check out the package using the developer instructions below to install it. Also checkout the [](example-usage.ipynb).
+FRAGMENT-MNP is in active development at the moment - results should be viewed with caution! That being said, you can install from GitHub using `pip`:
+
+```bash
+$ pip install git+https://github.com/microplastics-cluster/fragment-mnp.git
+```
+
+If you wish to contribute to development, then check out the [developer instructions](developers/quickstart) for instructions on how to install using Poetry.
+
+Here is a bare minimum example. See also the [](example-usage.ipynb).
 
 ```python
 from fragmentmnp import FragmentMNP

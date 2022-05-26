@@ -24,7 +24,11 @@ config_schema = Schema({
     # Timesteps should be an integer
     'n_timesteps': int,
     # Length of timesteps should be an integer (unit of seconds)
-    Optional('dt', default=1): int
+    Optional('dt', default=1): int,
+    # How should the average k_diss provided be scaled across
+    # size classes?
+    Optional('k_diss_scaling_method',
+             default='constant'): lambda x: x in ('constant', 'surface_area')
 })
 
 
@@ -40,7 +44,10 @@ data_schema = Schema({
     # theta1 (surface energy empirical parameter) must be a float or int
     Optional('theta_1', default=0.0): Or(int, float),
     # k_diss (dissolution) must be int or float
-    Optional('k_diss', default=0.0): Or(int, float)
+    Optional('k_diss', default=0.0): Or(int, float),
+    # k_diss_gamma is an empirical param that linearly scales
+    # the affect of surface area on dissolution rates
+    Optional('k_diss_gamma', default=1.0): Or(int, float)
 })
 
 

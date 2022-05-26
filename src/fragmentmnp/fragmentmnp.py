@@ -24,7 +24,8 @@ class FragmentMNP():
     """
 
     __slots__ = ['config', 'data', 'n_size_classes', 'psd', 'fsd',
-                 'n_timesteps', 'density', 'k_frag', 'theta_1', 'k_diss']
+                 'n_timesteps', 'density', 'k_frag', 'theta_1', 'k_diss',
+                 'initial_concs']
 
     def __init__(self,
                  config: dict,
@@ -42,13 +43,18 @@ class FragmentMNP():
         # Set the number of particle size classes and number of timesteps
         self.n_size_classes = self.config['n_size_classes']
         self.n_timesteps = self.config['n_timesteps']
-        # Set the particle physical properties
+        # Initial concentrations
+        self.initial_concs = np.array(data['initial_concs'])
+        # Set the particle phys-chem properties
         self.psd = self._set_psd()
         self.fsd = self._set_fsd(self.n_size_classes)
         self.theta_1 = data['theta_1']
         self.density = data['density']
         self.k_diss = self._set_k_diss(data['k_diss'],
-                                       self.n_size_classes)
+                                       config['k_diss_scaling_method'],
+                                       self.psd,
+                                       self.n_size_classes,
+                                       data['k_diss_gamma'])
         self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1,
                                        self.psd,
                                        self.n_size_classes)
@@ -65,7 +71,10 @@ class FragmentMNP():
         n : np.ndarray, shape (n_size_classes, n_timesteps)
             Particle number concentrations for each size class over
             this time series
-        c_diss : np.ndarray, shape (n_timesteps, )
+        n_diss : np.ndarray, shape (n_size_classes, n_timesteps)
+            Particle number concentrations lost from size classes due
+            to dissolution
+        c_diss : np.ndarray, shape (n_size_classes, n_timesteps)
             Mass concentrations of dissolved organics
 
         Notes
@@ -84,48 +93,66 @@ class FragmentMNP():
         from a fragmenting particle of size `i` that are of size `k`, and
         :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.
         """
+
         # Define the initial value problem to pass to SciPy to solve.
-        # This must satisfy n'(t) = f(t, n) with initial value given in data
+        # This must satisfy n'(t) = f(t, n) with initial values given in data.
+        # In our case, n is an array of equations covering the differential
+        # equation for each size class, n[:n_size_classes], and particle
+        # numbers lost from each size class due to dissolution in
+        # n[n_size_classes:]. The actual IVP that is solved is the first
+        # n_size_classes equations in n, and the dissolution elements after
+        # this are only used to return dissolution pools to be output from
+        # the model
         def f(t, n):
-            # Get the number of size classes and create result to be filled
-            N = n.shape[0]
+            # Get the number of size classes and create results to be filled
+            N = self.n_size_classes
             dndt = np.empty(N)
+            n_diss = np.empty(N)
             # Loop over the size classes and perform the calculation
             for k in np.arange(N):
+                # Particle number concentration lost from this size class due
+                # to dissolution
+                n_diss[k] = self.k_diss[k] * n[k]
+                # The differential equation that is being solved
                 dndt[k] = - self.k_frag[k] * n[k] \
-                    + np.sum(self.fsd[:, k] * self.k_frag * n) \
-                    - self.k_diss[k] * n[k]
-            # Return the solution for all of the size classes
-            return dndt
+                    + np.sum(self.fsd[:, k] * self.k_frag * n[:N]) \
+                    - n_diss[k]
+            # Return the solution for all of the size classes, including
+            # particle number concentration in each size class, and particle
+            # number concentrations lost due to dissolution
+            return [*dndt, *n_diss]
 
         # Numerically solve this given the initial values for n
         soln = solve_ivp(fun=f,
                          t_span=(0, self.n_timesteps),
-                         y0=self.data['initial_concs'],
+                         y0=[*self.initial_concs,
+                             *np.zeros(self.n_size_classes)],
                          t_eval=np.arange(0, self.n_timesteps))
         # If we didn't find a solution, raise an error
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be ' +
                                      f'found: {soln.message}')
-        # If dissolution rate is non-zero, then there will be a loss of
-        # dissolved organics from the system, so keep track of that here.
-        # First, we get the number concentration lost from each size
-        # class over time
-        n_diss = self.data['initial_concs'] - soln.y.T
-        # Now we need to convert from a number concentration to a mass
-        # concentration, by assuming sphere and the given polymer density
-        c_diss = n_diss * self.density * (4/3) * np.pi * (self.psd / 2) ** 3
+        # Extract the particle number concentrations and dissolution losses
+        n = soln.y[:self.n_size_classes]
+        n_diss = soln.y[self.n_size_classes:]
+        # Now we need to convert dissolution loss from a number concentration
+        # to a mass concentration using the polymer density and assuming
+        # spherical particles
+        c_diss = n_diss * self.density * (4/3) * np.pi \
+                 * (self.psd[:, None] / 2) ** 3
+
         # Create a named tuple to return the results in
         FMNPOutput = NamedTuple('FMNPOutput', [('t', npt.NDArray),
                                                ('n', npt.NDArray),
-                                               ('c_diss', npt.NDArray)])
+                                               ('c_diss', npt.NDArray),
+                                               ('n_diss', npt.NDArray)])
         # Return the solution in this named tuple
-        return FMNPOutput(soln.t, soln.y, c_diss)
+        return FMNPOutput(soln.t, n, c_diss, n_diss)
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """
         Calculate the particle size distribution based on
-        the config options passed in ``self.config``
+        the config options passed in `self.config`
         """
         if 'particle_size_classes' in self.config:
             # If a particle size distribution has been specified, use that
@@ -173,7 +200,7 @@ class FragmentMNP():
         # We presume fragmentation from the smallest size class
         # can't happen, and the only loss from this size class
         # is from dissolution
-        k_frag[n_size_classes - 1] = 0.0
+        k_frag[0] = 0.0
         return k_frag
 
     @staticmethod
@@ -197,36 +224,109 @@ class FragmentMNP():
         fsd = np.zeros((n_size_classes, n_size_classes))
         # Fill with an equal split between daughter size classes
         for i in np.arange(n_size_classes):
-            fsd[i, :] = 1 / (n_size_classes - i - 1) \
-                if (n_size_classes - i) != 1 else 0
-        # Get the upper triangle of this matrix, which effectively sets fsd
+            fsd[i, :] = 1 / i if i != 0 else 0
+        # Get the lower triangle of this matrix, which effectively sets fsd
         # to zero for size classes larger or equal to the current one
-        return np.triu(fsd, k=1)
+        return np.tril(fsd, k=-1)
 
     @staticmethod
-    def _set_k_diss(k_diss_av: float, n_size_classes: int) -> npt.NDArray[np.float64]:
+    def _set_k_diss(k_diss_av: float,
+                    scaling_method: str,
+                    psd: npt.NDArray[np.float64],
+                    n_size_classes: int,
+                    gamma: float = 1.0) -> npt.NDArray[np.float64]:
         """
         Set the dissolution rate for each of the size classes,
         based on an average dissolution rate
-        
+
         Parameters
         ----------
         k_diss_av : float
-            Average dissolution rate across size classes
-            
+            Average dissolution rate across size classes.
+        scaling_method: str
+            How to scale ``k_diss`` across size classes? Either `constant`
+            or `surface_area`. If `constant`, the same ``k_diss`` is used
+            for all size classes. If `surface_area`, ``k_diss`` is scaled
+            according to particle surface area per unit volume of polymer.
+        psd : np.ndarray
+            The particle size distribution
+        n_size_classes : int
+            The number of particle size classes
+
         Returns
         -------
         np.ndarray
             Dissolution rates for all size classes
-            
+
         Notes
         -----
-        At the moment, we just treat the dissolution rate as the
-        same across size classes and so the average is used. This
-        method exists in case the data suggest we need different
-        dissolution rates for different sized plastic particles.
+        At the moment, we are assuming spherical particles when scaling
+        by surface area. This might change.
         """
-        return np.full((n_size_classes,), k_diss_av)
+        # What scaling method has been chosen?
+        if scaling_method == 'constant':
+            # Use the average k_diss across all size classes
+            k_diss = np.full((n_size_classes,), k_diss_av)
+        elif scaling_method == 'surface_area':
+            # Scale the dissolution according to surface area per unit
+            # volume, assuming our particles are spheres
+            k_diss = k_diss_av * FragmentMNP._f_surface_area(psd, gamma)
+        else:
+            # We shouldn't get here, if validation has been performed!
+            raise ValueError('Invalid k_diss_scaling_factor provided: ',
+                             {scaling_method})
+        return k_diss
+
+    @staticmethod
+    def _f_surface_area(psd: npt.NDArray[np.float64],
+                        gamma: float = 1.0) -> npt.NDArray[np.float64]:
+        r"""
+        Calculate the scaling factor for surface area, which is defined
+        as the ratio of the surface area to volume ratio of the polymer
+        for each size class to the median size class, such that ``f`` is
+        1 for the median size class, larger for the smaller size classes
+        (because there are more particles per unit volume), and smaller
+        for larger size classes. An empirical parameter ``gamma`` linearly
+        scales the factor by :math:`f^\gamma`.
+
+        Parameters
+        ----------
+        psd : np.ndarray
+            The particle size distribution
+        gamma: float
+            Empirical scaling factor that scales ``f`` as :math:`s^\gamma`,
+            where ``s`` is the surface area to volume ratio of each size
+            class. Therefore, if ``gamma`` is 1, then ``k_diss`` scales
+            directly with ``s``.
+
+        Returns
+        -------
+        np.ndarray
+            Surface area scaling factor
+
+        Notes
+        -----
+        By assuming spherical particles, calculating their volumes and
+        surface areas and simplifying the algebra, ``f`` can be defined as
+
+        .. math::
+            f_\text{s} = \left(\frac{s}{\hat{s}}\right)^\gamma
+
+        where :math:`s` is the surface area to volume ratio, and
+        :math:`\hat{s}` is the median of :math:`s`:
+
+        .. math::
+            s = \frac{4 \pi r_\text{max}}{\textbf{r}}
+
+        Here, :math:`r_\text{max}` is the radius of the largest particle size
+        class, and :math:`\textbf{r}` is an array of the particle size class
+        radii.
+        """
+        # Calculate ratio of surface area to the largest volume and scale
+        # to the median (so f = 1 for the median size class)
+        surface_area_volume_ratio = (4 * np.pi * (psd.max() / 2) ** 3) / psd
+        f = surface_area_volume_ratio / np.median(surface_area_volume_ratio)
+        return f ** gamma
 
     @staticmethod
     def _validate_inputs(config: dict, data: dict) -> Tuple[dict, dict]:
