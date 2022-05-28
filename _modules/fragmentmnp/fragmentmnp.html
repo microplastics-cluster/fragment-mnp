@@ -321,46 +321,35 @@ const thebe_selector_output = ".output, .cell_output"
 
         <span class="c1"># Define the initial value problem to pass to SciPy to solve.</span>
         <span class="c1"># This must satisfy n&#39;(t) = f(t, n) with initial values given in data.</span>
-        <span class="c1"># In our case, n is an array of equations covering the differential</span>
-        <span class="c1"># equation for each size class, n[:n_size_classes], and particle</span>
-        <span class="c1"># numbers lost from each size class due to dissolution in</span>
-        <span class="c1"># n[n_size_classes:]. The actual IVP that is solved is the first</span>
-        <span class="c1"># n_size_classes equations in n, and the dissolution elements after</span>
-        <span class="c1"># this are only used to return dissolution pools to be output from</span>
-        <span class="c1"># the model</span>
         <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
             <span class="c1"># Get the number of size classes and create results to be filled</span>
             <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span>
             <span class="n">dndt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
-            <span class="n">n_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
             <span class="c1"># Loop over the size classes and perform the calculation</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
-                <span class="c1"># Particle number concentration lost from this size class due</span>
-                <span class="c1"># to dissolution</span>
-                <span class="n">n_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
                 <span class="c1"># The differential equation that is being solved</span>
                 <span class="n">dndt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> \
                     <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">*</span> <span class="n">n</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span> \
-                    <span class="o">-</span> <span class="n">n_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-            <span class="c1"># Return the solution for all of the size classes, including</span>
-            <span class="c1"># particle number concentration in each size class, and particle</span>
-            <span class="c1"># number concentrations lost due to dissolution</span>
-            <span class="k">return</span> <span class="p">[</span><span class="o">*</span><span class="n">dndt</span><span class="p">,</span> <span class="o">*</span><span class="n">n_diss</span><span class="p">]</span>
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="c1"># Return the solution for all of the size classes</span>
+            <span class="k">return</span> <span class="n">dndt</span>
 
         <span class="c1"># Numerically solve this given the initial values for n</span>
         <span class="n">soln</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">fun</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
                          <span class="n">t_span</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">),</span>
-                         <span class="n">y0</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span><span class="p">,</span>
-                             <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)],</span>
+                         <span class="n">y0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span><span class="p">,</span>
                          <span class="n">t_eval</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">))</span>
         <span class="c1"># If we didn&#39;t find a solution, raise an error</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">soln</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FMNPNumericalError</span><span class="p">(</span><span class="s1">&#39;Model solution could not be &#39;</span> <span class="o">+</span>
                                      <span class="sa">f</span><span class="s1">&#39;found: </span><span class="si">{</span><span class="n">soln</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="c1"># Extract the particle number concentrations and dissolution losses</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">]</span>
-        <span class="n">n_diss</span> <span class="o">=</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">:]</span>
-        <span class="c1"># Now we need to convert dissolution loss from a number concentration</span>
+        <span class="c1"># Calculate the timeseries of particle number flux lost to dissolution</span>
+        <span class="c1"># from the solution</span>
+        <span class="n">j_diss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span>
+        <span class="c1"># Use this to calculate the cumulative particle numbers (as a conc)</span>
+        <span class="c1"># lost to dissolution</span>
+        <span class="n">n_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">j_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Finally, convert dissolution loss from a number concentration</span>
         <span class="c1"># to a mass concentration using the polymer density and assuming</span>
         <span class="c1"># spherical particles</span>
         <span class="n">c_diss</span> <span class="o">=</span> <span class="n">n_diss</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> \
@@ -372,7 +361,7 @@ const thebe_selector_output = ".output, .cell_output"
                                                <span class="p">(</span><span class="s1">&#39;c_diss&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
                                                <span class="p">(</span><span class="s1">&#39;n_diss&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)])</span>
         <span class="c1"># Return the solution in this named tuple</span>
-        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_set_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>

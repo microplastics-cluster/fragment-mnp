@@ -304,7 +304,7 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-<p>The returned <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> object contains a timeseries <code class="docutils literal notranslate"><span class="pre">t</span></code>, particle number concentrations for each size class <code class="docutils literal notranslate"><span class="pre">n</span></code> and particle number concentration lost from the smallest size class <code class="docutils literal notranslate"><span class="pre">n_loss</span></code>. We can easily plot these to show model outputs:</p>
+<p>The returned <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> object contains a timeseries <code class="docutils literal notranslate"><span class="pre">t</span></code>, particle number concentrations for each size class <code class="docutils literal notranslate"><span class="pre">n</span></code>, particle number concentration lost from each size class due to dissolution <code class="docutils literal notranslate"><span class="pre">n_diss</span></code>, and corresponding concentration of dissolved organics from each size class <code class="docutils literal notranslate"><span class="pre">c_diss</span></code>. We can easily plot these to show model outputs:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We transpose the particle number concentrations `n` to be able to pass</span>
