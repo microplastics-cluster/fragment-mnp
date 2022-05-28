@@ -96,46 +96,35 @@ class FragmentMNP():
 
         # Define the initial value problem to pass to SciPy to solve.
         # This must satisfy n'(t) = f(t, n) with initial values given in data.
-        # In our case, n is an array of equations covering the differential
-        # equation for each size class, n[:n_size_classes], and particle
-        # numbers lost from each size class due to dissolution in
-        # n[n_size_classes:]. The actual IVP that is solved is the first
-        # n_size_classes equations in n, and the dissolution elements after
-        # this are only used to return dissolution pools to be output from
-        # the model
         def f(t, n):
             # Get the number of size classes and create results to be filled
             N = self.n_size_classes
             dndt = np.empty(N)
-            n_diss = np.empty(N)
             # Loop over the size classes and perform the calculation
             for k in np.arange(N):
-                # Particle number concentration lost from this size class due
-                # to dissolution
-                n_diss[k] = self.k_diss[k] * n[k]
                 # The differential equation that is being solved
                 dndt[k] = - self.k_frag[k] * n[k] \
                     + np.sum(self.fsd[:, k] * self.k_frag * n[:N]) \
-                    - n_diss[k]
-            # Return the solution for all of the size classes, including
-            # particle number concentration in each size class, and particle
-            # number concentrations lost due to dissolution
-            return [*dndt, *n_diss]
+                    - self.k_diss[k] * n[k]
+            # Return the solution for all of the size classes
+            return dndt
 
         # Numerically solve this given the initial values for n
         soln = solve_ivp(fun=f,
                          t_span=(0, self.n_timesteps),
-                         y0=[*self.initial_concs,
-                             *np.zeros(self.n_size_classes)],
+                         y0=self.initial_concs,
                          t_eval=np.arange(0, self.n_timesteps))
         # If we didn't find a solution, raise an error
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be ' +
                                      f'found: {soln.message}')
-        # Extract the particle number concentrations and dissolution losses
-        n = soln.y[:self.n_size_classes]
-        n_diss = soln.y[self.n_size_classes:]
-        # Now we need to convert dissolution loss from a number concentration
+        # Calculate the timeseries of particle number flux lost to dissolution
+        # from the solution
+        j_diss = self.k_diss[:, None] * soln.y
+        # Use this to calculate the cumulative particle numbers (as a conc)
+        # lost to dissolution
+        n_diss = np.cumsum(j_diss, axis=1)
+        # Finally, convert dissolution loss from a number concentration
         # to a mass concentration using the polymer density and assuming
         # spherical particles
         c_diss = n_diss * self.density * (4/3) * np.pi \
@@ -147,7 +136,7 @@ class FragmentMNP():
                                                ('c_diss', npt.NDArray),
                                                ('n_diss', npt.NDArray)])
         # Return the solution in this named tuple
-        return FMNPOutput(soln.t, n, c_diss, n_diss)
+        return FMNPOutput(soln.t, soln.y, c_diss, n_diss)
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """

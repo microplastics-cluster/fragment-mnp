@@ -4,7 +4,7 @@
 
 FRAGMENT-MNP is a mechanistic model of Micro and NanoPlastic FRAGMentation in the ENvironmenT.
 
-[See the model documentation here.](https://microplastics-cluster.github.io/fragment-mnp)
+[See the full model documentation here.](https://microplastics-cluster.github.io/fragment-mnp)
 
 ## Usage
 
@@ -49,10 +49,6 @@ You can test the installation has worked correctly by running `pytest` in the pr
 ```shell
 $ pytest
 ```
-
-### Talking of Conda...
-
-[Check out this doc](./docs/conda.md) for specifics of using Conda to manage your environment.
 
 ## Acknowledgements
 
