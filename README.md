@@ -12,11 +12,11 @@ FRAGMENT-MNP is in active development at the moment - results should be viewed w
 
 ```python
 from fragmentmnp import FragmentMNP
-from fragmentmnp.examples import minimal_config, data
+from fragmentmnp.examples import minimal_config, minimal_data
 import matplotlib.pyplot as plt
 
 # Create the model, pass it config and data, then run it
-fmnp = FragmentMNP(minimal_config, data)
+fmnp = FragmentMNP(minimal_config, minimal_data)
 output = fmnp.run()
 
 # Plot the results
