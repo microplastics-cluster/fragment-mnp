@@ -14,8 +14,8 @@ Input data must be passed to the {class}`fragmentmnp.FragmentMNP` model class. E
 The `minimal_data` contains only required variables, whilst `full_data` includes variables that have defaults. Here we take a look at the schema for this data dict.
 
 `initial_concs`
-: *Required, list of floats with length equal to `n_size_classes`, units: particles/m3.*
-: The intial particle number concentration in each model size class. 
+: *Required, list of floats with length equal to `n_size_classes`, units: kg/m3.*
+: The intial mass concentration in each model size class. 
 
 `density`
 : *Required, float, units: kg/m3.*
@@ -23,7 +23,7 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 
 `k_frag`
 : *Required, float, units: s<sup>-1</sup>.*
-: The average fragmentation rate $k_\text{frag}$ across the size classes.
+: The average fragmentation rate $k_\text{frag}$ across the size classes. $k_\text{frag}$ is defined as the fraction of the *mass* of a particular size class that fragments each second.
 
 `theta_1`
 : *Optional, float, default: 0.*
@@ -36,3 +36,11 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 `k_diss_gamma`
 : *Optional, float, default: 1.*
 : If the config option `k_diss_scaling_method` is set to `surface_area`, then `k_diss_gamma` $\gamma$ is an empirical parameter that scales how dependent the distribution of `k_diss` across size classes is on the particle surface area to volume ratio. In short, $k_\text{diss} \propto s^\gamma$, where $s$ is the surface area to volume ratio. In other words, if $\gamma = 1$, `k_diss` scales directly with the surface area to volume ratio, and if $\gamma = 0$, `k_diss` is constant across size classes (i.e. it has the same effect as setting `k_diss_scaling_method` to `constant`).
+
+
+```{admonition} Units
+:class: tip
+Strictly speaking, the FRAGMENT-MNP model is unit-agnostic. As long as the units of data specified in input data are consistent, then the units of variables output by the model will match these. For example, if you specify `initial_concs` and `density` with units of mg/m<sup>3</sup>, then output concentrations will be in mg/m<sup>3</sup>.
+
+**However**, we strongly recommend you stick to SI units to avoid the chance of mistakes being made. Hence this page gives unit recommendations in SI units.
+```

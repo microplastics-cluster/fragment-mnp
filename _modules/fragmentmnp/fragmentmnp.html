@@ -293,46 +293,52 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">        Named tuple with the following fields defined:</span>
 <span class="sd">        t : np.ndarray, shape (n_timesteps,)</span>
 <span class="sd">            Time series over which the model was run</span>
+<span class="sd">        c: np.ndarray, shape (n_size_classes, n_timesteps)</span>
+<span class="sd">            Mass concentrations for each size class over the time</span>
+<span class="sd">            series</span>
 <span class="sd">        n : np.ndarray, shape (n_size_classes, n_timesteps)</span>
 <span class="sd">            Particle number concentrations for each size class over</span>
-<span class="sd">            this time series</span>
+<span class="sd">            the time series</span>
+<span class="sd">        c_diss : np.ndarray, shape (n_size_classes, n_timesteps)</span>
+<span class="sd">            Mass concentrations of dissolved organics</span>
 <span class="sd">        n_diss : np.ndarray, shape (n_size_classes, n_timesteps)</span>
 <span class="sd">            Particle number concentrations lost from size classes due</span>
 <span class="sd">            to dissolution</span>
-<span class="sd">        c_diss : np.ndarray, shape (n_size_classes, n_timesteps)</span>
-<span class="sd">            Mass concentrations of dissolved organics</span>
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
 <span class="sd">        Internally the model numerically solves the following differential</span>
-<span class="sd">        equation for each size class, to give a time series of particle number</span>
-<span class="sd">        concentrations `n`. `k` is the current size class, `i` are the</span>
+<span class="sd">        equation for each size class, to give a time series of mass</span>
+<span class="sd">        concentrations `c`. `k` is the current size class, `i` are the</span>
 <span class="sd">        daughter size classes.</span>
 
 <span class="sd">        .. math::</span>
-<span class="sd">            \frac{dn_k}{dt} = -k_{\text{frag},k} n_k +</span>
-<span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i} n_i - k_{\text{diss},k} n_k</span>
+<span class="sd">            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +</span>
+<span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k</span>
 
 <span class="sd">        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size class</span>
 <span class="sd">        `k`, :math:`f_{i,k}` is the fraction of daughter fragments produced</span>
 <span class="sd">        from a fragmenting particle of size `i` that are of size `k`, and</span>
 <span class="sd">        :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.</span>
+
+<span class="sd">        Mass concentrations are converted to particle number concentrations by</span>
+<span class="sd">        assuming spherical particles with the density given in the input data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Define the initial value problem to pass to SciPy to solve.</span>
-        <span class="c1"># This must satisfy n&#39;(t) = f(t, n) with initial values given in data.</span>
-        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="c1"># This must satisfy c&#39;(t) = f(t, c) with initial values given in data.</span>
+        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
             <span class="c1"># Get the number of size classes and create results to be filled</span>
             <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span>
-            <span class="n">dndt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="n">dcdt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
             <span class="c1"># Loop over the size classes and perform the calculation</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
                 <span class="c1"># The differential equation that is being solved</span>
-                <span class="n">dndt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> \
-                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">*</span> <span class="n">n</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span> \
-                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="n">dcdt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> \
+                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">*</span> <span class="n">c</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span> \
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
             <span class="c1"># Return the solution for all of the size classes</span>
-            <span class="k">return</span> <span class="n">dndt</span>
+            <span class="k">return</span> <span class="n">dcdt</span>
 
         <span class="c1"># Numerically solve this given the initial values for n</span>
         <span class="n">soln</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">fun</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
@@ -343,25 +349,28 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="k">if</span> <span class="ow">not</span> <span class="n">soln</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">FMNPNumericalError</span><span class="p">(</span><span class="s1">&#39;Model solution could not be &#39;</span> <span class="o">+</span>
                                      <span class="sa">f</span><span class="s1">&#39;found: </span><span class="si">{</span><span class="n">soln</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="c1"># Calculate the timeseries of particle number flux lost to dissolution</span>
+        <span class="c1"># Calculate the timeseries of mass concentration lost to dissolution</span>
         <span class="c1"># from the solution</span>
         <span class="n">j_diss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span>
-        <span class="c1"># Use this to calculate the cumulative particle numbers (as a conc)</span>
+        <span class="c1"># Use this to calculate the cumulative mass concentration</span>
         <span class="c1"># lost to dissolution</span>
-        <span class="n">n_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">j_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># Finally, convert dissolution loss from a number concentration</span>
-        <span class="c1"># to a mass concentration using the polymer density and assuming</span>
-        <span class="c1"># spherical particles</span>
-        <span class="n">c_diss</span> <span class="o">=</span> <span class="n">n_diss</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> \
-                 <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
+        <span class="n">c_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">j_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Now we have the solutions as mass concentrations, we can</span>
+        <span class="c1"># convert to particle number concentrations, assuming spherical</span>
+        <span class="c1"># particles and using the polymer density</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+            <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">n_diss</span> <span class="o">=</span> <span class="n">c_diss</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+                 <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
 
         <span class="c1"># Create a named tuple to return the results in</span>
         <span class="n">FMNPOutput</span> <span class="o">=</span> <span class="n">NamedTuple</span><span class="p">(</span><span class="s1">&#39;FMNPOutput&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
+                                               <span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
                                                <span class="p">(</span><span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
                                                <span class="p">(</span><span class="s1">&#39;c_diss&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
                                                <span class="p">(</span><span class="s1">&#39;n_diss&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)])</span>
         <span class="c1"># Return the solution in this named tuple</span>
-        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_set_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>

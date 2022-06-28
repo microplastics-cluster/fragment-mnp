@@ -355,27 +355,31 @@ config and data are correct and wish to speed up model initialisation</p></li>
 <dd class="field-odd"><p><ul class="simple">
 <li><p><em>Named tuple with the following fields defined</em></p></li>
 <li><p><strong>t</strong> (<em>np.ndarray, shape (n_timesteps,)</em>) – Time series over which the model was run</p></li>
+<li><p><strong>c</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Mass concentrations for each size class over the time
+series</p></li>
 <li><p><strong>n</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Particle number concentrations for each size class over
-this time series</p></li>
+the time series</p></li>
+<li><p><strong>c_diss</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Mass concentrations of dissolved organics</p></li>
 <li><p><strong>n_diss</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Particle number concentrations lost from size classes due
 to dissolution</p></li>
-<li><p><strong>c_diss</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Mass concentrations of dissolved organics</p></li>
 </ul>
 </p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
 <p>Internally the model numerically solves the following differential
-equation for each size class, to give a time series of particle number
-concentrations <cite>n</cite>. <cite>k</cite> is the current size class, <cite>i</cite> are the
+equation for each size class, to give a time series of mass
+concentrations <cite>c</cite>. <cite>k</cite> is the current size class, <cite>i</cite> are the
 daughter size classes.</p>
 <div class="math notranslate nohighlight">
-\[\frac{dn_k}{dt} = -k_{\text{frag},k} n_k +
-\Sigma_i f_{i,k} k_{\text{frag},i} n_i - k_{\text{diss},k} n_k\]</div>
+\[\frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
+\Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k\]</div>
 <p>Here, <span class="math notranslate nohighlight">\(k_{\text{frag},k}\)</span> is the fragmentation rate of size class
 <cite>k</cite>, <span class="math notranslate nohighlight">\(f_{i,k}\)</span> is the fraction of daughter fragments produced
 from a fragmenting particle of size <cite>i</cite> that are of size <cite>k</cite>, and
 <span class="math notranslate nohighlight">\(k_{\text{diss},k}\)</span> is the dissolution rate from size class <cite>k</cite>.</p>
+<p>Mass concentrations are converted to particle number concentrations by
+assuming spherical particles with the density given in the input data.</p>
 </dd></dl>
 
 </dd></dl>

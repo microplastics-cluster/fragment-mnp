@@ -309,8 +309,8 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="n">fmnp</span> <span class="o">=</span> <span class="n">FragmentMNP</span><span class="p">(</span><span class="n">minimal_config</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">output</span> <span class="o">=</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-<span class="c1"># Plot the results</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">n</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="c1"># Plot the mass concentration time series</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1"> m&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">psd</span><span class="p">])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>

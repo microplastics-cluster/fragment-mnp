@@ -256,9 +256,9 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">minimal_data</span></code> contains only required variables, whilst <code class="docutils literal notranslate"><span class="pre">full_data</span></code> includes variables that have defaults. Here we take a look at the schema for this data dict.</p>
 <dl class="simple myst">
-<dt><code class="docutils literal notranslate"><span class="pre">initial_concs</span></code></dt><dd><p><em>Required, list of floats with length equal to <code class="docutils literal notranslate"><span class="pre">n_size_classes</span></code>, units: particles/m3.</em></p>
+<dt><code class="docutils literal notranslate"><span class="pre">initial_concs</span></code></dt><dd><p><em>Required, list of floats with length equal to <code class="docutils literal notranslate"><span class="pre">n_size_classes</span></code>, units: kg/m3.</em></p>
 </dd>
-<dd><p>The intial particle number concentration in each model size class.</p>
+<dd><p>The intial mass concentration in each model size class.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">density</span></code></dt><dd><p><em>Required, float, units: kg/m3.</em></p>
 </dd>
@@ -266,7 +266,7 @@ const thebe_selector_output = ".output, .cell_output"
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">k_frag</span></code></dt><dd><p><em>Required, float, units: s<sup>-1</sup>.</em></p>
 </dd>
-<dd><p>The average fragmentation rate <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> across the size classes.</p>
+<dd><p>The average fragmentation rate <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> across the size classes. <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> is defined as the fraction of the <em>mass</em> of a particular size class that fragments each second.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">theta_1</span></code></dt><dd><p><em>Optional, float, default: 0.</em></p>
 </dd>
@@ -281,6 +281,11 @@ const thebe_selector_output = ".output, .cell_output"
 <dd><p>If the config option <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> is set to <code class="docutils literal notranslate"><span class="pre">surface_area</span></code>, then <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> <span class="math notranslate nohighlight">\(\gamma\)</span> is an empirical parameter that scales how dependent the distribution of <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> across size classes is on the particle surface area to volume ratio. In short, <span class="math notranslate nohighlight">\(k_\text{diss} \propto s^\gamma\)</span>, where <span class="math notranslate nohighlight">\(s\)</span> is the surface area to volume ratio. In other words, if <span class="math notranslate nohighlight">\(\gamma = 1\)</span>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> scales directly with the surface area to volume ratio, and if <span class="math notranslate nohighlight">\(\gamma = 0\)</span>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is constant across size classes (i.e. it has the same effect as setting <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> to <code class="docutils literal notranslate"><span class="pre">constant</span></code>).</p>
 </dd>
 </dl>
+<div class="tip admonition">
+<p class="admonition-title">Units</p>
+<p>Strictly speaking, the FRAGMENT-MNP model is unit-agnostic. As long as the units of data specified in input data are consistent, then the units of variables output by the model will match these. For example, if you specify <code class="docutils literal notranslate"><span class="pre">initial_concs</span></code> and <code class="docutils literal notranslate"><span class="pre">density</span></code> with units of mg/m<sup>3</sup>, then output concentrations will be in mg/m<sup>3</sup>.</p>
+<p><strong>However</strong>, we strongly recommend you stick to SI units to avoid the chance of mistakes being made. Hence this page gives unit recommendations in SI units.</p>
+</div>
 </div>
 
     <script type="text/x-thebe-config">
