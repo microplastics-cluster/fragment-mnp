@@ -68,46 +68,52 @@ class FragmentMNP():
         Named tuple with the following fields defined:
         t : np.ndarray, shape (n_timesteps,)
             Time series over which the model was run
+        c: np.ndarray, shape (n_size_classes, n_timesteps)
+            Mass concentrations for each size class over the time
+            series
         n : np.ndarray, shape (n_size_classes, n_timesteps)
             Particle number concentrations for each size class over
-            this time series
+            the time series
+        c_diss : np.ndarray, shape (n_size_classes, n_timesteps)
+            Mass concentrations of dissolved organics
         n_diss : np.ndarray, shape (n_size_classes, n_timesteps)
             Particle number concentrations lost from size classes due
             to dissolution
-        c_diss : np.ndarray, shape (n_size_classes, n_timesteps)
-            Mass concentrations of dissolved organics
 
         Notes
         -----
         Internally the model numerically solves the following differential
-        equation for each size class, to give a time series of particle number
-        concentrations `n`. `k` is the current size class, `i` are the
+        equation for each size class, to give a time series of mass
+        concentrations `c`. `k` is the current size class, `i` are the
         daughter size classes.
 
         .. math::
-            \frac{dn_k}{dt} = -k_{\text{frag},k} n_k +
-            \Sigma_i f_{i,k} k_{\text{frag},i} n_i - k_{\text{diss},k} n_k
+            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
+            \Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
 
         Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size class
         `k`, :math:`f_{i,k}` is the fraction of daughter fragments produced
         from a fragmenting particle of size `i` that are of size `k`, and
         :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.
+
+        Mass concentrations are converted to particle number concentrations by
+        assuming spherical particles with the density given in the input data.
         """
 
         # Define the initial value problem to pass to SciPy to solve.
-        # This must satisfy n'(t) = f(t, n) with initial values given in data.
-        def f(t, n):
+        # This must satisfy c'(t) = f(t, c) with initial values given in data.
+        def f(t, c):
             # Get the number of size classes and create results to be filled
             N = self.n_size_classes
-            dndt = np.empty(N)
+            dcdt = np.empty(N)
             # Loop over the size classes and perform the calculation
             for k in np.arange(N):
                 # The differential equation that is being solved
-                dndt[k] = - self.k_frag[k] * n[k] \
-                    + np.sum(self.fsd[:, k] * self.k_frag * n[:N]) \
-                    - self.k_diss[k] * n[k]
+                dcdt[k] = - self.k_frag[k] * c[k] \
+                    + np.sum(self.fsd[:, k] * self.k_frag * c[:N]) \
+                    - self.k_diss[k] * c[k]
             # Return the solution for all of the size classes
-            return dndt
+            return dcdt
 
         # Numerically solve this given the initial values for n
         soln = solve_ivp(fun=f,
@@ -118,25 +124,28 @@ class FragmentMNP():
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be ' +
                                      f'found: {soln.message}')
-        # Calculate the timeseries of particle number flux lost to dissolution
+        # Calculate the timeseries of mass concentration lost to dissolution
         # from the solution
         j_diss = self.k_diss[:, None] * soln.y
-        # Use this to calculate the cumulative particle numbers (as a conc)
+        # Use this to calculate the cumulative mass concentration
         # lost to dissolution
-        n_diss = np.cumsum(j_diss, axis=1)
-        # Finally, convert dissolution loss from a number concentration
-        # to a mass concentration using the polymer density and assuming
-        # spherical particles
-        c_diss = n_diss * self.density * (4/3) * np.pi \
-                 * (self.psd[:, None] / 2) ** 3
+        c_diss = np.cumsum(j_diss, axis=1)
+        # Now we have the solutions as mass concentrations, we can
+        # convert to particle number concentrations, assuming spherical
+        # particles and using the polymer density
+        n = soln.y / (self.density * (4.0/3.0) * np.pi
+            * (self.psd[:, None] / 2) ** 3)
+        n_diss = c_diss / (self.density * (4/3) * np.pi
+                 * (self.psd[:, None] / 2) ** 3)
 
         # Create a named tuple to return the results in
         FMNPOutput = NamedTuple('FMNPOutput', [('t', npt.NDArray),
+                                               ('c', npt.NDArray),
                                                ('n', npt.NDArray),
                                                ('c_diss', npt.NDArray),
                                                ('n_diss', npt.NDArray)])
         # Return the solution in this named tuple
-        return FMNPOutput(soln.t, soln.y, c_diss, n_diss)
+        return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss)
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """

@@ -27,8 +27,8 @@ import matplotlib.pyplot as plt
 fmnp = FragmentMNP(minimal_config, data)
 output = fmnp.run()
 
-# Plot the results
-plt.plot(output.t, output.n.T)
+# Plot the mass concentration time series
+plt.plot(output.t, output.c.T)
 plt.legend([f'{d} m' for d in fmnp.psd])
 plt.show()
 ```
