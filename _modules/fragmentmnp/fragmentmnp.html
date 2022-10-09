@@ -281,8 +281,9 @@ const thebe_selector_output = ".output, .cell_output"
                                        <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span>
                                        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_diss_gamma&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span>
-                                       <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
-                                       <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NamedTuple</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -392,18 +393,20 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="k">return</span> <span class="n">psd</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_set_k_frag</span><span class="p">(</span><span class="n">k_frag_av</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta_1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">_set_k_frag</span><span class="p">(</span><span class="n">k_frag</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta_1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                     <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
                     <span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Set the fragmentation rate :math:`k_frag` based on</span>
-<span class="sd">        the average :math:`k_frag` for the median particle size bin,</span>
-<span class="sd">        and :math:`\theta_1` (surface energy empirical parameter)</span>
+<span class="sd">        Set the fragmentation rate :math:`k_frag` based on either</span>
+<span class="sd">        the average :math:`k_frag` for the median particle size bin</span>
+<span class="sd">        and :math:`\theta_1` (surface energy empirical parameter),</span>
+<span class="sd">        or directly if a distribution is provided.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        k_frag_av : float</span>
-<span class="sd">            The average :math:`k_frag` for the median particle size bin</span>
+<span class="sd">        k_frag: float or iterable</span>
+<span class="sd">            Either the average :math:`k_frag` for the median particle</span>
+<span class="sd">            size bin, or a distribution of :math:`k_frag` values</span>
 <span class="sd">        theta_1 : float</span>
 <span class="sd">            The surface energy empirical parameter :math:`\theta_1`</span>
 <span class="sd">        psd : np.ndarray</span>
@@ -416,15 +419,29 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">        k_frag = np.ndarray</span>
 <span class="sd">            Fragmentation rate array over particle size classes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get the proportionality constant</span>
-        <span class="n">k_prop</span> <span class="o">=</span> <span class="n">k_frag_av</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span><span class="p">))</span>
-        <span class="c1"># Now create the array of k_frags</span>
-        <span class="n">k_frag</span> <span class="o">=</span> <span class="n">k_prop</span> <span class="o">*</span> <span class="n">psd</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span><span class="p">)</span>
-        <span class="c1"># We presume fragmentation from the smallest size class</span>
-        <span class="c1"># can&#39;t happen, and the only loss from this size class</span>
-        <span class="c1"># is from dissolution</span>
-        <span class="n">k_frag</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="k">return</span> <span class="n">k_frag</span>
+        <span class="c1"># Check if k_frag is a scalar value, in which case we need</span>
+        <span class="c1"># to calculate a distribution based on theta1</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k_frag</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="c1"># Get the proportionality constant</span>
+            <span class="n">k_prop</span> <span class="o">=</span> <span class="n">k_frag</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span><span class="p">))</span>
+            <span class="c1"># Now create the array of k_frags</span>
+            <span class="n">k_frag_dist</span> <span class="o">=</span> <span class="n">k_prop</span> <span class="o">*</span> <span class="n">psd</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span><span class="p">)</span>
+            <span class="c1"># We presume fragmentation from the smallest size class</span>
+            <span class="c1"># can&#39;t happen, and the only loss from this size class</span>
+            <span class="c1"># is from dissolution</span>
+            <span class="n">k_frag_dist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># Else just set k_frag directly from the provided array</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k_frag_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span>
+            <span class="c1"># If the provided k_frag distribution isn&#39;t the correct</span>
+            <span class="c1"># length, raise an error</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">psd</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;k_frag distribution provided in &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;input data is not the same length as &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;particle size distribution. Expecting &#39;</span> <span class="o">+</span>
+                                <span class="sa">f</span><span class="s1">&#39;array of length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span><span class="si">}</span><span class="s1">. Received &#39;</span> <span class="o">+</span>
+                                <span class="sa">f</span><span class="s1">&#39;array of length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">k_frag_dist</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_set_fsd</span><span class="p">(</span><span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>

@@ -237,6 +237,14 @@ const thebe_selector_output = ".output, .cell_output"
                                      <span class="n">error</span><span class="o">=</span><span class="s1">&#39;particle_size_range must &#39;</span> <span class="o">+</span>
                                            <span class="s1">&#39;be a length-2 iterable&#39;</span><span class="p">))</span>
 
+<div class="viewcode-block" id="is_array"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.validation.is_array">[docs]</a><span class="k">def</span> <span class="nf">is_array</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check if arr is iterable&quot;&quot;&quot;</span> 
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">iter</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
 
 <span class="c1"># The schema that the config dict should follow</span>
 <span class="n">config_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
@@ -263,9 +271,9 @@ const thebe_selector_output = ".output, .cell_output"
     <span class="s1">&#39;initial_concs&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)],</span>
     <span class="c1"># Density must either be a float/int and greater than 0</span>
     <span class="s1">&#39;density&#39;</span><span class="p">:</span> <span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span>
-    <span class="c1"># k_frag must either be a float/int, or a list of flaots/ints,</span>
+    <span class="c1"># k_frag must either be a float/int, or a list of floats/ints,</span>
     <span class="c1"># and greater than 0</span>
-    <span class="s1">&#39;k_frag&#39;</span><span class="p">:</span> <span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span>
+    <span class="s1">&#39;k_frag&#39;</span><span class="p">:</span> <span class="n">Or</span><span class="p">(</span><span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">is_array</span><span class="p">),</span>
     <span class="c1"># theta1 (surface energy empirical parameter) must be a float or int</span>
     <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;theta_1&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
     <span class="c1"># k_diss (dissolution) must be int or float</span>
@@ -313,6 +321,7 @@ const thebe_selector_output = ".output, .cell_output"
     <span class="c1"># Run the validation, and return the validated dict</span>
     <span class="c1"># if it passes</span>
     <span class="n">validated</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">(</span><span class="n">data_schema</span><span class="p">)</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="c1"># TODO extra validation here, e.g. check lengths are n_size_classes</span>
     <span class="k">return</span> <span class="n">validated</span></div>
 </pre></div>
 
