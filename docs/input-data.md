@@ -22,12 +22,12 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 : The density of the polymer being modelled.
 
 `k_frag`
-: *Required, float, units: s<sup>-1</sup>.*
-: The average fragmentation rate $k_\text{frag}$ across the size classes. $k_\text{frag}$ is defined as the fraction of the *mass* of a particular size class that fragments each second.
+: *Required, float or iterable with length equal to `n_size_classes`, units: s<sup>-1</sup>.*
+: Either a scalar representing the average fragmentation rate $k_\text{frag}$ across the size classes, or the full $k_\text{frag}$ distribution for all size classes. $k_\text{frag}$ is defined as the fraction of the *mass* of a particular size class that fragments each second. If a scalar (average) is provided, `theta_1` is used to calculate the distribution, otherwise any value given for `theta_1` is ignored.
 
 `theta_1`
 : *Optional, float, default: 0.*
-: Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d_{2\theta_1}$, meaning if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles.
+: Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d_{2\theta_1}$, meaning if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles. `theta_1` is ignored if a distribution is given for `k_frag`.
 
 `k_diss`
 : *Optional, float, default: 0.*

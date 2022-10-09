@@ -1,9 +1,10 @@
 """
 Tests for the config and data validation
 """
+import numpy as np
+from schema import SchemaError
 from fragmentmnp.validation import validate_config, validate_data
 import fragmentmnp.examples
-from schema import SchemaError
 
 
 # Get some valid config from the examples module
@@ -115,3 +116,17 @@ def test_valid_minimal_data():
     validated = validate_data(valid_minimal_data)
     # theta_1 should have been defaulted to 0
     assert validated['theta_1'] == 0.0
+
+
+def test_array_or_scalar():
+    """
+    Test that k_frag can be either an array of
+    ints/floats or a scalar
+    """
+    valid_data = valid_minimal_data.copy()
+    valid_data['k_frag'] = np.array([1, 2, 3, 4, 5, 6, 7])
+    try:
+        validate_data(valid_data)
+        assert True
+    except SchemaError:
+        assert False

@@ -56,8 +56,9 @@ class FragmentMNP():
                                        self.n_size_classes,
                                        data['k_diss_gamma'])
         self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1,
-                                       self.psd,
-                                       self.n_size_classes)
+                                    self.psd,
+                                    self.n_size_classes)
+
 
     def run(self) -> NamedTuple:
         r"""
@@ -167,18 +168,20 @@ class FragmentMNP():
         return psd
 
     @staticmethod
-    def _set_k_frag(k_frag_av: float, theta_1: float,
+    def _set_k_frag(k_frag: float, theta_1: float,
                     psd: npt.NDArray[np.float64],
                     n_size_classes: int) -> npt.NDArray[np.float64]:
         r"""
-        Set the fragmentation rate :math:`k_frag` based on
-        the average :math:`k_frag` for the median particle size bin,
-        and :math:`\theta_1` (surface energy empirical parameter)
+        Set the fragmentation rate :math:`k_frag` based on either
+        the average :math:`k_frag` for the median particle size bin
+        and :math:`\theta_1` (surface energy empirical parameter),
+        or directly if a distribution is provided.
 
         Parameters
         ----------
-        k_frag_av : float
-            The average :math:`k_frag` for the median particle size bin
+        k_frag: float or iterable
+            Either the average :math:`k_frag` for the median particle
+            size bin, or a distribution of :math:`k_frag` values
         theta_1 : float
             The surface energy empirical parameter :math:`\theta_1`
         psd : np.ndarray
@@ -191,15 +194,29 @@ class FragmentMNP():
         k_frag = np.ndarray
             Fragmentation rate array over particle size classes
         """
-        # Get the proportionality constant
-        k_prop = k_frag_av / (np.median(psd) ** (2 * theta_1))
-        # Now create the array of k_frags
-        k_frag = k_prop * psd ** (2 * theta_1)
-        # We presume fragmentation from the smallest size class
-        # can't happen, and the only loss from this size class
-        # is from dissolution
-        k_frag[0] = 0.0
-        return k_frag
+        # Check if k_frag is a scalar value, in which case we need
+        # to calculate a distribution based on theta1
+        if isinstance(k_frag, (int, float)):
+            # Get the proportionality constant
+            k_prop = k_frag / (np.median(psd) ** (2 * theta_1))
+            # Now create the array of k_frags
+            k_frag_dist = k_prop * psd ** (2 * theta_1)
+            # We presume fragmentation from the smallest size class
+            # can't happen, and the only loss from this size class
+            # is from dissolution
+            k_frag_dist[0] = 0.0
+        # Else just set k_frag directly from the provided array
+        else:
+            k_frag_dist = np.array(k_frag)
+            # If the provided k_frag distribution isn't the correct
+            # length, raise an error
+            if len(k_frag) != len(psd):
+                raise Exception('k_frag distribution provided in ' +
+                                'input data is not the same length as ' +
+                                'particle size distribution. Expecting ' +
+                                f'array of length {len(psd)}. Received ' +
+                                f'array of length {len(k_frag)}.')
+        return k_frag_dist
 
     @staticmethod
     def _set_fsd(n_size_classes: int) -> npt.NDArray[np.float64]:

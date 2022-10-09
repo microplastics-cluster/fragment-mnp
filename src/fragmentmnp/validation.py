@@ -12,6 +12,14 @@ particle_size_range_schema = And(Or((int, float), [int, float]),
                                      error='particle_size_range must ' +
                                            'be a length-2 iterable'))
 
+def is_array(arr):
+    """Check if arr is iterable""" 
+    try:
+        iter(arr)
+    except:
+        return False
+    return True
+
 
 # The schema that the config dict should follow
 config_schema = Schema({
@@ -38,9 +46,9 @@ data_schema = Schema({
     'initial_concs': [And(Or(int, float), lambda x: x >= 0.0)],
     # Density must either be a float/int and greater than 0
     'density': And(Or(int, float), lambda x: x >= 0.0),
-    # k_frag must either be a float/int, or a list of flaots/ints,
+    # k_frag must either be a float/int, or a list of floats/ints,
     # and greater than 0
-    'k_frag': And(Or(int, float), lambda x: x >= 0.0),
+    'k_frag': Or(And(Or(int, float), lambda x: x >= 0.0), is_array),
     # theta1 (surface energy empirical parameter) must be a float or int
     Optional('theta_1', default=0.0): Or(int, float),
     # k_diss (dissolution) must be int or float
@@ -88,4 +96,5 @@ def validate_data(data: dict) -> dict:
     # Run the validation, and return the validated dict
     # if it passes
     validated = Schema(data_schema).validate(data)
+    # TODO extra validation here, e.g. check lengths are n_size_classes
     return validated
