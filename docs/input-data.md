@@ -31,11 +31,11 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 
 `k_diss`
 : *Optional, float, default: 0.*
-: The average (median) dissolution rate $k_\text{diss}$, which describes the rate of loss to dissolved organics from each size class. How this average is distributed across size classes is determined by the `k_diss_scaling_method` in the [model configuration](config).
+: Either the average (median) dissolution rate $k_\text{diss}$ across the size classes, or the full $k_\text{diss}$ distribution for all size classes. $k_\text{diss}$ describes the rate of loss to "dissolved" organics from each size class. If an average (scalar) is given, how this average is distributed across size classes is determined by the `k_diss_scaling_method` in the [model configuration](config). If a distribution is given, the `k_diss_scaling_method` is ignored.
 
 `k_diss_gamma`
 : *Optional, float, default: 1.*
-: If the config option `k_diss_scaling_method` is set to `surface_area`, then `k_diss_gamma` $\gamma$ is an empirical parameter that scales how dependent the distribution of `k_diss` across size classes is on the particle surface area to volume ratio. In short, $k_\text{diss} \propto s^\gamma$, where $s$ is the surface area to volume ratio. In other words, if $\gamma = 1$, `k_diss` scales directly with the surface area to volume ratio, and if $\gamma = 0$, `k_diss` is constant across size classes (i.e. it has the same effect as setting `k_diss_scaling_method` to `constant`).
+: If the config option `k_diss_scaling_method` is set to `surface_area` and an average (scalar) `k_diss` is given in input data, then `k_diss_gamma` $\gamma$ is an empirical parameter that scales how dependent the distribution of `k_diss` across size classes is on the particle surface area to volume ratio. In short, $k_\text{diss} \propto s^\gamma$, where $s$ is the surface area to volume ratio. In other words, if $\gamma = 1$, `k_diss` scales directly with the surface area to volume ratio, and if $\gamma = 0$, `k_diss` is constant across size classes (i.e. it has the same effect as setting `k_diss_scaling_method` to `constant`). If a distribution is given for `k_diss`, then `k_diss_gamma` is ignored.
 
 
 ```{admonition} Units

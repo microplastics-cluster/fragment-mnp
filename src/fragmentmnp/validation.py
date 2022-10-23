@@ -5,6 +5,7 @@ Validation of config and data (:mod:`fragmentmnp.validation`)
 Provides config and input data validation for the FRAGMENT-MNP model
 """
 from schema import Schema, Or, And, Optional
+from ._errors import FMNPIncorrectDistributionLength
 
 # The schema that particle size ranges should follow
 particle_size_range_schema = And(Or((int, float), [int, float]),
@@ -52,7 +53,9 @@ data_schema = Schema({
     # theta1 (surface energy empirical parameter) must be a float or int
     Optional('theta_1', default=0.0): Or(int, float),
     # k_diss (dissolution) must be int or float
-    Optional('k_diss', default=0.0): Or(int, float),
+    Optional('k_diss', default=0.0): Or(And(Or(int, float),
+                                            lambda x: x >= 0.0),
+                                            is_array),
     # k_diss_gamma is an empirical param that linearly scales
     # the affect of surface area on dissolution rates
     Optional('k_diss_gamma', default=1.0): Or(int, float)
@@ -79,7 +82,7 @@ def validate_config(config: dict) -> dict:
     return validated
 
 
-def validate_data(data: dict) -> dict:
+def validate_data(data: dict, config: dict) -> dict:
     """
     Validate the given data dict against required schema
 
@@ -93,8 +96,44 @@ def validate_data(data: dict) -> dict:
     dict
         Validated data dict
     """
+
     # Run the validation, and return the validated dict
     # if it passes
     validated = Schema(data_schema).validate(data)
+
+    # If k_frag isn't a scalar (i.e. we're not calculating
+    # a k_frag distribution interally), then check the
+    # provided distribution is the correct length
+    if not isinstance(validated['k_frag'], (int, float)):
+        if len(data['k_frag']) != config['n_size_classes']:
+            raise FMNPIncorrectDistributionLength(
+                'k_frag distribution provided in input data ' +
+                'is not the same length as particle size distribution. ' +
+                f'Expecting {config["n_size_classes"]}-length array. ' +
+                f'Received {len(data["k_frag"])}-length array.'
+            )
+
+    # If k_diss isn't a scalar (i.e. we're not calculating
+    # a k_diss distribution interally), then check the
+    # provided distribution is the correct length
+    if not isinstance(validated['k_diss'], (int, float)):
+        if len(data['k_diss']) != config['n_size_classes']:
+            raise FMNPIncorrectDistributionLength(
+                'k_diss distribution provided in input data ' +
+                'is not the same length as particle size distribution. ' +
+                f'Expecting {config["n_size_classes"]}-length array. ' +
+                f'Received {len(data["k_diss"])}-length array.'
+            )
+
+    # Check initial conc distribution is the correct length
+    if len(data['initial_concs']) != config['n_size_classes']:
+        raise FMNPIncorrectDistributionLength(
+            'initial_concs distribution provided in input data ' +
+            'is not the same length as particle size distribution. ' +
+            f'Expecting {config["n_size_classes"]}-length array. ' +
+            f'Received {len(data["initial_concs"])}-length array.'
+        )
+
     # TODO extra validation here, e.g. check lengths are n_size_classes
     return validated
+

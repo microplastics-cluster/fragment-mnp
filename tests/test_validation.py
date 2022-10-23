@@ -5,6 +5,7 @@ import numpy as np
 from schema import SchemaError
 from fragmentmnp.validation import validate_config, validate_data
 import fragmentmnp.examples
+from fragmentmnp._errors import FMNPIncorrectDistributionLength
 
 
 # Get some valid config from the examples module
@@ -104,7 +105,7 @@ def test_valid_data():
     """
     Test for validating a correct data dict
     """
-    validated = validate_data(valid_data)
+    validated = validate_data(valid_data, valid_config)
     assert validated == valid_data
 
 
@@ -113,20 +114,51 @@ def test_valid_minimal_data():
     Test the minimal config example passes with
     defaults filled in
     """
-    validated = validate_data(valid_minimal_data)
+    validated = validate_data(valid_minimal_data, valid_config)
     # theta_1 should have been defaulted to 0
     assert validated['theta_1'] == 0.0
 
 
 def test_array_or_scalar():
     """
-    Test that k_frag can be either an array of
+    Test that k_frag and k_diss can be either an array of
     ints/floats or a scalar
     """
     valid_data = valid_minimal_data.copy()
     valid_data['k_frag'] = np.array([1, 2, 3, 4, 5, 6, 7])
+    valid_data['k_diss'] = np.array([1, 2, 3, 4, 5, 6, 7])
     try:
-        validate_data(valid_data)
+        validate_data(valid_data, valid_config)
         assert True
     except SchemaError:
         assert False
+
+
+def test_invalid_k_frag_distribution_length():
+    """
+    Test that inputting a k_frag distribution that
+    isn't the same length as the number of size classes
+    results in an error
+    """
+    invalid_data = valid_minimal_data.copy()
+    invalid_data['k_frag'] = [1]
+    try:
+        validate_data(invalid_data, valid_config)
+        assert False
+    except FMNPIncorrectDistributionLength:
+        assert True
+
+
+def test_invalid_initial_concs_distribution_length():
+    """
+    Test that inputting an initial_concs distribution that
+    isn't the same length as the number of size classes
+    results in an error
+    """
+    invalid_data = valid_minimal_data.copy()
+    invalid_data['initial_concs'] = [1]
+    try:
+        validate_data(invalid_data, valid_config)
+        assert False
+    except FMNPIncorrectDistributionLength:
+        assert True
