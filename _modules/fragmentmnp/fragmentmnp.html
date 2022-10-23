@@ -280,9 +280,7 @@ const thebe_selector_output = ".output, .cell_output"
                                        <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
                                        <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span>
                                        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_diss_gamma&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NamedTuple</span><span class="p">:</span>
@@ -394,8 +392,7 @@ const thebe_selector_output = ".output, .cell_output"
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_set_k_frag</span><span class="p">(</span><span class="n">k_frag</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta_1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                    <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
-                    <span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+                    <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the fragmentation rate :math:`k_frag` based on either</span>
 <span class="sd">        the average :math:`k_frag` for the median particle size bin</span>
@@ -433,14 +430,6 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="c1"># Else just set k_frag directly from the provided array</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">k_frag_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span>
-            <span class="c1"># If the provided k_frag distribution isn&#39;t the correct</span>
-            <span class="c1"># length, raise an error</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">psd</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;k_frag distribution provided in &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;input data is not the same length as &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;particle size distribution. Expecting &#39;</span> <span class="o">+</span>
-                                <span class="sa">f</span><span class="s1">&#39;array of length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span><span class="si">}</span><span class="s1">. Received &#39;</span> <span class="o">+</span>
-                                <span class="sa">f</span><span class="s1">&#39;array of length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">k_frag_dist</span>
 
     <span class="nd">@staticmethod</span>
@@ -470,7 +459,7 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">fsd</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_set_k_diss</span><span class="p">(</span><span class="n">k_diss_av</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">_set_k_diss</span><span class="p">(</span><span class="n">k_diss</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                     <span class="n">scaling_method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                     <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
                     <span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -481,8 +470,9 @@ const thebe_selector_output = ".output, .cell_output"
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        k_diss_av : float</span>
-<span class="sd">            Average dissolution rate across size classes.</span>
+<span class="sd">        k_diss : float</span>
+<span class="sd">            Either average dissolution rate across size classes, or the</span>
+<span class="sd">            full distribution.</span>
 <span class="sd">        scaling_method: str</span>
 <span class="sd">            How to scale ``k_diss`` across size classes? Either `constant`</span>
 <span class="sd">            or `surface_area`. If `constant`, the same ``k_diss`` is used</span>
@@ -496,26 +486,33 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        np.ndarray</span>
-<span class="sd">            Dissolution rates for all size classes</span>
+<span class="sd">            Dissolution rate distribution</span>
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
 <span class="sd">        At the moment, we are assuming spherical particles when scaling</span>
 <span class="sd">        by surface area. This might change.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># What scaling method has been chosen?</span>
-        <span class="k">if</span> <span class="n">scaling_method</span> <span class="o">==</span> <span class="s1">&#39;constant&#39;</span><span class="p">:</span>
-            <span class="c1"># Use the average k_diss across all size classes</span>
-            <span class="n">k_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_size_classes</span><span class="p">,),</span> <span class="n">k_diss_av</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">scaling_method</span> <span class="o">==</span> <span class="s1">&#39;surface_area&#39;</span><span class="p">:</span>
-            <span class="c1"># Scale the dissolution according to surface area per unit</span>
-            <span class="c1"># volume, assuming our particles are spheres</span>
-            <span class="n">k_diss</span> <span class="o">=</span> <span class="n">k_diss_av</span> <span class="o">*</span> <span class="n">FragmentMNP</span><span class="o">.</span><span class="n">_f_surface_area</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+        <span class="c1"># Check if k_diss is a scalar value, in which case we need</span>
+        <span class="c1"># to calculate a distribution based on gamma</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k_diss</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="c1"># What scaling method has been chosen?</span>
+            <span class="k">if</span> <span class="n">scaling_method</span> <span class="o">==</span> <span class="s1">&#39;constant&#39;</span><span class="p">:</span>
+                <span class="c1"># Use the average k_diss across all size classes</span>
+                <span class="n">k_diss_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_size_classes</span><span class="p">,),</span> <span class="n">k_diss</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">scaling_method</span> <span class="o">==</span> <span class="s1">&#39;surface_area&#39;</span><span class="p">:</span>
+                <span class="c1"># Scale the dissolution according to surface area per unit</span>
+                <span class="c1"># volume, assuming our particles are spheres</span>
+                <span class="n">k_diss_dist</span> <span class="o">=</span> <span class="n">k_diss</span> <span class="o">*</span> <span class="n">FragmentMNP</span><span class="o">.</span><span class="n">_f_surface_area</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># We shouldn&#39;t get here, if validation has been performed!</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid k_diss_scaling_factor provided: &#39;</span><span class="p">,</span>
+                                <span class="p">{</span><span class="n">scaling_method</span><span class="p">})</span>
+        <span class="c1"># Otherwise we will have been given a distribution, so use</span>
+        <span class="c1"># that directly</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># We shouldn&#39;t get here, if validation has been performed!</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid k_diss_scaling_factor provided: &#39;</span><span class="p">,</span>
-                             <span class="p">{</span><span class="n">scaling_method</span><span class="p">})</span>
-        <span class="k">return</span> <span class="n">k_diss</span>
+            <span class="n">k_diss_dist</span> <span class="o">=</span> <span class="n">k_diss</span>
+        <span class="k">return</span> <span class="n">k_diss_dist</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_f_surface_area</span><span class="p">(</span><span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
@@ -594,7 +591,7 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="c1"># Try and validate data</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Returns the data dict with defaults filled</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">validate_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">validate_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">SchemaError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SchemaError</span><span class="p">(</span><span class="s1">&#39;Input data did not pass validation!&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
         <span class="c1"># Return the config and data with filled defaults</span>

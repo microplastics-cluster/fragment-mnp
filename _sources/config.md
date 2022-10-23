@@ -35,4 +35,4 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 
 `k_diss_scaling_method`
 : *Optional, str equal to `constant` or `surface_area`, default: `constant`.*
-: The method by which the dissolution rate `k_diss` is scaled across size classes. If `constant`, then `k_diss` is the same across all size classes. If `surface_area`, then `k_diss` scales as $s^\gamma$, where $s$ is the surface area to volume ratio of the polymer particles, and $\gamma$ is an empirical scaling parameter set by the `k_diss_gamma` variable in the [model input data dict](input-data).
+: The method by which the dissolution rate `k_diss` is scaled across size classes. If `constant`, then `k_diss` is the same across all size classes. If `surface_area`, then `k_diss` scales as $s^\gamma$, where $s$ is the surface area to volume ratio of the polymer particles, and $\gamma$ is an empirical scaling parameter set by the `k_diss_gamma` variable in the [model input data dict](input-data). If `k_diss` is given as a distribution in the input data, then `k_diss_scaling_method` is ignored and this distribution is used directly instead.
