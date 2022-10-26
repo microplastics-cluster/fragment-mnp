@@ -13,13 +13,19 @@ particle_size_range_schema = And(Or((int, float), [int, float]),
                                      error='particle_size_range must ' +
                                            'be a length-2 iterable'))
 
-def is_array(arr):
-    """Check if arr is iterable""" 
+def is_positive_array(arr):
+    """
+    Check if arr is iterable and all elements
+    are positive
+    """ 
+    is_array = True
     try:
-        iter(arr)
+        for x in arr:
+            if x < 0.0:
+                is_array = False
     except:
-        return False
-    return True
+        is_array = False
+    return is_array
 
 
 # The schema that the config dict should follow
@@ -44,18 +50,18 @@ config_schema = Schema({
 # The schema that the data dict should follow
 data_schema = Schema({
     # Initial concs must be a list and >= 0
-    'initial_concs': [And(Or(int, float), lambda x: x >= 0.0)],
+    'initial_concs': is_positive_array,
     # Density must either be a float/int and greater than 0
     'density': And(Or(int, float), lambda x: x >= 0.0),
     # k_frag must either be a float/int, or a list of floats/ints,
     # and greater than 0
-    'k_frag': Or(And(Or(int, float), lambda x: x >= 0.0), is_array),
+    'k_frag': Or(And(Or(int, float), lambda x: x >= 0.0), is_positive_array),
     # theta1 (surface energy empirical parameter) must be a float or int
     Optional('theta_1', default=0.0): Or(int, float),
     # k_diss (dissolution) must be int or float
     Optional('k_diss', default=0.0): Or(And(Or(int, float),
                                             lambda x: x >= 0.0),
-                                            is_array),
+                                            is_positive_array),
     # k_diss_gamma is an empirical param that linearly scales
     # the affect of surface area on dissolution rates
     Optional('k_diss_gamma', default=1.0): Or(int, float)

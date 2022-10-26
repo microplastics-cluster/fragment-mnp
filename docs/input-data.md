@@ -14,7 +14,7 @@ Input data must be passed to the {class}`fragmentmnp.FragmentMNP` model class. E
 The `minimal_data` contains only required variables, whilst `full_data` includes variables that have defaults. Here we take a look at the schema for this data dict.
 
 `initial_concs`
-: *Required, list of floats with length equal to `n_size_classes`, units: kg/m3.*
+: *Required, list of positive floats with length equal to `n_size_classes`, units: kg/m3.*
 : The intial mass concentration in each model size class. 
 
 `density`
