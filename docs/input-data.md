@@ -22,20 +22,20 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 : The density of the polymer being modelled.
 
 `k_frag`
-: *Required, float, units: s<sup>-1</sup>.*
-: The average fragmentation rate $k_\text{frag}$ across the size classes. $k_\text{frag}$ is defined as the fraction of the *mass* of a particular size class that fragments each second.
+: *Required, float or iterable with length equal to `n_size_classes`, units: s<sup>-1</sup>.*
+: Either a scalar representing the average fragmentation rate $k_\text{frag}$ across the size classes, or the full $k_\text{frag}$ distribution for all size classes. $k_\text{frag}$ is defined as the fraction of the *mass* of a particular size class that fragments each second. If a scalar (average) is provided, `theta_1` is used to calculate the distribution, otherwise any value given for `theta_1` is ignored.
 
 `theta_1`
 : *Optional, float, default: 0.*
-: Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d_{2\theta_1}$, meaning if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles.
+: Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d_{2\theta_1}$, meaning if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles. `theta_1` is ignored if a distribution is given for `k_frag`.
 
 `k_diss`
 : *Optional, float, default: 0.*
-: The average (median) dissolution rate $k_\text{diss}$, which describes the rate of loss to dissolved organics from each size class. How this average is distributed across size classes is determined by the `k_diss_scaling_method` in the [model configuration](config).
+: Either the average (median) dissolution rate $k_\text{diss}$ across the size classes, or the full $k_\text{diss}$ distribution for all size classes. $k_\text{diss}$ describes the rate of loss to "dissolved" organics from each size class. If an average (scalar) is given, how this average is distributed across size classes is determined by the `k_diss_scaling_method` in the [model configuration](config). If a distribution is given, the `k_diss_scaling_method` is ignored.
 
 `k_diss_gamma`
 : *Optional, float, default: 1.*
-: If the config option `k_diss_scaling_method` is set to `surface_area`, then `k_diss_gamma` $\gamma$ is an empirical parameter that scales how dependent the distribution of `k_diss` across size classes is on the particle surface area to volume ratio. In short, $k_\text{diss} \propto s^\gamma$, where $s$ is the surface area to volume ratio. In other words, if $\gamma = 1$, `k_diss` scales directly with the surface area to volume ratio, and if $\gamma = 0$, `k_diss` is constant across size classes (i.e. it has the same effect as setting `k_diss_scaling_method` to `constant`).
+: If the config option `k_diss_scaling_method` is set to `surface_area` and an average (scalar) `k_diss` is given in input data, then `k_diss_gamma` $\gamma$ is an empirical parameter that scales how dependent the distribution of `k_diss` across size classes is on the particle surface area to volume ratio. In short, $k_\text{diss} \propto s^\gamma$, where $s$ is the surface area to volume ratio. In other words, if $\gamma = 1$, `k_diss` scales directly with the surface area to volume ratio, and if $\gamma = 0$, `k_diss` is constant across size classes (i.e. it has the same effect as setting `k_diss_scaling_method` to `constant`). If a distribution is given for `k_diss`, then `k_diss_gamma` is ignored.
 
 
 ```{admonition} Units

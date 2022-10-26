@@ -55,9 +55,8 @@ class FragmentMNP():
                                        self.psd,
                                        self.n_size_classes,
                                        data['k_diss_gamma'])
-        self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1,
-                                       self.psd,
-                                       self.n_size_classes)
+        self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1, self.psd)
+
 
     def run(self) -> NamedTuple:
         r"""
@@ -167,18 +166,19 @@ class FragmentMNP():
         return psd
 
     @staticmethod
-    def _set_k_frag(k_frag_av: float, theta_1: float,
-                    psd: npt.NDArray[np.float64],
-                    n_size_classes: int) -> npt.NDArray[np.float64]:
+    def _set_k_frag(k_frag: float, theta_1: float,
+                    psd: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         r"""
-        Set the fragmentation rate :math:`k_frag` based on
-        the average :math:`k_frag` for the median particle size bin,
-        and :math:`\theta_1` (surface energy empirical parameter)
+        Set the fragmentation rate :math:`k_frag` based on either
+        the average :math:`k_frag` for the median particle size bin
+        and :math:`\theta_1` (surface energy empirical parameter),
+        or directly if a distribution is provided.
 
         Parameters
         ----------
-        k_frag_av : float
-            The average :math:`k_frag` for the median particle size bin
+        k_frag: float or iterable
+            Either the average :math:`k_frag` for the median particle
+            size bin, or a distribution of :math:`k_frag` values
         theta_1 : float
             The surface energy empirical parameter :math:`\theta_1`
         psd : np.ndarray
@@ -191,15 +191,21 @@ class FragmentMNP():
         k_frag = np.ndarray
             Fragmentation rate array over particle size classes
         """
-        # Get the proportionality constant
-        k_prop = k_frag_av / (np.median(psd) ** (2 * theta_1))
-        # Now create the array of k_frags
-        k_frag = k_prop * psd ** (2 * theta_1)
-        # We presume fragmentation from the smallest size class
-        # can't happen, and the only loss from this size class
-        # is from dissolution
-        k_frag[0] = 0.0
-        return k_frag
+        # Check if k_frag is a scalar value, in which case we need
+        # to calculate a distribution based on theta1
+        if isinstance(k_frag, (int, float)):
+            # Get the proportionality constant
+            k_prop = k_frag / (np.median(psd) ** (2 * theta_1))
+            # Now create the array of k_frags
+            k_frag_dist = k_prop * psd ** (2 * theta_1)
+            # We presume fragmentation from the smallest size class
+            # can't happen, and the only loss from this size class
+            # is from dissolution
+            k_frag_dist[0] = 0.0
+        # Else just set k_frag directly from the provided array
+        else:
+            k_frag_dist = np.array(k_frag)
+        return k_frag_dist
 
     @staticmethod
     def _set_fsd(n_size_classes: int) -> npt.NDArray[np.float64]:
@@ -228,7 +234,7 @@ class FragmentMNP():
         return np.tril(fsd, k=-1)
 
     @staticmethod
-    def _set_k_diss(k_diss_av: float,
+    def _set_k_diss(k_diss: float,
                     scaling_method: str,
                     psd: npt.NDArray[np.float64],
                     n_size_classes: int,
@@ -239,8 +245,9 @@ class FragmentMNP():
 
         Parameters
         ----------
-        k_diss_av : float
-            Average dissolution rate across size classes.
+        k_diss : float
+            Either average dissolution rate across size classes, or the
+            full distribution.
         scaling_method: str
             How to scale ``k_diss`` across size classes? Either `constant`
             or `surface_area`. If `constant`, the same ``k_diss`` is used
@@ -254,26 +261,33 @@ class FragmentMNP():
         Returns
         -------
         np.ndarray
-            Dissolution rates for all size classes
+            Dissolution rate distribution
 
         Notes
         -----
         At the moment, we are assuming spherical particles when scaling
         by surface area. This might change.
         """
-        # What scaling method has been chosen?
-        if scaling_method == 'constant':
-            # Use the average k_diss across all size classes
-            k_diss = np.full((n_size_classes,), k_diss_av)
-        elif scaling_method == 'surface_area':
-            # Scale the dissolution according to surface area per unit
-            # volume, assuming our particles are spheres
-            k_diss = k_diss_av * FragmentMNP._f_surface_area(psd, gamma)
+        # Check if k_diss is a scalar value, in which case we need
+        # to calculate a distribution based on gamma
+        if isinstance(k_diss, (int, float)):
+            # What scaling method has been chosen?
+            if scaling_method == 'constant':
+                # Use the average k_diss across all size classes
+                k_diss_dist = np.full((n_size_classes,), k_diss)
+            elif scaling_method == 'surface_area':
+                # Scale the dissolution according to surface area per unit
+                # volume, assuming our particles are spheres
+                k_diss_dist = k_diss * FragmentMNP._f_surface_area(psd, gamma)
+            else:
+                # We shouldn't get here, if validation has been performed!
+                raise ValueError('Invalid k_diss_scaling_factor provided: ',
+                                {scaling_method})
+        # Otherwise we will have been given a distribution, so use
+        # that directly
         else:
-            # We shouldn't get here, if validation has been performed!
-            raise ValueError('Invalid k_diss_scaling_factor provided: ',
-                             {scaling_method})
-        return k_diss
+            k_diss_dist = k_diss
+        return k_diss_dist
 
     @staticmethod
     def _f_surface_area(psd: npt.NDArray[np.float64],
@@ -352,7 +366,7 @@ class FragmentMNP():
         # Try and validate data
         try:
             # Returns the data dict with defaults filled
-            data = validation.validate_data(data)
+            data = validation.validate_data(data, config)
         except SchemaError as err:
             raise SchemaError('Input data did not pass validation!') from err
         # Return the config and data with filled defaults

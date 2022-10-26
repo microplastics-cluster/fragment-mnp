@@ -25,7 +25,7 @@ def test_model_run():
     output = FragmentMNP(minimal_config, minimal_data).run()
     assert (
         np.array_equal(output.t, np.arange(minimal_config['n_timesteps'])) and
-        output.n.sum() == 29400.0
+        output.c.sum() == 29400.0
     )
 
 
@@ -75,3 +75,16 @@ def test_k_diss_scaling_method_equivalence():
         np.array_equal(output_sa.n, output_c.n) and
         np.array_equal(output_sa.c_diss, output_c.c_diss)
     )
+
+
+def test_k_frag_input_as_distribution():
+    """
+    Test that inputing k_diss as a distribution results
+    in the correct k_frag being saved to the model.
+    """
+    data_np = minimal_data.copy()
+    k_frag = np.array([1, 2, 3, 4, 5, 6, 7])
+    data_np['k_frag'] = k_frag
+    fmnp = FragmentMNP(minimal_config, data_np)
+    # Check the saved k_frag is what we specified
+    assert np.array_equal(fmnp.k_frag, k_frag)
