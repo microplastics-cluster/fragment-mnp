@@ -162,3 +162,31 @@ def test_invalid_initial_concs_distribution_length():
         assert False
     except FMNPIncorrectDistributionLength:
         assert True
+
+
+def test_negative_initial_concs():
+    """
+    Test that inputting an initial_concs distribution that
+    has a negative value results in an error
+    """
+    invalid_data = valid_minimal_data.copy()
+    invalid_data['initial_concs'][0] = -1
+    try:
+        validate_data(invalid_data, valid_config)
+        assert False
+    except SchemaError:
+        assert True
+
+
+def test_noniterable_array():
+    """
+    Test that inputting an initial_concs distribution that
+    isn't iterable results in an error
+    """
+    invalid_data = valid_minimal_data.copy()
+    invalid_data['initial_concs'] = 1
+    try:
+        validate_data(invalid_data, valid_config)
+        assert False
+    except SchemaError:
+        assert True
