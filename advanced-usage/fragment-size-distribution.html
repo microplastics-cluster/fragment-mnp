@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Developing with Conda &#8212; FRAGMENT-MNP</title>
+    <title>Fragment size distribution &#8212; FRAGMENT-MNP</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -51,10 +51,12 @@ const thebe_selector_input = "pre"
 const thebe_selector_output = ".output, .cell_output"
 </script>
     <script async="async" src="../_static/sphinx-thebe.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="API Reference" href="api.html" />
-    <link rel="prev" title="Developers quickstart" href="quickstart.html" />
+    <link rel="next" title="Developers quickstart" href="../developers/quickstart.html" />
+    <link rel="prev" title="Advanced usage" href="../advanced-usage.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -103,7 +105,7 @@ const thebe_selector_output = ".output, .cell_output"
   Users
  </span>
 </p>
-<ul class="nav bd-sidenav">
+<ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="../example-usage.html">
    Example usage
@@ -119,18 +121,18 @@ const thebe_selector_output = ".output, .cell_output"
    Input data
   </a>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="../advanced-usage.html">
    Advanced usage
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
-   <li class="toctree-l2">
-    <a class="reference internal" href="../advanced-usage/fragment-size-distribution.html">
+  <ul class="current">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
      Fragment size distribution
     </a>
    </li>
@@ -142,19 +144,19 @@ const thebe_selector_output = ".output, .cell_output"
   Developers
  </span>
 </p>
-<ul class="current nav bd-sidenav">
+<ul class="nav bd-sidenav">
  <li class="toctree-l1">
-  <a class="reference internal" href="quickstart.html">
+  <a class="reference internal" href="../developers/quickstart.html">
    Developers quickstart
   </a>
  </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../developers/conda.html">
    Developing with Conda
   </a>
  </li>
  <li class="toctree-l1">
-  <a class="reference internal" href="api.html">
+  <a class="reference internal" href="../developers/api.html">
    API Reference
   </a>
  </li>
@@ -199,7 +201,7 @@ const thebe_selector_output = ".output, .cell_output"
         <!-- ipynb file if we had a myst markdown file -->
         
         <!-- Download raw file -->
-        <a class="dropdown-buttons" href="../_sources/developers/conda.md"><button type="button"
+        <a class="dropdown-buttons" href="../_sources/advanced-usage/fragment-size-distribution.md"><button type="button"
                 class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
                 data-placement="left">.md</button></a>
         <!-- Download PDF via print -->
@@ -219,7 +221,7 @@ const thebe_selector_output = ".output, .cell_output"
                 data-toggle="tooltip" data-placement="left" title="Source repository"><i
                     class="fab fa-github"></i>repository</button></a>
         <a class="issues-button"
-            href="https://github.com/microplastics-cluster/fragment-mnp/issues/new?title=Issue%20on%20page%20%2Fdevelopers/conda.html&body=Your%20issue%20content%20here."><button
+            href="https://github.com/microplastics-cluster/fragment-mnp/issues/new?title=Issue%20on%20page%20%2Fadvanced-usage/fragment-size-distribution.html&body=Your%20issue%20content%20here."><button
                 type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
                 title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
         
@@ -246,13 +248,18 @@ const thebe_selector_output = ".output, .cell_output"
             <nav id="bd-toc-nav" aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#use-a-conda-environment-as-the-virtual-environment-used-by-poetry">
-   Use a Conda environment as the virtual environment used by Poetry
+  <a class="reference internal nav-link" href="#general-fragment-size-distribution-matrix">
+   General fragment size distribution matrix
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#just-use-conda-do-not-use-poetry">
-   Just use Conda, do not use Poetry
+  <a class="reference internal nav-link" href="#example-only-fragmentation-from-largest-size-class">
+   Example - only fragmentation from largest size class
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#changing-the-fragment-size-distribution-in-the-model">
+   Changing the fragment size distribution in the model
   </a>
  </li>
 </ul>
@@ -265,7 +272,7 @@ const thebe_selector_output = ".output, .cell_output"
         <div class="col-12 col-md-9 pl-md-3 pr-md-0">
             <!-- Table of contents that is only displayed when printing the page -->
             <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Developing with Conda</h1>
+                <h1>Fragment size distribution</h1>
                 <!-- Table of contents -->
                 <div id="print-main-content">
                     <div id="jb-print-toc">
@@ -276,13 +283,18 @@ const thebe_selector_output = ".output, .cell_output"
                         <nav aria-label="Page">
                             <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#use-a-conda-environment-as-the-virtual-environment-used-by-poetry">
-   Use a Conda environment as the virtual environment used by Poetry
+  <a class="reference internal nav-link" href="#general-fragment-size-distribution-matrix">
+   General fragment size distribution matrix
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#just-use-conda-do-not-use-poetry">
-   Just use Conda, do not use Poetry
+  <a class="reference internal nav-link" href="#example-only-fragmentation-from-largest-size-class">
+   Example - only fragmentation from largest size class
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#changing-the-fragment-size-distribution-in-the-model">
+   Changing the fragment size distribution in the model
   </a>
  </li>
 </ul>
@@ -294,42 +306,54 @@ const thebe_selector_output = ".output, .cell_output"
             
               <div>
                 
-  <div class="tex2jax_ignore mathjax_ignore section" id="developing-with-conda">
-<h1>Developing with Conda<a class="headerlink" href="#developing-with-conda" title="Permalink to this headline">¶</a></h1>
-<p>To make packaging and publishing easier, we are using <a class="reference external" href="https://python-poetry.org/">Poetry</a> as our dependency and package manager. If you are used to Conda and still wish to use Conda instead or alongside Poetry as your package manager, there are a number of options.</p>
-<div class="section" id="use-a-conda-environment-as-the-virtual-environment-used-by-poetry">
-<h2>Use a Conda environment as the virtual environment used by Poetry<a class="headerlink" href="#use-a-conda-environment-as-the-virtual-environment-used-by-poetry" title="Permalink to this headline">¶</a></h2>
-<p>When Poetry installs your package’s dependencies, it checks whether you are already in a virtual environment (including a Conda environment) and, if so, uses that as the virtual environment for your project. This means that you can use Poetry as a package manager from within a Conda environment.</p>
-<p>For example, for this project, you could create a Conda env with just Python 3.9 installed:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ conda create -n fmnp <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.9 --no-default-packages
-$ conda activate fmnp
+  <div class="tex2jax_ignore mathjax_ignore section" id="fragment-size-distribution">
+<h1>Fragment size distribution<a class="headerlink" href="#fragment-size-distribution" title="Permalink to this headline">¶</a></h1>
+<p>Fragment size distribution <span class="math notranslate nohighlight">\(f_{i,j}\)</span> is an integral part of the model. It defines how polymer fragmented from one size class is distributed to smaller size classes. When compared to the fragmentation rate <span class="math notranslate nohighlight">\(k_\text{frag}\)</span>:</p>
+<dl class="simple myst">
+<dt><span class="math notranslate nohighlight">\(k_{\text{frag},i}\)</span></dt><dd><p>The fragmentation rate <span class="math notranslate nohighlight">\(k_\text{frag},i\)</span> is the rate at which the mass of polymer in size class <span class="math notranslate nohighlight">\(i\)</span> is lost from that size class due to fragmentation. For a given period of time <span class="math notranslate nohighlight">\(\Delta t\)</span>, a mass <span class="math notranslate nohighlight">\(m = \Delta t k_{\text{frag},i}\)</span> of polymer fragments from size class <span class="math notranslate nohighlight">\(i\)</span>. However, this doesn’t tell us how much of this mass goes to each daughter (smaller) size class. This information is given by <span class="math notranslate nohighlight">\(f_{i,j}\)</span>.</p>
+</dd>
+<dt><span class="math notranslate nohighlight">\(f_{i,j}\)</span></dt><dd><p>The fragment size distribution is the fraction of this fragmented mass that is transfered from size class <span class="math notranslate nohighlight">\(i\)</span> to size class <span class="math notranslate nohighlight">\(k\)</span>.</p>
+</dd>
+</dl>
+<div class="section" id="general-fragment-size-distribution-matrix">
+<h2>General fragment size distribution matrix<a class="headerlink" href="#general-fragment-size-distribution-matrix" title="Permalink to this headline">¶</a></h2>
+<p><span class="math notranslate nohighlight">\(f_{i,j}\)</span> is a 2D matrix, but as fragmentation only happens from larger to smaller size classes, the matrix is zero everywhere except its lower left triangle. Taking the example of four size classes, with the smallest indexed by 1 and the largest by 4:</p>
+<p><img alt="Image showing the 4x4 f_i_j matrix that is all zeros except the lower left triangle" src="../_images/fragment-size-distribution.png" /></p>
+</div>
+<div class="section" id="example-only-fragmentation-from-largest-size-class">
+<h2>Example - only fragmentation from largest size class<a class="headerlink" href="#example-only-fragmentation-from-largest-size-class" title="Permalink to this headline">¶</a></h2>
+<p>Taking the example of a situation where only the largest size class fragments, the matrix can be simplified to be mostly zeros:</p>
+<p><img alt="Image showing the 4x4 f_i_j matrix that is all zeroes except the final row" src="../_images/fragment-size-distribution_largest-only.png" /></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As shown here, the model uses a <span class="math notranslate nohighlight">\(f_{i,j}\)</span> matrix with zeros on the diagonal (fragmentation from and to the same size class). For use as a proper mass balance matrix, the diagonal should instead be the fraction of polymer left in that size class after fragmentation.</p>
+</div>
+</div>
+<div class="section" id="changing-the-fragment-size-distribution-in-the-model">
+<h2>Changing the fragment size distribution in the model<a class="headerlink" href="#changing-the-fragment-size-distribution-in-the-model" title="Permalink to this headline">¶</a></h2>
+<p>The model presumes an even split between all daughter size classes, which is calculated internally by:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start with a zero-filled array of shape (N,N)</span>
+<span class="n">fsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="n">n_size_classes</span><span class="p">))</span>
+<span class="c1"># Fill with an equal split between daughter size classes</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_size_classes</span><span class="p">):</span>
+    <span class="n">fsd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">i</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+<span class="c1"># Get the lower triangle of this matrix, which effectively sets fsd</span>
+<span class="c1"># to zero for size classes larger or equal to the current one</span>
+<span class="n">fsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">fsd</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>You can then install the rest of the dependencies using Poetry:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>fmnp<span class="o">)</span> $ poetry install
-</pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This default of an even split between size classes is likely to change as our project develops and experimental data gives us a better idea of a sensible default (which might be polymer-specific).</p>
 </div>
-<p>Running <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">env</span> <span class="pre">info</span></code> will verify that you are using the Conda environment as your virtual environment:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>fmnp<span class="o">)</span> $ poetry env info
-
-Virtualenv
-Python:         <span class="m">3</span>.9.12
-Implementation: CPython
-Path:           /home/username/miniconda3/envs/fmnp
-Valid:          True
-</pre></div>
-</div>
-<p>Note that it is highly recommended that you do not use Conda to install any packages within this environment (except for Python itself), as this is likely to lead to dependency issues.</p>
-</div>
-<div class="section" id="just-use-conda-do-not-use-poetry">
-<h2>Just use Conda, do not use Poetry<a class="headerlink" href="#just-use-conda-do-not-use-poetry" title="Permalink to this headline">¶</a></h2>
-<p>If you do not wish to use Poetry at all, then that is fine too! A Conda <a class="reference external" href="https://github.com/microplastics-cluster/fragment-mnp/blob/develop/environment.yml">environment file</a> is provided and you can simply use this to install the project dependencies:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ conda create -f environment.yml
+<p>To change this, you must generate your own <span class="math notranslate nohighlight">\(f_{i,j}\)</span> matrix and directly set the <code class="docutils literal notranslate"><span class="pre">fsd</span></code> variable. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fmnp</span> <span class="o">=</span> <span class="n">FragmentMNP</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">fmnp</span><span class="o">.</span><span class="n">fsd</span> <span class="o">=</span> <span class="n">my_fsd_matrix</span>
 </pre></div>
 </div>
 <div class="admonition caution">
 <p class="admonition-title">Caution</p>
-<p>Whilst this is fine for development, you will not be able to package or publish the project without relying on a different tool. In particularly, the project will not be installed as a package in editable mode, which may cause issues when running tests. If you add extra dependencies whilst developing the code, you will not be able to add these to the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> file automatically via Poetry, and you won’t be able to build a <code class="docutils literal notranslate"><span class="pre">poetry.lock</span></code> file for other users to use. In short, if you will be adding dependencies, please use Poetry.</p>
+<p>Currently, no validation is performed on this matrix, and so the model will produce erroneous results if a matrix in which rows don’t sum to unity is provided.</p>
 </div>
 </div>
 </div>
@@ -347,7 +371,7 @@ Valid:          True
         },
         kernelOptions: {
             kernelName: "python3",
-            path: "./developers"
+            path: "./advanced-usage"
         },
         predefinedOutput: true
     }
@@ -359,17 +383,17 @@ Valid:          True
             
                 <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="quickstart.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="../advanced-usage.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">Developers quickstart</p>
+            <p class="prev-next-title">Advanced usage</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="api.html" title="next page">
+    <a class='right-next' id="next-link" href="../developers/quickstart.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">API Reference</p>
+        <p class="prev-next-title">Developers quickstart</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
