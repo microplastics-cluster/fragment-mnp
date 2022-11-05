@@ -9,6 +9,9 @@ parts:
     - file: example-usage
     - file: config
     - file: input-data
+    - file: advanced-usage
+      sections:
+      - file: advanced-usage/fragment-size-distribution
   - caption: Developers
     chapters:
     - file: developers/quickstart
