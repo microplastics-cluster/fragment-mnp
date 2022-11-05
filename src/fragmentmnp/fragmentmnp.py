@@ -4,6 +4,7 @@ import numpy.typing as npt
 from scipy.integrate import solve_ivp
 from schema import SchemaError
 from . import validation
+from .output import FMNPOutput
 from ._errors import FMNPNumericalError
 
 
@@ -58,26 +59,13 @@ class FragmentMNP():
         self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1, self.psd)
 
 
-    def run(self) -> NamedTuple:
+    def run(self) -> FMNPOutput:
         r"""
         Run the model with the config and data provided at initialisation.
 
         Returns
         -------
-        Named tuple with the following fields defined:
-        t : np.ndarray, shape (n_timesteps,)
-            Time series over which the model was run
-        c: np.ndarray, shape (n_size_classes, n_timesteps)
-            Mass concentrations for each size class over the time
-            series
-        n : np.ndarray, shape (n_size_classes, n_timesteps)
-            Particle number concentrations for each size class over
-            the time series
-        c_diss : np.ndarray, shape (n_size_classes, n_timesteps)
-            Mass concentrations of dissolved organics
-        n_diss : np.ndarray, shape (n_size_classes, n_timesteps)
-            Particle number concentrations lost from size classes due
-            to dissolution
+        :class:`fragmentmnp.output.FMNPOutput` object containing model output data.
 
         Notes
         -----
@@ -137,13 +125,7 @@ class FragmentMNP():
         n_diss = c_diss / (self.density * (4/3) * np.pi
                  * (self.psd[:, None] / 2) ** 3)
 
-        # Create a named tuple to return the results in
-        FMNPOutput = NamedTuple('FMNPOutput', [('t', npt.NDArray),
-                                               ('c', npt.NDArray),
-                                               ('n', npt.NDArray),
-                                               ('c_diss', npt.NDArray),
-                                               ('n_diss', npt.NDArray)])
-        # Return the solution in this named tuple
+        # Return the solution in an FMNPOutput object
         return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss)
 
     def _set_psd(self) -> npt.NDArray[np.float64]:

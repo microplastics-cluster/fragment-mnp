@@ -1,5 +1,5 @@
 """
-Tests for the config and data validation
+Unit tests for the config and data validation
 """
 import numpy as np
 from schema import SchemaError
