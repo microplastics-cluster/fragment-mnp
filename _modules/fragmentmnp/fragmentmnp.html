@@ -246,6 +246,7 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">solve_ivp</span>
 <span class="kn">from</span> <span class="nn">schema</span> <span class="kn">import</span> <span class="n">SchemaError</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">validation</span>
+<span class="kn">from</span> <span class="nn">.output</span> <span class="kn">import</span> <span class="n">FMNPOutput</span>
 <span class="kn">from</span> <span class="nn">._errors</span> <span class="kn">import</span> <span class="n">FMNPNumericalError</span>
 
 
@@ -300,26 +301,13 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NamedTuple</span><span class="p">:</span>
+<div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FMNPOutput</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Run the model with the config and data provided at initialisation.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        Named tuple with the following fields defined:</span>
-<span class="sd">        t : np.ndarray, shape (n_timesteps,)</span>
-<span class="sd">            Time series over which the model was run</span>
-<span class="sd">        c: np.ndarray, shape (n_size_classes, n_timesteps)</span>
-<span class="sd">            Mass concentrations for each size class over the time</span>
-<span class="sd">            series</span>
-<span class="sd">        n : np.ndarray, shape (n_size_classes, n_timesteps)</span>
-<span class="sd">            Particle number concentrations for each size class over</span>
-<span class="sd">            the time series</span>
-<span class="sd">        c_diss : np.ndarray, shape (n_size_classes, n_timesteps)</span>
-<span class="sd">            Mass concentrations of dissolved organics</span>
-<span class="sd">        n_diss : np.ndarray, shape (n_size_classes, n_timesteps)</span>
-<span class="sd">            Particle number concentrations lost from size classes due</span>
-<span class="sd">            to dissolution</span>
+<span class="sd">        :class:`fragmentmnp.output.FMNPOutput` object containing model output data.</span>
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
@@ -379,13 +367,7 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="n">n_diss</span> <span class="o">=</span> <span class="n">c_diss</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
                  <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
 
-        <span class="c1"># Create a named tuple to return the results in</span>
-        <span class="n">FMNPOutput</span> <span class="o">=</span> <span class="n">NamedTuple</span><span class="p">(</span><span class="s1">&#39;FMNPOutput&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
-                                               <span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
-                                               <span class="p">(</span><span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
-                                               <span class="p">(</span><span class="s1">&#39;c_diss&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">),</span>
-                                               <span class="p">(</span><span class="s1">&#39;n_diss&#39;</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)])</span>
-        <span class="c1"># Return the solution in this named tuple</span>
+        <span class="c1"># Return the solution in an FMNPOutput object</span>
         <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_set_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>

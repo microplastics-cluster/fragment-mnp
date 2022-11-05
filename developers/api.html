@@ -365,22 +365,11 @@ config and data are correct and wish to speed up model initialisation</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">NamedTuple</span></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.run" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">fragmentmnp.output.FMNPOutput</span></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the model with the config and data provided at initialisation.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><em>Named tuple with the following fields defined</em></p></li>
-<li><p><strong>t</strong> (<em>np.ndarray, shape (n_timesteps,)</em>) – Time series over which the model was run</p></li>
-<li><p><strong>c</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Mass concentrations for each size class over the time
-series</p></li>
-<li><p><strong>n</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Particle number concentrations for each size class over
-the time series</p></li>
-<li><p><strong>c_diss</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Mass concentrations of dissolved organics</p></li>
-<li><p><strong>n_diss</strong> (<em>np.ndarray, shape (n_size_classes, n_timesteps)</em>) – Particle number concentrations lost from size classes due
-to dissolution</p></li>
-</ul>
-</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.output.FMNPOutput</span></code> object containing model output data.</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
