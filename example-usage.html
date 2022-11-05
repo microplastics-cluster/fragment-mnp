@@ -320,6 +320,28 @@ const thebe_selector_output = ".output, .cell_output"
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+
+  <span class="n">File</span> <span class="o">~/</span><span class="n">work</span><span class="o">/</span><span class="n">fragment</span><span class="o">-</span><span class="n">mnp</span><span class="o">/</span><span class="n">fragment</span><span class="o">-</span><span class="n">mnp</span><span class="o">/.</span><span class="n">venv</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.9</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">IPython</span><span class="o">/</span><span class="n">core</span><span class="o">/</span><span class="n">interactiveshell</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">3398</span> <span class="ow">in</span> <span class="n">run_code</span>
+    <span class="n">exec</span><span class="p">(</span><span class="n">code_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_global_ns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_ns</span><span class="p">)</span>
+
+  <span class="n">Input</span> <span class="n">In</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">cell</span> <span class="n">line</span><span class="p">:</span> <span class="mi">1</span><span class="o">&gt;</span>
+    <span class="kn">from</span> <span class="nn">fragmentmnp</span> <span class="kn">import</span> <span class="n">FragmentMNP</span>
+
+  <span class="n">File</span> <span class="o">~/</span><span class="n">work</span><span class="o">/</span><span class="n">fragment</span><span class="o">-</span><span class="n">mnp</span><span class="o">/</span><span class="n">fragment</span><span class="o">-</span><span class="n">mnp</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">fragmentmnp</span><span class="o">/</span><span class="fm">__init__</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">9</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="kn">from</span> <span class="nn">.fragmentmnp</span> <span class="kn">import</span> <span class="n">FragmentMNP</span>
+
+  <span class="n">File</span> <span class="o">~/</span><span class="n">work</span><span class="o">/</span><span class="n">fragment</span><span class="o">-</span><span class="n">mnp</span><span class="o">/</span><span class="n">fragment</span><span class="o">-</span><span class="n">mnp</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">fragmentmnp</span><span class="o">/</span><span class="n">fragmentmnp</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">7</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="kn">from</span> <span class="nn">.output</span> <span class="kn">import</span> <span class="n">FMNPOutput</span>
+
+  <span class="n">File</span> <span class="o">~/</span><span class="n">work</span><span class="o">/</span><span class="n">fragment</span><span class="o">-</span><span class="n">mnp</span><span class="o">/</span><span class="n">fragment</span><span class="o">-</span><span class="n">mnp</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">fragmentmnp</span><span class="o">/</span><span class="n">output</span><span class="o">.</span><span class="n">py</span><span class="p">:</span><span class="mi">59</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;c&#39;</span><span class="p">)</span>
+                 <span class="o">^</span>
+<span class="ne">SyntaxError</span>: invalid syntax
+</pre></div>
+</div>
+</div>
 </div>
 <p>The returned <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> object contains a timeseries <code class="docutils literal notranslate"><span class="pre">t</span></code>, particle mass and number concentrations for each size class, <code class="docutils literal notranslate"><span class="pre">c</span></code> and <code class="docutils literal notranslate"><span class="pre">n</span></code>, particle number concentration lost from each size class due to dissolution <code class="docutils literal notranslate"><span class="pre">n_diss</span></code>, and corresponding concentration of dissolved organics from each size class <code class="docutils literal notranslate"><span class="pre">c_diss</span></code>. We can easily plot these to show model outputs:</p>
 <div class="cell docutils container">
