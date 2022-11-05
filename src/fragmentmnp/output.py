@@ -53,3 +53,7 @@ class FMNPOutput():
             self.id = uuid.uuid4()
         else:
             self.id = id
+
+    def plot(self,
+             x: str = 't',
+             y: str = 'c')
