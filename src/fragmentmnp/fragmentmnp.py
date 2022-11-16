@@ -158,7 +158,7 @@ class FragmentMNP():
 
         Parameters
         ----------
-        k_frag: float or iterable
+        k_frag : float or iterable
             Either the average :math:`k_frag` for the median particle
             size bin, or a distribution of :math:`k_frag` values
         theta_1 : float

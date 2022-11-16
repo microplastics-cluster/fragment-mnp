@@ -55,5 +55,40 @@ class FMNPOutput():
             self.id = id
 
     def plot(self,
-             x: str = 't',
-             y: str = 'c')
+             type : str = 'particle_number_conc',
+             options : dict = {}):
+        """
+        Plot the output data by choosing from a number of
+        pre-defined plot types 
+
+        Parameters
+        ----------
+        type : str, default='particle_number_conc'
+            Tells the function what type of plot to produce.
+            Either `particle_number_conc`, `mass_conc`,
+            or `dissolution_mass_conc`.
+        options : dict, default={}
+            Options that control the different plots:
+            * `'plot_dissolution': True` plots the mass lost
+              to dissolution as a separate y-axis (not on
+              `dissolution_mass_conc` plot type, default=False)
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            A Matplotlib figure object containing the
+            produced plot
+        """
+        if type == 'particle_number_conc':
+            fig = self._plot_particle_number_conc(options)
+        elif type == 'mass_conc':
+            pass
+        elif type == 'dissolution_mass_conc':
+            pass
+        else:
+            raise Exception(f'Invalid type "{type}" specified for ' +
+                            'FMNPOutput plot')
+
+
+    def _plot_particle_number_conc(self, options):
+        pass
