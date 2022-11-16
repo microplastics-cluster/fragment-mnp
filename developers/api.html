@@ -51,6 +51,8 @@ const thebe_selector_input = "pre"
 const thebe_selector_output = ".output, .cell_output"
 </script>
     <script async="async" src="../_static/sphinx-thebe.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="Developing with Conda" href="conda.html" />
@@ -245,6 +247,29 @@ const thebe_selector_output = ".output, .cell_output"
             <nav id="bd-toc-nav" aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#fragment-mnp-model">
+   FRAGMENT-MNP model
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#example-config-and-data-fragmentmnp-examples">
+   Example config and data (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     fragmentmnp.examples
+    </span>
+   </code>
+   )
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#dictionaries">
+     Dictionaries
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#validation-of-config-and-data-fragmentmnp-validation">
    Validation of config and data (
    <code class="xref py py-mod docutils literal notranslate">
@@ -276,6 +301,29 @@ const thebe_selector_output = ".output, .cell_output"
                         <nav aria-label="Page">
                             <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#fragment-mnp-model">
+   FRAGMENT-MNP model
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#example-config-and-data-fragmentmnp-examples">
+   Example config and data (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     fragmentmnp.examples
+    </span>
+   </code>
+   )
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#dictionaries">
+     Dictionaries
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#validation-of-config-and-data-fragmentmnp-validation">
    Validation of config and data (
    <code class="xref py py-mod docutils literal notranslate">
@@ -295,9 +343,122 @@ const thebe_selector_output = ".output, .cell_output"
             
               <div>
                 
-  <div class="section" id="module-fragmentmnp.validation">
-<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-fragmentmnp.validation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="validation-of-config-and-data-fragmentmnp-validation">
+  <div class="section" id="module-fragmentmnp">
+<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-fragmentmnp" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="fragment-mnp-model">
+<h2>FRAGMENT-MNP model<a class="headerlink" href="#fragment-mnp-model" title="Permalink to this headline">¶</a></h2>
+<p>Mechanistic model of Micro and NanoPlastic FRAGMentation in the ENvironmenT.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="fragmentmnp.FragmentMNP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fragmentmnp.</span></span><span class="sig-name descname"><span class="pre">FragmentMNP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP" title="Permalink to this definition">¶</a></dt>
+<dd><p>The class that controls usage of the FRAGMENT-MNP model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – Model configuration options</p></li>
+<li><p><strong>data</strong> (<em>dict</em>) – Model input data</p></li>
+<li><p><strong>validate</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Should config and data be validated? It is strongly recommended to
+use validation, but this option is provided if you are <em>certain</em> your
+config and data are correct and wish to speed up model initialisation</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><span class="pre">fragmentmnp.output.FMNPOutput</span></a></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the model with the config and data provided at initialisation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.output.FMNPOutput</span></code></a> object containing model output data.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Internally the model numerically solves the following differential
+equation for each size class, to give a time series of mass
+concentrations <cite>c</cite>. <cite>k</cite> is the current size class, <cite>i</cite> are the
+daughter size classes.</p>
+<div class="math notranslate nohighlight">
+\[\frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
+\Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k\]</div>
+<p>Here, <span class="math notranslate nohighlight">\(k_{\text{frag},k}\)</span> is the fragmentation rate of size class
+<cite>k</cite>, <span class="math notranslate nohighlight">\(f_{i,k}\)</span> is the fraction of daughter fragments produced
+from a fragmenting particle of size <cite>i</cite> that are of size <cite>k</cite>, and
+<span class="math notranslate nohighlight">\(k_{\text{diss},k}\)</span> is the dissolution rate from size class <cite>k</cite>.</p>
+<p>Mass concentrations are converted to particle number concentrations by
+assuming spherical particles with the density given in the input data.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-fragmentmnp.output"></span><dl class="py class">
+<dt class="sig sig-object py" id="fragmentmnp.output.FMNPOutput">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fragmentmnp.output.</span></span><span class="sig-name descname"><span class="pre">FMNPOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_diss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_diss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that holds output data from the model, and
+includes a number of useful plotting functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<em>np.ndarray</em><em>, </em><em>shape</em><em> (</em><em>n_timesteps</em><em>,</em><em>)</em>) – Time series over which the model was run</p></li>
+<li><p><strong>c</strong> (<em>np.ndarray</em><em>, </em><em>shape</em><em> (</em><em>n_size_classes</em><em>, </em><em>n_timesteps</em><em>)</em>) – Mass concentrations for each size class over the time
+series</p></li>
+<li><p><strong>n</strong> (<em>np.ndarray</em><em>, </em><em>shape</em><em> (</em><em>n_size_classes</em><em>, </em><em>n_timesteps</em><em>)</em>) – Particle number concentrations for each size class over
+the time series</p></li>
+<li><p><strong>c_diss</strong> (<em>np.ndarray</em><em>, </em><em>shape</em><em> (</em><em>n_size_classes</em><em>, </em><em>n_timesteps</em><em>)</em>) – Mass concentrations of dissolved organics</p></li>
+<li><p><strong>n_diss</strong> (<em>np.ndarray</em><em>, </em><em>shape</em><em> (</em><em>n_size_classes</em><em>, </em><em>n_timesteps</em><em>)</em>) – Particle number concentrations lost from size classes due
+to dissolution</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="fragmentmnp.output.FMNPOutput.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'particle_number_conc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the output data by choosing from a number of
+pre-defined plot types</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>type</strong> (<em>str</em><em>, </em><em>default='particle_number_conc'</em>) – Tells the function what type of plot to produce.
+Either <cite>particle_number_conc</cite>, <cite>mass_conc</cite>,
+or <cite>dissolution_mass_conc</cite>.</p></li>
+<li><p><strong>options</strong> (<em>dict</em><em>, </em><em>default={}</em>) – <p>Options that control the different plots:
+* <cite>‘plot_dissolution’: True</cite> plots the mass lost</p>
+<blockquote>
+<div><p>to dissolution as a separate y-axis (not on
+<cite>dissolution_mass_conc</cite> plot type, default=False)</p>
+</div></blockquote>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A Matplotlib figure object containing the
+produced plot</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib.figure.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-fragmentmnp.examples"></span><div class="section" id="example-config-and-data-fragmentmnp-examples">
+<h2>Example config and data (<a class="reference internal" href="#module-fragmentmnp.examples" title="fragmentmnp.examples"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fragmentmnp.examples</span></code></a>)<a class="headerlink" href="#example-config-and-data-fragmentmnp-examples" title="Permalink to this headline">¶</a></h2>
+<p>Provides example config and data dictionaries for use
+in the FRAGMENT-MNP model.</p>
+<div class="section" id="dictionaries">
+<h3>Dictionaries<a class="headerlink" href="#dictionaries" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">full_config</span></code>: Config with all variables complete</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">minimal_config</span></code>: Config with only variables that
+don’t have defaults</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">full_data</span></code>: Data with all variables complete</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mininal_data</span></code>: Data with only variables that don’t
+have defaults</p></li>
+</ul>
+</div>
+</div>
+<span class="target" id="module-fragmentmnp.validation"></span><div class="section" id="validation-of-config-and-data-fragmentmnp-validation">
 <h2>Validation of config and data (<a class="reference internal" href="#module-fragmentmnp.validation" title="fragmentmnp.validation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fragmentmnp.validation</span></code></a>)<a class="headerlink" href="#validation-of-config-and-data-fragmentmnp-validation" title="Permalink to this headline">¶</a></h2>
 <p>Provides config and input data validation for the FRAGMENT-MNP model</p>
 <dl class="py function">

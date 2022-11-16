@@ -1,0 +1,626 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>fragmentmnp.fragmentmnp &#8212; FRAGMENT-MNP</title>
+    
+  <link href="../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../../_static/logo.svg" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">FRAGMENT-MNP</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../intro.html">
+   FRAGMENT-MNP
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Users
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../example-usage.html">
+   Example usage
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../config.html">
+   Model configuration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../input-data.html">
+   Input data
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../advanced-usage.html">
+   Advanced usage
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../advanced-usage/fragment-size-distribution.html">
+     Fragment size distribution
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Developers
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../developers/quickstart.html">
+   Developers quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../developers/conda.html">
+   Developing with Conda
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../developers/api.html">
+   API Reference
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Powered by <a href="https://jupyterbook.org">Jupyter Book</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/microplastics-cluster/fragment-mnp"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        <a class="issues-button"
+            href="https://github.com/microplastics-cluster/fragment-mnp/issues/new?title=Issue%20on%20page%20%2F_modules/fragmentmnp/fragmentmnp.html&body=Your%20issue%20content%20here."><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+        title="Fullscreen mode"><i
+            class="fas fa-expand"></i></button></a>
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1></h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <h1>Source code for fragmentmnp.fragmentmnp</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">solve_ivp</span>
+<span class="kn">from</span> <span class="nn">schema</span> <span class="kn">import</span> <span class="n">SchemaError</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">validation</span>
+<span class="kn">from</span> <span class="nn">.output</span> <span class="kn">import</span> <span class="n">FMNPOutput</span>
+<span class="kn">from</span> <span class="nn">._errors</span> <span class="kn">import</span> <span class="n">FMNPNumericalError</span>
+
+
+<div class="viewcode-block" id="FragmentMNP"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP">[docs]</a><span class="k">class</span> <span class="nc">FragmentMNP</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The class that controls usage of the FRAGMENT-MNP model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : dict</span>
+<span class="sd">        Model configuration options</span>
+<span class="sd">    data : dict</span>
+<span class="sd">        Model input data</span>
+<span class="sd">    validate: bool, default=True</span>
+<span class="sd">        Should config and data be validated? It is strongly recommended to</span>
+<span class="sd">        use validation, but this option is provided if you are *certain* your</span>
+<span class="sd">        config and data are correct and wish to speed up model initialisation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;n_size_classes&#39;</span><span class="p">,</span> <span class="s1">&#39;psd&#39;</span><span class="p">,</span> <span class="s1">&#39;fsd&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;n_timesteps&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;theta_1&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;initial_concs&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+                 <span class="n">validate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialise the model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Validate the config and data (if we are meant to)</span>
+        <span class="k">if</span> <span class="n">validate</span><span class="p">:</span>
+            <span class="n">config</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inputs</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="c1"># If we passed validation (or aren&#39;t validating), save attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="c1"># Set the number of particle size classes and number of timesteps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_size_classes&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_timesteps&#39;</span><span class="p">]</span>
+        <span class="c1"># Initial concentrations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;initial_concs&#39;</span><span class="p">])</span>
+        <span class="c1"># Set the particle phys-chem properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">psd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_psd</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_fsd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;theta_1&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_diss</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_diss&#39;</span><span class="p">],</span>
+                                       <span class="n">config</span><span class="p">[</span><span class="s1">&#39;k_diss_scaling_method&#39;</span><span class="p">],</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span>
+                                       <span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_diss_gamma&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FMNPOutput</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run the model with the config and data provided at initialisation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`fragmentmnp.output.FMNPOutput` object containing model output data.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Internally the model numerically solves the following differential</span>
+<span class="sd">        equation for each size class, to give a time series of mass</span>
+<span class="sd">        concentrations `c`. `k` is the current size class, `i` are the</span>
+<span class="sd">        daughter size classes.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +</span>
+<span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k</span>
+
+<span class="sd">        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size class</span>
+<span class="sd">        `k`, :math:`f_{i,k}` is the fraction of daughter fragments produced</span>
+<span class="sd">        from a fragmenting particle of size `i` that are of size `k`, and</span>
+<span class="sd">        :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.</span>
+
+<span class="sd">        Mass concentrations are converted to particle number concentrations by</span>
+<span class="sd">        assuming spherical particles with the density given in the input data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Define the initial value problem to pass to SciPy to solve.</span>
+        <span class="c1"># This must satisfy c&#39;(t) = f(t, c) with initial values given in data.</span>
+        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+            <span class="c1"># Get the number of size classes and create results to be filled</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span>
+            <span class="n">dcdt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="c1"># Loop over the size classes and perform the calculation</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+                <span class="c1"># The differential equation that is being solved</span>
+                <span class="n">dcdt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> \
+                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">*</span> <span class="n">c</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span> \
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="c1"># Return the solution for all of the size classes</span>
+            <span class="k">return</span> <span class="n">dcdt</span>
+
+        <span class="c1"># Numerically solve this given the initial values for n</span>
+        <span class="n">soln</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">fun</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+                         <span class="n">t_span</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">),</span>
+                         <span class="n">y0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span><span class="p">,</span>
+                         <span class="n">t_eval</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">))</span>
+        <span class="c1"># If we didn&#39;t find a solution, raise an error</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">soln</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FMNPNumericalError</span><span class="p">(</span><span class="s1">&#39;Model solution could not be &#39;</span> <span class="o">+</span>
+                                     <span class="sa">f</span><span class="s1">&#39;found: </span><span class="si">{</span><span class="n">soln</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Calculate the timeseries of mass concentration lost to dissolution</span>
+        <span class="c1"># from the solution</span>
+        <span class="n">j_diss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span>
+        <span class="c1"># Use this to calculate the cumulative mass concentration</span>
+        <span class="c1"># lost to dissolution</span>
+        <span class="n">c_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">j_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Now we have the solutions as mass concentrations, we can</span>
+        <span class="c1"># convert to particle number concentrations, assuming spherical</span>
+        <span class="c1"># particles and using the polymer density</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+            <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">n_diss</span> <span class="o">=</span> <span class="n">c_diss</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+                 <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># Return the solution in an FMNPOutput object</span>
+        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_set_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the particle size distribution based on</span>
+<span class="sd">        the config options passed in `self.config`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;particle_size_classes&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+            <span class="c1"># If a particle size distribution has been specified, use that</span>
+            <span class="n">psd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;particle_size_classes&#39;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="s1">&#39;particle_size_range&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+            <span class="c1"># Else, construct the size distribution from the given size range</span>
+            <span class="n">psd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;particle_size_range&#39;</span><span class="p">],</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># TODO move this check into validation</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;particle_size_classes or particle_size_range &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;must be present in the model config, but &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;neither were found.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">psd</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_set_k_frag</span><span class="p">(</span><span class="n">k_frag</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta_1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                    <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the fragmentation rate :math:`k_frag` based on either</span>
+<span class="sd">        the average :math:`k_frag` for the median particle size bin</span>
+<span class="sd">        and :math:`\theta_1` (surface energy empirical parameter),</span>
+<span class="sd">        or directly if a distribution is provided.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k_frag : float or iterable</span>
+<span class="sd">            Either the average :math:`k_frag` for the median particle</span>
+<span class="sd">            size bin, or a distribution of :math:`k_frag` values</span>
+<span class="sd">        theta_1 : float</span>
+<span class="sd">            The surface energy empirical parameter :math:`\theta_1`</span>
+<span class="sd">        psd : np.ndarray</span>
+<span class="sd">            The particle size distribution</span>
+<span class="sd">        n_size_classes : int</span>
+<span class="sd">            The number of particle size classes</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        k_frag = np.ndarray</span>
+<span class="sd">            Fragmentation rate array over particle size classes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if k_frag is a scalar value, in which case we need</span>
+        <span class="c1"># to calculate a distribution based on theta1</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k_frag</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="c1"># Get the proportionality constant</span>
+            <span class="n">k_prop</span> <span class="o">=</span> <span class="n">k_frag</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span><span class="p">))</span>
+            <span class="c1"># Now create the array of k_frags</span>
+            <span class="n">k_frag_dist</span> <span class="o">=</span> <span class="n">k_prop</span> <span class="o">*</span> <span class="n">psd</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span><span class="p">)</span>
+            <span class="c1"># We presume fragmentation from the smallest size class</span>
+            <span class="c1"># can&#39;t happen, and the only loss from this size class</span>
+            <span class="c1"># is from dissolution</span>
+            <span class="n">k_frag_dist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c1"># Else just set k_frag directly from the provided array</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k_frag_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">k_frag_dist</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_set_fsd</span><span class="p">(</span><span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the fragment size distribution matrix, assuming that</span>
+<span class="sd">        fragmentation events result in even split between size classes</span>
+<span class="sd">        of daughter particles</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_size_classes : int</span>
+<span class="sd">            Number of particle size classes</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Matrix of fragment size distributions for all size classes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Start with a zero-filled array of shape (N,N)</span>
+        <span class="n">fsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="n">n_size_classes</span><span class="p">))</span>
+        <span class="c1"># Fill with an equal split between daughter size classes</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_size_classes</span><span class="p">):</span>
+            <span class="n">fsd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">i</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="c1"># Get the lower triangle of this matrix, which effectively sets fsd</span>
+        <span class="c1"># to zero for size classes larger or equal to the current one</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">fsd</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_set_k_diss</span><span class="p">(</span><span class="n">k_diss</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                    <span class="n">scaling_method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                    <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+                    <span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                    <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the dissolution rate for each of the size classes,</span>
+<span class="sd">        based on an average dissolution rate</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k_diss : float</span>
+<span class="sd">            Either average dissolution rate across size classes, or the</span>
+<span class="sd">            full distribution.</span>
+<span class="sd">        scaling_method: str</span>
+<span class="sd">            How to scale ``k_diss`` across size classes? Either `constant`</span>
+<span class="sd">            or `surface_area`. If `constant`, the same ``k_diss`` is used</span>
+<span class="sd">            for all size classes. If `surface_area`, ``k_diss`` is scaled</span>
+<span class="sd">            according to particle surface area per unit volume of polymer.</span>
+<span class="sd">        psd : np.ndarray</span>
+<span class="sd">            The particle size distribution</span>
+<span class="sd">        n_size_classes : int</span>
+<span class="sd">            The number of particle size classes</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Dissolution rate distribution</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        At the moment, we are assuming spherical particles when scaling</span>
+<span class="sd">        by surface area. This might change.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if k_diss is a scalar value, in which case we need</span>
+        <span class="c1"># to calculate a distribution based on gamma</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k_diss</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="c1"># What scaling method has been chosen?</span>
+            <span class="k">if</span> <span class="n">scaling_method</span> <span class="o">==</span> <span class="s1">&#39;constant&#39;</span><span class="p">:</span>
+                <span class="c1"># Use the average k_diss across all size classes</span>
+                <span class="n">k_diss_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_size_classes</span><span class="p">,),</span> <span class="n">k_diss</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">scaling_method</span> <span class="o">==</span> <span class="s1">&#39;surface_area&#39;</span><span class="p">:</span>
+                <span class="c1"># Scale the dissolution according to surface area per unit</span>
+                <span class="c1"># volume, assuming our particles are spheres</span>
+                <span class="n">k_diss_dist</span> <span class="o">=</span> <span class="n">k_diss</span> <span class="o">*</span> <span class="n">FragmentMNP</span><span class="o">.</span><span class="n">_f_surface_area</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># We shouldn&#39;t get here, if validation has been performed!</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid k_diss_scaling_factor provided: &#39;</span><span class="p">,</span>
+                                <span class="p">{</span><span class="n">scaling_method</span><span class="p">})</span>
+        <span class="c1"># Otherwise we will have been given a distribution, so use</span>
+        <span class="c1"># that directly</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k_diss_dist</span> <span class="o">=</span> <span class="n">k_diss</span>
+        <span class="k">return</span> <span class="n">k_diss_dist</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_f_surface_area</span><span class="p">(</span><span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+                        <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the scaling factor for surface area, which is defined</span>
+<span class="sd">        as the ratio of the surface area to volume ratio of the polymer</span>
+<span class="sd">        for each size class to the median size class, such that ``f`` is</span>
+<span class="sd">        1 for the median size class, larger for the smaller size classes</span>
+<span class="sd">        (because there are more particles per unit volume), and smaller</span>
+<span class="sd">        for larger size classes. An empirical parameter ``gamma`` linearly</span>
+<span class="sd">        scales the factor by :math:`f^\gamma`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        psd : np.ndarray</span>
+<span class="sd">            The particle size distribution</span>
+<span class="sd">        gamma: float</span>
+<span class="sd">            Empirical scaling factor that scales ``f`` as :math:`s^\gamma`,</span>
+<span class="sd">            where ``s`` is the surface area to volume ratio of each size</span>
+<span class="sd">            class. Therefore, if ``gamma`` is 1, then ``k_diss`` scales</span>
+<span class="sd">            directly with ``s``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Surface area scaling factor</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        By assuming spherical particles, calculating their volumes and</span>
+<span class="sd">        surface areas and simplifying the algebra, ``f`` can be defined as</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            f_\text{s} = \left(\frac{s}{\hat{s}}\right)^\gamma</span>
+
+<span class="sd">        where :math:`s` is the surface area to volume ratio, and</span>
+<span class="sd">        :math:`\hat{s}` is the median of :math:`s`:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            s = \frac{4 \pi r_\text{max}}{\textbf{r}}</span>
+
+<span class="sd">        Here, :math:`r_\text{max}` is the radius of the largest particle size</span>
+<span class="sd">        class, and :math:`\textbf{r}` is an array of the particle size class</span>
+<span class="sd">        radii.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Calculate ratio of surface area to the largest volume and scale</span>
+        <span class="c1"># to the median (so f = 1 for the median size class)</span>
+        <span class="n">surface_area_volume_ratio</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">psd</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="n">psd</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">surface_area_volume_ratio</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">surface_area_volume_ratio</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span> <span class="o">**</span> <span class="n">gamma</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_validate_inputs</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate the config and data dicts passed to the model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        config : dict</span>
+<span class="sd">            Model config dict</span>
+<span class="sd">        data : dict</span>
+<span class="sd">            Model input data dict</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tuple[dict, dict]</span>
+<span class="sd">             Config and data dicts validated and filled with defaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Try and validate the config</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Returns the config dict with defaults filled</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">validate_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">SchemaError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SchemaError</span><span class="p">(</span><span class="s1">&#39;Model config did not pass validation!&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
+        <span class="c1"># Try and validate data</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Returns the data dict with defaults filled</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">validate_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">SchemaError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SchemaError</span><span class="p">(</span><span class="s1">&#39;Input data did not pass validation!&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
+        <span class="c1"># Return the config and data with filled defaults</span>
+        <span class="k">return</span> <span class="n">config</span><span class="p">,</span> <span class="n">data</span></div>
+</pre></div>
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By Sam Harrison<br/>
+    
+        &copy; Copyright 2022.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>
