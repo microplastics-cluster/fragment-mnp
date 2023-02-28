@@ -55,7 +55,8 @@ class FragmentMNP():
                                        self.psd,
                                        self.n_size_classes,
                                        data['k_diss_gamma'])
-        self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1, self.psd)
+        self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1,
+                                       self.psd, self.n_timesteps)
 
 
     def run(self) -> NamedTuple:
@@ -108,7 +109,7 @@ class FragmentMNP():
             # Loop over the size classes and perform the calculation
             for k in np.arange(N):
                 # The differential equation that is being solved
-                dcdt[k] = - self.k_frag[k] * c[k] \
+                dcdt[k] = - self.k_frag[int(np.floor(t)), k] * c[k] \
                     + np.sum(self.fsd[:, k] * self.k_frag * c[:N]) \
                     - self.k_diss[k] * c[k]
             # Return the solution for all of the size classes
@@ -116,9 +117,9 @@ class FragmentMNP():
 
         # Numerically solve this given the initial values for n
         soln = solve_ivp(fun=f,
-                         t_span=(0, self.n_timesteps),
+                         t_span=(0, self.n_timesteps - 1),
                          y0=self.initial_concs,
-                         t_eval=np.arange(0, self.n_timesteps))
+                         t_eval=np.arange(0, self.n_timesteps - 1))
         # If we didn't find a solution, raise an error
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be ' +
@@ -167,7 +168,8 @@ class FragmentMNP():
 
     @staticmethod
     def _set_k_frag(k_frag: float, theta_1: float,
-                    psd: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+                    psd: npt.NDArray[np.float64],
+                    n_timesteps: int) -> npt.NDArray[np.float64]:
         r"""
         Set the fragmentation rate :math:`k_frag` based on either
         the average :math:`k_frag` for the median particle size bin
@@ -183,8 +185,8 @@ class FragmentMNP():
             The surface energy empirical parameter :math:`\theta_1`
         psd : np.ndarray
             The particle size distribution
-        n_size_classes : int
-            The number of particle size classes
+        n_timesteps : int
+            The number of model timesteps
 
         Returns
         -------
@@ -202,10 +204,19 @@ class FragmentMNP():
             # can't happen, and the only loss from this size class
             # is from dissolution
             k_frag_dist[0] = 0.0
-        # Else just set k_frag directly from the provided array
+        # Else just set k_frag directly from the provided array.
+        # Validation makes sure this is the correct length
         else:
             k_frag_dist = np.array(k_frag)
-        return k_frag_dist
+        # At the moment, input parameters only allow for time-constant
+        # fragmentation rates, *but* internally k_frag is a 2D array
+        # across time and size classes. So, we must expand the 1D (size
+        # class) arrays we just created across time. If the use wants
+        # to use the time-dependence, they can set k_frag directly by
+        # passing it a 2D array. This will change in the future.
+        k_frag_ts = np.repeat(k_frag_dist[np.newaxis, :], n_timesteps,
+                              axis=0)
+        return k_frag_ts
 
     @staticmethod
     def _set_fsd(n_size_classes: int) -> npt.NDArray[np.float64]:

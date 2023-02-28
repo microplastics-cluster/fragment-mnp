@@ -13,11 +13,12 @@ particle_size_range_schema = And(Or((int, float), [int, float]),
                                      error='particle_size_range must ' +
                                            'be a length-2 iterable'))
 
+
 def _is_positive_array(arr):
     """
     Check if arr is iterable and all elements
     are positive
-    """ 
+    """
     is_array = True
     try:
         for x in arr:
