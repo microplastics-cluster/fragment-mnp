@@ -255,17 +255,18 @@ const thebe_selector_output = ".output, .cell_output"
                                      <span class="n">error</span><span class="o">=</span><span class="s1">&#39;particle_size_range must &#39;</span> <span class="o">+</span>
                                            <span class="s1">&#39;be a length-2 iterable&#39;</span><span class="p">))</span>
 
+
 <span class="k">def</span> <span class="nf">_is_positive_array</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check if arr is iterable and all elements</span>
 <span class="sd">    are positive</span>
-<span class="sd">    &quot;&quot;&quot;</span> 
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">is_array</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">arr</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
                 <span class="n">is_array</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">except</span><span class="p">:</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
         <span class="n">is_array</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">return</span> <span class="n">is_array</span>
 
