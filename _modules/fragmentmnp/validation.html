@@ -286,7 +286,8 @@ const thebe_selector_output = ".output, .cell_output"
     <span class="c1"># How should the average k_diss provided be scaled across</span>
     <span class="c1"># size classes?</span>
     <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_diss_scaling_method&#39;</span><span class="p">,</span>
-             <span class="n">default</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">):</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="s1">&#39;surface_area&#39;</span><span class="p">)</span>
+             <span class="n">default</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">):</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="s1">&#39;surface_area&#39;</span><span class="p">),</span>
+    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;ode_solver_method&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;RK45&#39;</span><span class="p">):</span> <span class="nb">str</span>
 <span class="p">})</span>
 
 
