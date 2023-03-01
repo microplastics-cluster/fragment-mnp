@@ -21,7 +21,8 @@ full_config = {
     'particle_size_range': [-9, -3],
     'n_timesteps': 100,
     'dt': 1,
-    'k_diss_scaling_method': 'constant'
+    'k_diss_scaling_method': 'constant',
+    'ode_solver_method': 'RK45'
 }
 
 # Example model config specifying only required options

@@ -58,7 +58,6 @@ class FragmentMNP():
                                        data['k_diss_gamma'])
         self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1, self.psd)
 
-
     def run(self) -> FMNPOutput:
         r"""
         Run the model with the config and data provided at initialisation.
@@ -104,6 +103,7 @@ class FragmentMNP():
 
         # Numerically solve this given the initial values for n
         soln = solve_ivp(fun=f,
+                         method=self.config['ode_solver_method'],
                          t_span=(0, self.n_timesteps),
                          y0=self.initial_concs,
                          t_eval=np.arange(0, self.n_timesteps))
@@ -126,7 +126,7 @@ class FragmentMNP():
                  * (self.psd[:, None] / 2) ** 3)
 
         # Return the solution in an FMNPOutput object
-        return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss)
+        return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss, soln)
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """
@@ -264,7 +264,7 @@ class FragmentMNP():
             else:
                 # We shouldn't get here, if validation has been performed!
                 raise ValueError('Invalid k_diss_scaling_factor provided: ',
-                                {scaling_method})
+                                 {scaling_method})
         # Otherwise we will have been given a distribution, so use
         # that directly
         else:

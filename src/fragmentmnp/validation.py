@@ -44,7 +44,8 @@ config_schema = Schema({
     # How should the average k_diss provided be scaled across
     # size classes?
     Optional('k_diss_scaling_method',
-             default='constant'): lambda x: x in ('constant', 'surface_area')
+             default='constant'): lambda x: x in ('constant', 'surface_area'),
+    Optional('ode_solver_method', default='RK45'): str
 })
 
 

@@ -9,14 +9,16 @@ from fragmentmnp.output import FMNPOutput
 t = np.arange(0, 100)
 size_bins = np.array([1e-6, 1e-3])
 c = np.array([
-    np.linspace(0,42,100),
-    np.linspace(0,10,100)
+    np.linspace(0, 42, 100),
+    np.linspace(0, 10, 100)
 ])
 n = c / (4.0 / 3.0) * np.pi * size_bins[:, np.newaxis] ** 3
 c_diss = np.linspace(0, 1e6, 100)
 n_diss = np.linspace(0, 1e-2, 100)
-# Create output based on this
-example_output = FMNPOutput(t, c, n, c_diss, n_diss)
+# Create output based on this. `soln` shouldn't be none,
+# but we don't want to create a full ODE solution just for
+# the test
+example_output = FMNPOutput(t, c, n, c_diss, n_diss, soln=None)
 
 
 def test_saving_data():
@@ -36,7 +38,7 @@ def test_saving_data():
 def test_n_timesteps_size_classes():
     """
     Test that the number of timesteps and size classes
-    is set correctly 
+    is set correctly
     """
     assert (
         example_output.n_timesteps == 100 and
