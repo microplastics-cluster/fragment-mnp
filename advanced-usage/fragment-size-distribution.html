@@ -312,7 +312,7 @@ const thebe_selector_output = ".output, .cell_output"
 <dl class="simple myst">
 <dt><span class="math notranslate nohighlight">\(k_{\text{frag},i}\)</span></dt><dd><p>The fragmentation rate <span class="math notranslate nohighlight">\(k_\text{frag},i\)</span> is the rate at which the mass of polymer in size class <span class="math notranslate nohighlight">\(i\)</span> is lost from that size class due to fragmentation. For a given period of time <span class="math notranslate nohighlight">\(\Delta t\)</span>, a mass <span class="math notranslate nohighlight">\(m = \Delta t k_{\text{frag},i}\)</span> of polymer fragments from size class <span class="math notranslate nohighlight">\(i\)</span>. However, this doesn’t tell us how much of this mass goes to each daughter (smaller) size class. This information is given by <span class="math notranslate nohighlight">\(f_{i,j}\)</span>.</p>
 </dd>
-<dt><span class="math notranslate nohighlight">\(f_{i,j}\)</span></dt><dd><p>The fragment size distribution is the fraction of this fragmented mass that is transfered from size class <span class="math notranslate nohighlight">\(i\)</span> to size class <span class="math notranslate nohighlight">\(k\)</span>.</p>
+<dt><span class="math notranslate nohighlight">\(f_{i,j}\)</span></dt><dd><p>The fragment size distribution is the fraction of this fragmented <em>mass</em> that is transfered from size class <span class="math notranslate nohighlight">\(i\)</span> to size class <span class="math notranslate nohighlight">\(k\)</span>.</p>
 </dd>
 </dl>
 <div class="section" id="general-fragment-size-distribution-matrix">
@@ -326,27 +326,22 @@ const thebe_selector_output = ".output, .cell_output"
 <p><img alt="Image showing the 4x4 f_i_j matrix that is all zeroes except the final row" src="../_images/fragment-size-distribution_largest-only.png" /></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>As shown here, the model uses a <span class="math notranslate nohighlight">\(f_{i,j}\)</span> matrix with zeros on the diagonal (fragmentation from and to the same size class). For use as a proper mass balance matrix, the diagonal should instead be the fraction of polymer left in that size class after fragmentation.</p>
+<p>As shown here, the model uses a <span class="math notranslate nohighlight">\(f_{i,j}\)</span> matrix with zeros on the diagonal (fragmentation from and to the same size class). For use as a proper mass balance matrix, the diagonal should instead be the fraction of polymer left in that size class after fragmentation, and the fractions to smaller size classes adjusted accordingly.</p>
 </div>
 </div>
 <div class="section" id="changing-the-fragment-size-distribution-in-the-model">
 <h2>Changing the fragment size distribution in the model<a class="headerlink" href="#changing-the-fragment-size-distribution-in-the-model" title="Permalink to this headline">¶</a></h2>
-<p>The model presumes an even split between all daughter size classes, which is calculated internally by:</p>
+<p>The <a class="reference internal" href="../input-data.html#input-data-fsd-beta"><span class="std std-ref">input data parameter <code class="docutils literal notranslate"><span class="pre">fsd_beta</span></code></span></a> controls the depedence of the fragment size distribution on the particle diameters of daughter size classes, such that the distributed masses scales proportionally to <span class="math notranslate nohighlight">\(d^\beta\)</span>. Thus, if <span class="math notranslate nohighlight">\(\beta = 0\)</span> (the default), there is an even split amongst daughter size classes, if <span class="math notranslate nohighlight">\(\beta &lt; 0\)</span>, a greater proportion of the mass goes to smaller size classes, and if <span class="math notranslate nohighlight">\(\beta &gt; 0\)</span>, a greater proportion of the mass goes to larger size classes.</p>
+<p>The model calculates this internally by:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start with a zero-filled array of shape (N,N)</span>
-<span class="n">fsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="n">n_size_classes</span><span class="p">))</span>
-<span class="c1"># Fill with an equal split between daughter size classes</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_size_classes</span><span class="p">):</span>
-    <span class="n">fsd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">i</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-<span class="c1"># Get the lower triangle of this matrix, which effectively sets fsd</span>
-<span class="c1"># to zero for size classes larger or equal to the current one</span>
-<span class="n">fsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">fsd</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">fsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+<span class="c1"># Fill with the split to daughter size classes scaled</span>
+<span class="c1"># proportionally to d^beta</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="n">fsd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">psd</span><span class="p">[:</span><span class="o">-</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">**</span> <span class="n">beta</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">psd</span><span class="p">[:</span><span class="o">-</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">**</span> <span class="n">beta</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This default of an even split between size classes is likely to change as our project develops and experimental data gives us a better idea of a sensible default (which might be polymer-specific).</p>
-</div>
-<p>To change this, you must generate your own <span class="math notranslate nohighlight">\(f_{i,j}\)</span> matrix and directly set the <code class="docutils literal notranslate"><span class="pre">fsd</span></code> variable. For example:</p>
+<p>To change this over and above the <span class="math notranslate nohighlight">\(d^\beta\)</span> dependence outlined above, you must generate your own <span class="math notranslate nohighlight">\(f_{i,j}\)</span> matrix and directly set the <code class="docutils literal notranslate"><span class="pre">fsd</span></code> variable:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fmnp</span> <span class="o">=</span> <span class="n">FragmentMNP</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 <span class="n">fmnp</span><span class="o">.</span><span class="n">fsd</span> <span class="o">=</span> <span class="n">my_fsd_matrix</span>
 </pre></div>

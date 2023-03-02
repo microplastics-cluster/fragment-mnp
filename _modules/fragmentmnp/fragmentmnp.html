@@ -290,7 +290,9 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;initial_concs&#39;</span><span class="p">])</span>
         <span class="c1"># Set the particle phys-chem properties</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">psd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_psd</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_fsd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_fsd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;fsd_beta&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;theta_1&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_diss</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_diss&#39;</span><span class="p">],</span>
@@ -368,7 +370,7 @@ const thebe_selector_output = ".output, .cell_output"
                  <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
 
         <span class="c1"># Return the solution in an FMNPOutput object</span>
-        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">,</span> <span class="n">soln</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">,</span> <span class="n">soln</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_set_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -431,17 +433,31 @@ const thebe_selector_output = ".output, .cell_output"
             <span class="n">k_frag_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">k_frag_dist</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_set_fsd</span><span class="p">(</span><span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="FragmentMNP.set_fsd"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.set_fsd">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_fsd</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+                <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the fragment size distribution matrix, assuming that</span>
-<span class="sd">        fragmentation events result in even split between size classes</span>
-<span class="sd">        of daughter particles</span>
+<span class="sd">        fragmentation events result in a split in mass between daughter</span>
+<span class="sd">        fragments that scales proportionally to :math:`d^\beta`,</span>
+<span class="sd">        where :math:`d` is the particle diameter and :math:`\beta`</span>
+<span class="sd">        is an empirical fragment size distribution parameter. For</span>
+<span class="sd">        example, if :math:`\beta` is negative, then a larger</span>
+<span class="sd">        proportion of the fragmenting mass goes to smaller size</span>
+<span class="sd">        classes than larger.</span>
+
+<span class="sd">        For an equal split between daughter size classes, set</span>
+<span class="sd">        :math:`\beta` to 0.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        n_size_classes : int</span>
+<span class="sd">        n : int</span>
 <span class="sd">            Number of particle size classes</span>
+<span class="sd">        psd : np.ndarray</span>
+<span class="sd">            Particle size distribution</span>
+<span class="sd">        beta : float</span>
+<span class="sd">            Fragment size distribution empirical parameter</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -449,13 +465,13 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">            Matrix of fragment size distributions for all size classes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Start with a zero-filled array of shape (N,N)</span>
-        <span class="n">fsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="n">n_size_classes</span><span class="p">))</span>
-        <span class="c1"># Fill with an equal split between daughter size classes</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_size_classes</span><span class="p">):</span>
-            <span class="n">fsd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">i</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="c1"># Get the lower triangle of this matrix, which effectively sets fsd</span>
-        <span class="c1"># to zero for size classes larger or equal to the current one</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">fsd</span><span class="p">,</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">fsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+        <span class="c1"># Fill with the split to daughter size classes scaled</span>
+        <span class="c1"># proportionally to d^beta</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+            <span class="n">fsd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">psd</span><span class="p">[:</span><span class="o">-</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">**</span> <span class="n">beta</span>
+                               <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">psd</span><span class="p">[:</span><span class="o">-</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">i</span><span class="p">)]</span> <span class="o">**</span> <span class="n">beta</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">fsd</span></div>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_set_k_diss</span><span class="p">(</span><span class="n">k_diss</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>

@@ -269,10 +269,13 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">    soln : Bunch object from scipy.integrate.solve_ivp return</span>
 <span class="sd">        The solution to the model ODE, passed directly from the</span>
 <span class="sd">        scipy.integrate.solve_ivp method</span>
+<span class="sd">    psd : np.ndarray, shape (n_size_classes, )</span>
+<span class="sd">        Particle size distribution - the average diameters of</span>
+<span class="sd">        each of the particle size classes</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="s1">&#39;c_diss&#39;</span><span class="p">,</span> <span class="s1">&#39;n_diss&#39;</span><span class="p">,</span> <span class="s1">&#39;n_timesteps&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;n_size_classes&#39;</span><span class="p">,</span> <span class="s1">&#39;soln&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                 <span class="s1">&#39;n_size_classes&#39;</span><span class="p">,</span> <span class="s1">&#39;soln&#39;</span><span class="p">,</span> <span class="s1">&#39;psd&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">t</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
@@ -280,7 +283,7 @@ const thebe_selector_output = ".output, .cell_output"
                  <span class="n">n</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
                  <span class="n">c_diss</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
                  <span class="n">n_diss</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-                 <span class="n">soln</span><span class="p">,</span>
+                 <span class="n">soln</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span>
                  <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialise the output data object</span>
@@ -292,6 +295,7 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="bp">self</span><span class="o">.</span><span class="n">c_diss</span> <span class="o">=</span> <span class="n">c_diss</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_diss</span> <span class="o">=</span> <span class="n">n_diss</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">soln</span> <span class="o">=</span> <span class="n">soln</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">psd</span> <span class="o">=</span> <span class="n">psd</span>
         <span class="c1"># Save the number of timesteps and size classes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>

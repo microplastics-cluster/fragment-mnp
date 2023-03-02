@@ -306,9 +306,13 @@ const thebe_selector_output = ".output, .cell_output"
     <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_diss&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
                                             <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span>
                                             <span class="n">_is_positive_array</span><span class="p">),</span>
-    <span class="c1"># k_diss_gamma is an empirical param that linearly scales</span>
+    <span class="c1"># k_diss_gamma is an empirical param that scales</span>
     <span class="c1"># the affect of surface area on dissolution rates</span>
-    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_diss_gamma&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_diss_gamma&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+    <span class="c1"># fsd_beta is an empirical param that scales the depedence</span>
+    <span class="c1"># of the fragment size distribution on particle diameter d</span>
+    <span class="c1"># accordingly to d^beta. beta=0 means an equal split</span>
+    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;fsd_beta&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
 <span class="p">})</span>
 
 
