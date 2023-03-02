@@ -251,7 +251,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 
 <div class="viewcode-block" id="FragmentMNP"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP">[docs]</a><span class="k">class</span> <span class="nc">FragmentMNP</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The class that controls usage of the FRAGMENT-MNP model</span>
 
 <span class="sd">    Parameters</span>
@@ -274,7 +274,7 @@ const thebe_selector_output = ".output, .cell_output"
                  <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
                  <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
                  <span class="n">validate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialise the model</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Validate the config and data (if we are meant to)</span>
@@ -301,7 +301,7 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FMNPOutput</span><span class="p">:</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Run the model with the config and data provided at initialisation.</span>
 
 <span class="sd">        Returns</span>
@@ -371,7 +371,7 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">,</span> <span class="n">soln</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_set_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate the particle size distribution based on</span>
 <span class="sd">        the config options passed in `self.config`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -392,7 +392,7 @@ const thebe_selector_output = ".output, .cell_output"
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_set_k_frag</span><span class="p">(</span><span class="n">k_frag</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta_1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                     <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the fragmentation rate :math:`k_frag` based on either</span>
 <span class="sd">        the average :math:`k_frag` for the median particle size bin</span>
 <span class="sd">        and :math:`\theta_1` (surface energy empirical parameter),</span>
@@ -433,7 +433,7 @@ const thebe_selector_output = ".output, .cell_output"
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_set_fsd</span><span class="p">(</span><span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the fragment size distribution matrix, assuming that</span>
 <span class="sd">        fragmentation events result in even split between size classes</span>
 <span class="sd">        of daughter particles</span>
@@ -463,7 +463,7 @@ const thebe_selector_output = ".output, .cell_output"
                     <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
                     <span class="n">n_size_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
                     <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the dissolution rate for each of the size classes,</span>
 <span class="sd">        based on an average dissolution rate</span>
 
@@ -516,7 +516,7 @@ const thebe_selector_output = ".output, .cell_output"
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_f_surface_area</span><span class="p">(</span><span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
                         <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate the scaling factor for surface area, which is defined</span>
 <span class="sd">        as the ratio of the surface area to volume ratio of the polymer</span>
 <span class="sd">        for each size class to the median size class, such that ``f`` is</span>
@@ -566,7 +566,7 @@ const thebe_selector_output = ".output, .cell_output"
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_validate_inputs</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate the config and data dicts passed to the model</span>
 
 <span class="sd">        Parameters</span>

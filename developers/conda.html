@@ -301,22 +301,22 @@ const thebe_selector_output = ".output, .cell_output"
 <h2>Use a Conda environment as the virtual environment used by Poetry<a class="headerlink" href="#use-a-conda-environment-as-the-virtual-environment-used-by-poetry" title="Permalink to this headline">¶</a></h2>
 <p>When Poetry installs your package’s dependencies, it checks whether you are already in a virtual environment (including a Conda environment) and, if so, uses that as the virtual environment for your project. This means that you can use Poetry as a package manager from within a Conda environment.</p>
 <p>For example, for this project, you could create a Conda env with just Python 3.9 installed:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ conda create -n fmnp <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.9 --no-default-packages
-$ conda activate fmnp
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>fmnp<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.9<span class="w"> </span>--no-default-packages
+$<span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>fmnp
 </pre></div>
 </div>
 <p>You can then install the rest of the dependencies using Poetry:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>fmnp<span class="o">)</span> $ poetry install
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>fmnp<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>poetry<span class="w"> </span>install
 </pre></div>
 </div>
 <p>Running <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">env</span> <span class="pre">info</span></code> will verify that you are using the Conda environment as your virtual environment:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>fmnp<span class="o">)</span> $ poetry env info
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>fmnp<span class="o">)</span><span class="w"> </span>$<span class="w"> </span>poetry<span class="w"> </span>env<span class="w"> </span>info
 
 Virtualenv
-Python:         <span class="m">3</span>.9.12
-Implementation: CPython
-Path:           /home/username/miniconda3/envs/fmnp
-Valid:          True
+Python:<span class="w">         </span><span class="m">3</span>.9.12
+Implementation:<span class="w"> </span>CPython
+Path:<span class="w">           </span>/home/username/miniconda3/envs/fmnp
+Valid:<span class="w">          </span>True
 </pre></div>
 </div>
 <p>Note that it is highly recommended that you do not use Conda to install any packages within this environment (except for Python itself), as this is likely to lead to dependency issues.</p>
@@ -324,7 +324,7 @@ Valid:          True
 <div class="section" id="just-use-conda-do-not-use-poetry">
 <h2>Just use Conda, do not use Poetry<a class="headerlink" href="#just-use-conda-do-not-use-poetry" title="Permalink to this headline">¶</a></h2>
 <p>If you do not wish to use Poetry at all, then that is fine too! A Conda <a class="reference external" href="https://github.com/microplastics-cluster/fragment-mnp/blob/develop/environment.yml">environment file</a> is provided and you can simply use this to install the project dependencies:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ conda create -f environment.yml
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>conda<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
 </pre></div>
 </div>
 <div class="admonition caution">
