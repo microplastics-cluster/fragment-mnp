@@ -48,7 +48,9 @@ class FragmentMNP():
         self.initial_concs = np.array(data['initial_concs'])
         # Set the particle phys-chem properties
         self.psd = self._set_psd()
-        self.fsd = self._set_fsd(self.n_size_classes)
+        self.fsd = self.set_fsd(self.n_size_classes,
+                                self.psd,
+                                self.data['fsd_beta'])
         self.theta_1 = data['theta_1']
         self.density = data['density']
         self.k_diss = self._set_k_diss(data['k_diss'],
@@ -126,7 +128,7 @@ class FragmentMNP():
                  * (self.psd[:, None] / 2) ** 3)
 
         # Return the solution in an FMNPOutput object
-        return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss, soln)
+        return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss, soln, self.psd)
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """
@@ -190,16 +192,30 @@ class FragmentMNP():
         return k_frag_dist
 
     @staticmethod
-    def _set_fsd(n_size_classes: int) -> npt.NDArray[np.float64]:
-        """
+    def set_fsd(n: int,
+                psd: npt.NDArray[np.float64],
+                beta: float) -> npt.NDArray[np.float64]:
+        r"""
         Set the fragment size distribution matrix, assuming that
-        fragmentation events result in even split between size classes
-        of daughter particles
+        fragmentation events result in a split in mass between daughter
+        fragments that scales proportionally to :math:`d^\beta`,
+        where :math:`d` is the particle diameter and :math:`\beta`
+        is an empirical fragment size distribution parameter. For
+        example, if :math:`\beta` is negative, then a larger
+        proportion of the fragmenting mass goes to smaller size
+        classes than larger.
+
+        For an equal split between daughter size classes, set
+        :math:`\beta` to 0.
 
         Parameters
         ----------
-        n_size_classes : int
+        n : int
             Number of particle size classes
+        psd : np.ndarray
+            Particle size distribution
+        beta : float
+            Fragment size distribution empirical parameter
 
         Returns
         -------
@@ -207,13 +223,13 @@ class FragmentMNP():
             Matrix of fragment size distributions for all size classes
         """
         # Start with a zero-filled array of shape (N,N)
-        fsd = np.zeros((n_size_classes, n_size_classes))
-        # Fill with an equal split between daughter size classes
-        for i in np.arange(n_size_classes):
-            fsd[i, :] = 1 / i if i != 0 else 0
-        # Get the lower triangle of this matrix, which effectively sets fsd
-        # to zero for size classes larger or equal to the current one
-        return np.tril(fsd, k=-1)
+        fsd = np.zeros((n, n))
+        # Fill with the split to daughter size classes scaled
+        # proportionally to d^beta
+        for i in np.arange(1, n):
+            fsd[i, :-(n-i)] = (psd[:-(n-i)] ** beta
+                               / np.sum(psd[:-(n-i)] ** beta))
+        return fsd
 
     @staticmethod
     def _set_k_diss(k_diss: float,

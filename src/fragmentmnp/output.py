@@ -27,10 +27,13 @@ class FMNPOutput():
     soln : Bunch object from scipy.integrate.solve_ivp return
         The solution to the model ODE, passed directly from the
         scipy.integrate.solve_ivp method
+    psd : np.ndarray, shape (n_size_classes, )
+        Particle size distribution - the average diameters of
+        each of the particle size classes
     """
 
     __slots__ = ['t', 'c', 'n', 'c_diss', 'n_diss', 'n_timesteps',
-                 'n_size_classes', 'soln', 'id']
+                 'n_size_classes', 'soln', 'psd', 'id']
 
     def __init__(self,
                  t: npt.NDArray,
@@ -38,7 +41,7 @@ class FMNPOutput():
                  n: npt.NDArray,
                  c_diss: npt.NDArray,
                  n_diss: npt.NDArray,
-                 soln,
+                 soln, psd,
                  id=None) -> None:
         """
         Initialise the output data object
@@ -50,6 +53,7 @@ class FMNPOutput():
         self.c_diss = c_diss
         self.n_diss = n_diss
         self.soln = soln
+        self.psd = psd
         # Save the number of timesteps and size classes
         self.n_timesteps = self.t.shape[0]
         self.n_size_classes = self.c.shape[0]

@@ -27,7 +27,7 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 
 `theta_1`
 : *Optional, float, default: 0.*
-: Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d_{2\theta_1}$, meaning if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles. `theta_1` is ignored if a distribution is given for `k_frag`.
+: Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d^{2\theta_1}$, meaning if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles. `theta_1` is ignored if a distribution is given for `k_frag`.
 
 `k_diss`
 : *Optional, float, default: 0.*
@@ -37,6 +37,10 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 : *Optional, float, default: 1.*
 : If the config option `k_diss_scaling_method` is set to `surface_area` and an average (scalar) `k_diss` is given in input data, then `k_diss_gamma` $\gamma$ is an empirical parameter that scales how dependent the distribution of `k_diss` across size classes is on the particle surface area to volume ratio. In short, $k_\text{diss} \propto s^\gamma$, where $s$ is the surface area to volume ratio. In other words, if $\gamma = 1$, `k_diss` scales directly with the surface area to volume ratio, and if $\gamma = 0$, `k_diss` is constant across size classes (i.e. it has the same effect as setting `k_diss_scaling_method` to `constant`). If a distribution is given for `k_diss`, then `k_diss_gamma` is ignored.
 
+(input-data:fsd-beta)=
+`fsd_beta`
+: *Optional, float, default: 0.*
+: $\beta$ is an empirical parameter that controls the dependence of the fragment size distribution `fsd` on particle diameter. The split of fragmented mass amongst daughter size classes is scaled as $\propto d^\beta$, where $d$ is the particle diameter. Thus, if $\beta = 0$ (the default), there is an even split amongst daughter size classes, if $\beta < 0$, a greater proportion of the mass goes to smaller size classes, and if $\beta > 0$, a greater proportion of the mass goes to larger size classes. See [](./advanced-usage/fragment-size-distribution.md) for more information on the fragment size distribution matrix.
 
 ```{admonition} Units
 :class: tip

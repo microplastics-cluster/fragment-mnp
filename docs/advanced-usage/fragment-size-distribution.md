@@ -6,7 +6,7 @@ $k_{\text{frag},i}$
 : The fragmentation rate $k_\text{frag},i$ is the rate at which the mass of polymer in size class $i$ is lost from that size class due to fragmentation. For a given period of time $\Delta t$, a mass $m = \Delta t k_{\text{frag},i}$ of polymer fragments from size class $i$. However, this doesn't tell us how much of this mass goes to each daughter (smaller) size class. This information is given by $f_{i,j}$.
 
 $f_{i,j}$
-: The fragment size distribution is the fraction of this fragmented mass that is transfered from size class $i$ to size class $k$.
+: The fragment size distribution is the fraction of this fragmented *mass* that is transfered from size class $i$ to size class $k$.
 
 
 ## General fragment size distribution matrix
@@ -23,30 +23,26 @@ Taking the example of a situation where only the largest size class fragments, t
 ![Image showing the 4x4 f_i_j matrix that is all zeroes except the final row](../img/fragment-size-distribution_largest-only.png)
 
 :::{note}
-As shown here, the model uses a $f_{i,j}$ matrix with zeros on the diagonal (fragmentation from and to the same size class). For use as a proper mass balance matrix, the diagonal should instead be the fraction of polymer left in that size class after fragmentation.
+As shown here, the model uses a $f_{i,j}$ matrix with zeros on the diagonal (fragmentation from and to the same size class). For use as a proper mass balance matrix, the diagonal should instead be the fraction of polymer left in that size class after fragmentation, and the fractions to smaller size classes adjusted accordingly.
 :::
 
 
 ## Changing the fragment size distribution in the model
 
-The model presumes an even split between all daughter size classes, which is calculated internally by:
+The [input data parameter `fsd_beta`](input-data:fsd-beta) controls the depedence of the fragment size distribution on the particle diameters of daughter size classes, such that the distributed masses scales proportionally to $d^\beta$. Thus, if $\beta = 0$ (the default), there is an even split amongst daughter size classes, if $\beta < 0$, a greater proportion of the mass goes to smaller size classes, and if $\beta > 0$, a greater proportion of the mass goes to larger size classes.
+
+The model calculates this internally by:
 
 ```python
 # Start with a zero-filled array of shape (N,N)
-fsd = np.zeros((n_size_classes, n_size_classes))
-# Fill with an equal split between daughter size classes
-for i in np.arange(n_size_classes):
-    fsd[i, :] = 1 / i if i != 0 else 0
-# Get the lower triangle of this matrix, which effectively sets fsd
-# to zero for size classes larger or equal to the current one
-fsd = np.tril(fsd, k=-1)
+fsd = np.zeros((n, n))
+# Fill with the split to daughter size classes scaled
+# proportionally to d^beta
+for i in np.arange(1, n):
+    fsd[i, :-(n-i)] = psd[:-(n-i)] ** beta / np.sum(psd[:-(n-i)] ** beta)
 ```
 
-:::{note}
-This default of an even split between size classes is likely to change as our project develops and experimental data gives us a better idea of a sensible default (which might be polymer-specific).
-:::
-
-To change this, you must generate your own $f_{i,j}$ matrix and directly set the `fsd` variable. For example:
+To change this over and above the $d^\beta$ dependence outlined above, you must generate your own $f_{i,j}$ matrix and directly set the `fsd` variable:
 
 ```python
 fmnp = FragmentMNP(config, data)

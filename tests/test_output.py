@@ -7,18 +7,18 @@ from fragmentmnp.output import FMNPOutput
 
 # Generate some arbitrary data
 t = np.arange(0, 100)
-size_bins = np.array([1e-6, 1e-3])
+psd = np.array([1e-6, 1e-3])
 c = np.array([
     np.linspace(0, 42, 100),
     np.linspace(0, 10, 100)
 ])
-n = c / (4.0 / 3.0) * np.pi * size_bins[:, np.newaxis] ** 3
+n = c / (4.0 / 3.0) * np.pi * psd[:, np.newaxis] ** 3
 c_diss = np.linspace(0, 1e6, 100)
 n_diss = np.linspace(0, 1e-2, 100)
 # Create output based on this. `soln` shouldn't be none,
 # but we don't want to create a full ODE solution just for
 # the test
-example_output = FMNPOutput(t, c, n, c_diss, n_diss, soln=None)
+example_output = FMNPOutput(t, c, n, c_diss, n_diss, None, psd)
 
 
 def test_saving_data():

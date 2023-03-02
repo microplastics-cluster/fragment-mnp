@@ -64,9 +64,13 @@ data_schema = Schema({
     Optional('k_diss', default=0.0): Or(And(Or(int, float),
                                             lambda x: x >= 0.0),
                                             _is_positive_array),
-    # k_diss_gamma is an empirical param that linearly scales
+    # k_diss_gamma is an empirical param that scales
     # the affect of surface area on dissolution rates
-    Optional('k_diss_gamma', default=1.0): Or(int, float)
+    Optional('k_diss_gamma', default=1.0): Or(int, float),
+    # fsd_beta is an empirical param that scales the depedence
+    # of the fragment size distribution on particle diameter d
+    # accordingly to d^beta. beta=0 means an equal split
+    Optional('fsd_beta', default=0.0): Or(int, float)
 })
 
 

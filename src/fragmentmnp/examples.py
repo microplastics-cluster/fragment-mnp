@@ -39,7 +39,8 @@ full_data = {
     'k_frag': 0.01,
     'theta_1': 0.0,
     'k_diss': 0.0,
-    'k_diss_gamma': 1.0
+    'k_diss_gamma': 1.0,
+    'fsd_beta': 0.0
 }
 
 # Example model data specifying only required data
