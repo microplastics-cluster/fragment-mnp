@@ -69,7 +69,7 @@ class FMNPOutput():
              options : dict = {}):
         """
         Plot the output data by choosing from a number of
-        pre-defined plot types 
+        pre-defined plot types.
 
         Parameters
         ----------
@@ -80,8 +80,8 @@ class FMNPOutput():
         options : dict, default={}
             Options that control the different plots:
             * `'plot_dissolution': True` plots the mass lost
-              to dissolution as a separate y-axis (not on
-              `dissolution_mass_conc` plot type, default=False)
+            to dissolution as a separate y-axis (not on
+            `dissolution_mass_conc` plot type, default=False)
 
         Returns
         -------

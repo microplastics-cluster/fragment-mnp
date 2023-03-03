@@ -38,6 +38,7 @@ full_data = {
     'density': 1380,              # PET density [kg/m3]
     'k_frag': 0.01,
     'theta_1': 0.0,
+    'k_frag_tau': 0.0,
     'k_diss': 0.0,
     'k_diss_gamma': 1.0,
     'fsd_beta': 0.0
