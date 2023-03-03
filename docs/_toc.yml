@@ -11,6 +11,7 @@ parts:
     - file: input-data
     - file: advanced-usage
       sections:
+      - file: advanced-usage/fragmentation-rate
       - file: advanced-usage/fragment-size-distribution
   - caption: Developers
     chapters:

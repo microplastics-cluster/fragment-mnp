@@ -94,12 +94,28 @@ def test_k_diss_scaling_method_equivalence():
 
 def test_k_frag_input_as_distribution():
     """
-    Test that inputing k_diss as a distribution results
+    Test that inputing k_frag as a distribution results
     in the correct k_frag being saved to the model.
     """
     data_np = minimal_data.copy()
     k_frag = np.array([1, 2, 3, 4, 5, 6, 7])
     data_np['k_frag'] = k_frag
     fmnp = FragmentMNP(minimal_config, data_np)
+    # Repeat along the time axis to give the 2D k_frag
+    # array stored internally by the model
+    k_frag = np.repeat(k_frag[np.newaxis, :],
+                       minimal_config['n_timesteps'],
+                       axis=0)
     # Check the saved k_frag is what we specified
     assert np.array_equal(fmnp.k_frag, k_frag)
+
+
+def test_k_frag_time_dependence():
+    """
+    Testing that inputing k_frag as a constant results
+    in a 2D (n_timesteps, n_size_classes) array being
+    saved to the model.
+    """
+    fmnp = FragmentMNP(minimal_config, minimal_data)
+    assert fmnp.k_frag.shape == (minimal_config['n_timesteps'],
+                                 minimal_config['n_size_classes'])

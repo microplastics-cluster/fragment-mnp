@@ -2,6 +2,7 @@ from typing import NamedTuple, Tuple
 import numpy as np
 import numpy.typing as npt
 from scipy.integrate import solve_ivp
+from scipy import interpolate
 from schema import SchemaError
 from . import validation
 from .output import FMNPOutput
@@ -58,7 +59,9 @@ class FragmentMNP():
                                        self.psd,
                                        self.n_size_classes,
                                        data['k_diss_gamma'])
-        self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1, self.psd)
+        self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1,
+                                       self.data['k_frag_tau'],
+                                       self.psd, self.n_timesteps)
 
     def run(self) -> FMNPOutput:
         r"""
@@ -76,12 +79,12 @@ class FragmentMNP():
         daughter size classes.
 
         .. math::
-            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
-            \Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
+            \frac{dc_k}{dt} = -k_{\text{frag},k,t} c_k +
+            \Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k
 
-        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size class
-        `k`, :math:`f_{i,k}` is the fraction of daughter fragments produced
-        from a fragmenting particle of size `i` that are of size `k`, and
+        Here, :math:`k_{\text{frag},k,t}` is the fragmentation rate of size class
+        `k` on timestep `t`, :math:`f_{i,k}` is the fraction of daughter fragments
+        produced from a fragmenting particle of size `i` that are of size `k`, and
         :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.
 
         Mass concentrations are converted to particle number concentrations by
@@ -94,11 +97,17 @@ class FragmentMNP():
             # Get the number of size classes and create results to be filled
             N = self.n_size_classes
             dcdt = np.empty(N)
+            # Interpolate the time-dependent parameters to the specific
+            # timestep given (which will be a float, rather than integer index)
+            t_model = np.arange(self.n_timesteps)
+            f = interpolate.interp1d(t_model, self.k_frag, axis=0,
+                                     fill_value='extrapolate')
+            k_frag = f(t)
             # Loop over the size classes and perform the calculation
             for k in np.arange(N):
                 # The differential equation that is being solved
-                dcdt[k] = - self.k_frag[k] * c[k] \
-                    + np.sum(self.fsd[:, k] * self.k_frag * c[:N]) \
+                dcdt[k] = - k_frag[k] * c[k] \
+                    + np.sum(self.fsd[:, k] * k_frag * c[:N]) \
                     - self.k_diss[k] * c[k]
             # Return the solution for all of the size classes
             return dcdt
@@ -150,13 +159,15 @@ class FragmentMNP():
         return psd
 
     @staticmethod
-    def _set_k_frag(k_frag: float, theta_1: float,
-                    psd: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def _set_k_frag(k_frag: float, theta_1: float, tau: float,
+                    psd: npt.NDArray[np.float64],
+                    n_timesteps: int) -> npt.NDArray[np.float64]:
         r"""
-        Set the fragmentation rate :math:`k_frag` based on either
-        the average :math:`k_frag` for the median particle size bin
-        and :math:`\theta_1` (surface energy empirical parameter),
-        or directly if a distribution is provided.
+        Set the fragmentation rate `k_frag` based on either the average
+        `k_frag` for the median particle size bin and `theta_1` (surface
+        energy empirical parameter), or directly if a distribution is
+        provided. `tau` (time dependence empirical parameter) then scales
+        `k_frag` to be dependent on time.
 
         Parameters
         ----------
@@ -165,15 +176,17 @@ class FragmentMNP():
             size bin, or a distribution of :math:`k_frag` values
         theta_1 : float
             The surface energy empirical parameter :math:`\theta_1`
+        tau : float
+            The time-dependence parameter :math:`\tau`
         psd : np.ndarray
             The particle size distribution
-        n_size_classes : int
-            The number of particle size classes
+        n_timesteps : int
+            The number of model timesteps
 
         Returns
         -------
-        k_frag = np.ndarray
-            Fragmentation rate array over particle size classes
+        k_frag = np.ndarray (n_timesteps, n_size_classes)
+            Fragmentation rate array over timesteps and size classes
         """
         # Check if k_frag is a scalar value, in which case we need
         # to calculate a distribution based on theta1
@@ -186,10 +199,14 @@ class FragmentMNP():
             # can't happen, and the only loss from this size class
             # is from dissolution
             k_frag_dist[0] = 0.0
-        # Else just set k_frag directly from the provided array
+        # Else just set k_frag directly from the provided array.
+        # Validation makes sure this is the correct length
         else:
             k_frag_dist = np.array(k_frag)
-        return k_frag_dist
+        # Now set the time dependence of k_frag using tau
+        t = np.arange(1, n_timesteps + 1)
+        k_frag_2d = k_frag_dist * t[:, np.newaxis] ** tau / np.median(t) ** tau
+        return k_frag_2d
 
     @staticmethod
     def set_fsd(n: int,

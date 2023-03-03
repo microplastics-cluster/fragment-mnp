@@ -60,6 +60,8 @@ data_schema = Schema({
     'k_frag': Or(And(Or(int, float), lambda x: x >= 0.0), _is_positive_array),
     # theta1 (surface energy empirical parameter) must be a float or int
     Optional('theta_1', default=0.0): Or(int, float),
+    # k_diss_tau (fragment time dependence) must be a float or int
+    Optional('k_frag_tau', default=0.0): Or(int, float),
     # k_diss (dissolution) must be int or float
     Optional('k_diss', default=0.0): Or(And(Or(int, float),
                                             lambda x: x >= 0.0),
