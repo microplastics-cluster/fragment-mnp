@@ -2,6 +2,7 @@ from typing import NamedTuple, Tuple
 import numpy as np
 import numpy.typing as npt
 from scipy.integrate import solve_ivp
+from scipy import interpolate
 from schema import SchemaError
 from . import validation
 from .output import FMNPOutput
@@ -95,11 +96,17 @@ class FragmentMNP():
             # Get the number of size classes and create results to be filled
             N = self.n_size_classes
             dcdt = np.empty(N)
+            # Interpolate the time-dependent parameters to the specific
+            # timestep given (which will be float, rather than integer index)
+            t_model = np.arange(self.n_timesteps)
+            f = interpolate.interp1d(t_model, self.k_frag, axis=0,
+                                     fill_value='extrapolate')
+            k_frag = f(t)
             # Loop over the size classes and perform the calculation
             for k in np.arange(N):
                 # The differential equation that is being solved
-                dcdt[k] = - self.k_frag[int(np.floor(t)), k] * c[k] \
-                    + np.sum(self.fsd[:, k] * self.k_frag * c[:N]) \
+                dcdt[k] = - k_frag[k] * c[k] \
+                    + np.sum(self.fsd[:, k] * k_frag * c[:N]) \
                     - self.k_diss[k] * c[k]
             # Return the solution for all of the size classes
             return dcdt
@@ -195,9 +202,9 @@ class FragmentMNP():
         # At the moment, input parameters only allow for time-constant
         # fragmentation rates, *but* internally k_frag is a 2D array
         # across time and size classes. So, we must expand the 1D (size
-        # class) arrays we just created across time. If the use wants
+        # class) arrays we just created across time. If the user wants
         # to use the time-dependence, they can set k_frag directly by
-        # passing it a 2D array. This will change in the future.
+        # passing it a 2D array. This *will* change in the future.
         k_frag_ts = np.repeat(k_frag_dist[np.newaxis, :], n_timesteps,
                               axis=0)
         return k_frag_ts

@@ -24,7 +24,7 @@ def test_model_run():
     """
     output = FragmentMNP(minimal_config, minimal_data).run()
     assert (
-        np.array_equal(output.t, np.arange(minimal_config['n_timesteps']) - 1) and
+        np.array_equal(output.t, np.arange(minimal_config['n_timesteps'])) and
         output.c.sum() == 29400.0
     )
 
@@ -101,5 +101,9 @@ def test_k_frag_input_as_distribution():
     k_frag = np.array([1, 2, 3, 4, 5, 6, 7])
     data_np['k_frag'] = k_frag
     fmnp = FragmentMNP(minimal_config, data_np)
+    # Repeat along the time axis
+    k_frag = np.repeat(k_frag[np.newaxis, :],
+                       minimal_config['n_timesteps'],
+                       axis=0)
     # Check the saved k_frag is what we specified
-    assert np.array_equal(fmnp.k_frag[:, 0], k_frag)
+    assert np.array_equal(fmnp.k_frag, k_frag)
