@@ -25,9 +25,15 @@ The `minimal_data` contains only required variables, whilst `full_data` includes
 : *Required, float or iterable with length equal to `n_size_classes`, units: s<sup>-1</sup>.*
 : Either a scalar representing the average fragmentation rate $k_\text{frag}$ across the size classes, or the full $k_\text{frag}$ distribution for all size classes. $k_\text{frag}$ is defined as the fraction of the *mass* of a particular size class that fragments each second. If a scalar (average) is provided, `theta_1` is used to calculate the distribution, otherwise any value given for `theta_1` is ignored.
 
+(input-data:theta_1)=
 `theta_1`
 : *Optional, float, default: 0.*
-: Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d^{2\theta_1}$, meaning if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles. `theta_1` is ignored if a distribution is given for `k_frag`.
+: Surface energy empirical parameter $\theta_1$, which dictates how $k_\text{frag}$ varies with particle size. $k_\text{frag}$ varies as $d^{2\theta_1}$, meaning that if $\theta_1 = 0$, the same $k_\text{frag}$ is used across size classes, and if $\theta_1 > 0$, $k_\text{frag}$ is larger for larger size particles. `theta_1` is ignored if a distribution is given for `k_frag`.
+
+(input-data:k_frag_tau)=
+`k_frag_tau`
+: *Optional, float, default: 0.*
+: Fragmentation rate time-dependence parameter $\tau$, which dictates how $k_\text{frag}$ varies over time. $k_\text{frag}$ varies as $t^\tau$, where $t$ is the model timestep index, meaning that if $\tau = 0$ (the default), $k_\text{frag}$ is constant in time. If $\tau < 0$, $k_\text{frag}$ decreases in time, and vice-versa. Note that this dependence is on the timestep index, rather than the actual time.
 
 `k_diss`
 : *Optional, float, default: 0.*

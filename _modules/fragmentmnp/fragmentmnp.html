@@ -128,6 +128,11 @@ const thebe_selector_output = ".output, .cell_output"
   </label>
   <ul>
    <li class="toctree-l2">
+    <a class="reference internal" href="../../advanced-usage/fragmentation-rate.html">
+     Fragmentation rate
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="../../advanced-usage/fragment-size-distribution.html">
      Fragment size distribution
     </a>
@@ -244,6 +249,7 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
 <span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">solve_ivp</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
 <span class="kn">from</span> <span class="nn">schema</span> <span class="kn">import</span> <span class="n">SchemaError</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">validation</span>
 <span class="kn">from</span> <span class="nn">.output</span> <span class="kn">import</span> <span class="n">FMNPOutput</span>
@@ -300,7 +306,9 @@ const thebe_selector_output = ".output, .cell_output"
                                        <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
                                        <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span>
                                        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_diss_gamma&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_k_frag</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_1</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;k_frag_tau&#39;</span><span class="p">],</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FMNPOutput</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -318,12 +326,12 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">        daughter size classes.</span>
 
 <span class="sd">        .. math::</span>
-<span class="sd">            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +</span>
-<span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k</span>
+<span class="sd">            \frac{dc_k}{dt} = -k_{\text{frag},k,t} c_k +</span>
+<span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k</span>
 
-<span class="sd">        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size class</span>
-<span class="sd">        `k`, :math:`f_{i,k}` is the fraction of daughter fragments produced</span>
-<span class="sd">        from a fragmenting particle of size `i` that are of size `k`, and</span>
+<span class="sd">        Here, :math:`k_{\text{frag},k,t}` is the fragmentation rate of size class</span>
+<span class="sd">        `k` on timestep `t`, :math:`f_{i,k}` is the fraction of daughter fragments</span>
+<span class="sd">        produced from a fragmenting particle of size `i` that are of size `k`, and</span>
 <span class="sd">        :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.</span>
 
 <span class="sd">        Mass concentrations are converted to particle number concentrations by</span>
@@ -336,11 +344,17 @@ const thebe_selector_output = ".output, .cell_output"
             <span class="c1"># Get the number of size classes and create results to be filled</span>
             <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span>
             <span class="n">dcdt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="c1"># Interpolate the time-dependent parameters to the specific</span>
+            <span class="c1"># timestep given (which will be a float, rather than integer index)</span>
+            <span class="n">t_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">t_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                     <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
+            <span class="n">k_frag</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
             <span class="c1"># Loop over the size classes and perform the calculation</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
                 <span class="c1"># The differential equation that is being solved</span>
-                <span class="n">dcdt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> \
-                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">*</span> <span class="n">c</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span> \
+                <span class="n">dcdt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> \
+                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">k_frag</span> <span class="o">*</span> <span class="n">c</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span> \
                     <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
             <span class="c1"># Return the solution for all of the size classes</span>
             <span class="k">return</span> <span class="n">dcdt</span>
@@ -392,13 +406,15 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="k">return</span> <span class="n">psd</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_set_k_frag</span><span class="p">(</span><span class="n">k_frag</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta_1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                    <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">_set_k_frag</span><span class="p">(</span><span class="n">k_frag</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta_1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                    <span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+                    <span class="n">n_timesteps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Set the fragmentation rate :math:`k_frag` based on either</span>
-<span class="sd">        the average :math:`k_frag` for the median particle size bin</span>
-<span class="sd">        and :math:`\theta_1` (surface energy empirical parameter),</span>
-<span class="sd">        or directly if a distribution is provided.</span>
+<span class="sd">        Set the fragmentation rate `k_frag` based on either the average</span>
+<span class="sd">        `k_frag` for the median particle size bin and `theta_1` (surface</span>
+<span class="sd">        energy empirical parameter), or directly if a distribution is</span>
+<span class="sd">        provided. `tau` (time dependence empirical parameter) then scales</span>
+<span class="sd">        `k_frag` to be dependent on time.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -407,15 +423,17 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">            size bin, or a distribution of :math:`k_frag` values</span>
 <span class="sd">        theta_1 : float</span>
 <span class="sd">            The surface energy empirical parameter :math:`\theta_1`</span>
+<span class="sd">        tau : float</span>
+<span class="sd">            The time-dependence parameter :math:`\tau`</span>
 <span class="sd">        psd : np.ndarray</span>
 <span class="sd">            The particle size distribution</span>
-<span class="sd">        n_size_classes : int</span>
-<span class="sd">            The number of particle size classes</span>
+<span class="sd">        n_timesteps : int</span>
+<span class="sd">            The number of model timesteps</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        k_frag = np.ndarray</span>
-<span class="sd">            Fragmentation rate array over particle size classes</span>
+<span class="sd">        k_frag = np.ndarray (n_timesteps, n_size_classes)</span>
+<span class="sd">            Fragmentation rate array over timesteps and size classes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Check if k_frag is a scalar value, in which case we need</span>
         <span class="c1"># to calculate a distribution based on theta1</span>
@@ -428,10 +446,14 @@ const thebe_selector_output = ".output, .cell_output"
             <span class="c1"># can&#39;t happen, and the only loss from this size class</span>
             <span class="c1"># is from dissolution</span>
             <span class="n">k_frag_dist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="c1"># Else just set k_frag directly from the provided array</span>
+        <span class="c1"># Else just set k_frag directly from the provided array.</span>
+        <span class="c1"># Validation makes sure this is the correct length</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">k_frag_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">k_frag</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">k_frag_dist</span>
+        <span class="c1"># Now set the time dependence of k_frag using tau</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_timesteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">k_frag_2d</span> <span class="o">=</span> <span class="n">k_frag_dist</span> <span class="o">*</span> <span class="n">t</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">**</span> <span class="n">tau</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="n">tau</span>
+        <span class="k">return</span> <span class="n">k_frag_2d</span>
 
 <div class="viewcode-block" id="FragmentMNP.set_fsd"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.set_fsd">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_fsd</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>

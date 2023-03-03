@@ -131,6 +131,11 @@ const thebe_selector_output = ".output, .cell_output"
   </label>
   <ul>
    <li class="toctree-l2">
+    <a class="reference internal" href="../advanced-usage/fragmentation-rate.html">
+     Fragmentation rate
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="../advanced-usage/fragment-size-distribution.html">
      Fragment size distribution
     </a>
@@ -378,11 +383,11 @@ equation for each size class, to give a time series of mass
 concentrations <cite>c</cite>. <cite>k</cite> is the current size class, <cite>i</cite> are the
 daughter size classes.</p>
 <div class="math notranslate nohighlight">
-\[\frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
-\Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k\]</div>
-<p>Here, <span class="math notranslate nohighlight">\(k_{\text{frag},k}\)</span> is the fragmentation rate of size class
-<cite>k</cite>, <span class="math notranslate nohighlight">\(f_{i,k}\)</span> is the fraction of daughter fragments produced
-from a fragmenting particle of size <cite>i</cite> that are of size <cite>k</cite>, and
+\[\frac{dc_k}{dt} = -k_{\text{frag},k,t} c_k +
+\Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k\]</div>
+<p>Here, <span class="math notranslate nohighlight">\(k_{\text{frag},k,t}\)</span> is the fragmentation rate of size class
+<cite>k</cite> on timestep <cite>t</cite>, <span class="math notranslate nohighlight">\(f_{i,k}\)</span> is the fraction of daughter fragments
+produced from a fragmenting particle of size <cite>i</cite> that are of size <cite>k</cite>, and
 <span class="math notranslate nohighlight">\(k_{\text{diss},k}\)</span> is the dissolution rate from size class <cite>k</cite>.</p>
 <p>Mass concentrations are converted to particle number concentrations by
 assuming spherical particles with the density given in the input data.</p>
@@ -448,20 +453,17 @@ each of the particle size classes</p></li>
 <dt class="sig sig-object py" id="fragmentmnp.output.FMNPOutput.plot">
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'particle_number_conc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot the output data by choosing from a number of
-pre-defined plot types</p>
+pre-defined plot types.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>type</strong> (<em>str</em><em>, </em><em>default='particle_number_conc'</em>) – Tells the function what type of plot to produce.
 Either <cite>particle_number_conc</cite>, <cite>mass_conc</cite>,
 or <cite>dissolution_mass_conc</cite>.</p></li>
-<li><p><strong>options</strong> (<em>dict</em><em>, </em><em>default={}</em>) – <p>Options that control the different plots:
-* <cite>‘plot_dissolution’: True</cite> plots the mass lost</p>
-<blockquote>
-<div><p>to dissolution as a separate y-axis (not on
-<cite>dissolution_mass_conc</cite> plot type, default=False)</p>
-</div></blockquote>
-</p></li>
+<li><p><strong>options</strong> (<em>dict</em><em>, </em><em>default={}</em>) – Options that control the different plots:
+* <cite>‘plot_dissolution’: True</cite> plots the mass lost
+to dissolution as a separate y-axis (not on
+<cite>dissolution_mass_conc</cite> plot type, default=False)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
