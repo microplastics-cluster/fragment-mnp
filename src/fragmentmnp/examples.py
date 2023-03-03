@@ -21,7 +21,8 @@ full_config = {
     'particle_size_range': [-9, -3],
     'n_timesteps': 100,
     'dt': 1,
-    'k_diss_scaling_method': 'constant'
+    'k_diss_scaling_method': 'constant',
+    'ode_solver_method': 'RK45'
 }
 
 # Example model config specifying only required options
@@ -38,7 +39,8 @@ full_data = {
     'k_frag': 0.01,
     'theta_1': 0.0,
     'k_diss': 0.0,
-    'k_diss_gamma': 1.0
+    'k_diss_gamma': 1.0,
+    'fsd_beta': 0.0
 }
 
 # Example model data specifying only required data

@@ -24,7 +24,7 @@ def _is_positive_array(arr):
         for x in arr:
             if x < 0.0:
                 is_array = False
-    except:
+    except TypeError:
         is_array = False
     return is_array
 
@@ -44,7 +44,8 @@ config_schema = Schema({
     # How should the average k_diss provided be scaled across
     # size classes?
     Optional('k_diss_scaling_method',
-             default='constant'): lambda x: x in ('constant', 'surface_area')
+             default='constant'): lambda x: x in ('constant', 'surface_area'),
+    Optional('ode_solver_method', default='RK45'): str
 })
 
 
@@ -63,9 +64,13 @@ data_schema = Schema({
     Optional('k_diss', default=0.0): Or(And(Or(int, float),
                                             lambda x: x >= 0.0),
                                             _is_positive_array),
-    # k_diss_gamma is an empirical param that linearly scales
+    # k_diss_gamma is an empirical param that scales
     # the affect of surface area on dissolution rates
-    Optional('k_diss_gamma', default=1.0): Or(int, float)
+    Optional('k_diss_gamma', default=1.0): Or(int, float),
+    # fsd_beta is an empirical param that scales the depedence
+    # of the fragment size distribution on particle diameter d
+    # accordingly to d^beta. beta=0 means an equal split
+    Optional('fsd_beta', default=0.0): Or(int, float)
 })
 
 

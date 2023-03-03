@@ -29,7 +29,7 @@ def test_model_run():
     )
 
 
-def test_fsd():
+def test_fsd_equal_split():
     """
     Test the fragment size distribution is calculated correctly
     when an even split amongst daughter size classes is assumed
@@ -42,6 +42,21 @@ def test_fsd():
     fmnp = FragmentMNP(minimal_config, minimal_data)
     # Do the assertion
     np.testing.assert_array_equal(fmnp.fsd, fsd)
+
+
+def test_fsd_rows_sum_to_unity():
+    """
+    Test the fragment size distribution is calculated correctly
+    and that rows sum to unity when a beta parameter other than
+    zero is used
+    """
+    # Set a beta parameter that isn't zero
+    psd = np.logspace(-9, -3, 7)
+    fsd = FragmentMNP.set_fsd(n=7, psd=psd, beta=-0.1)
+    # Check the calculated fsd by summing each row (except the
+    # first, i.e. the smallest size class) and checking they 
+    # all sum to unity
+    assert np.all(np.sum(fsd, axis=1)[1:] == 1.0)
 
 
 def test_f_surface_area():

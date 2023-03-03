@@ -4,6 +4,7 @@ import numpy.typing as npt
 from scipy.integrate import solve_ivp
 from schema import SchemaError
 from . import validation
+from .output import FMNPOutput
 from ._errors import FMNPNumericalError
 
 
@@ -47,7 +48,9 @@ class FragmentMNP():
         self.initial_concs = np.array(data['initial_concs'])
         # Set the particle phys-chem properties
         self.psd = self._set_psd()
-        self.fsd = self._set_fsd(self.n_size_classes)
+        self.fsd = self.set_fsd(self.n_size_classes,
+                                self.psd,
+                                self.data['fsd_beta'])
         self.theta_1 = data['theta_1']
         self.density = data['density']
         self.k_diss = self._set_k_diss(data['k_diss'],
@@ -58,27 +61,13 @@ class FragmentMNP():
         self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1,
                                        self.psd, self.n_timesteps)
 
-
-    def run(self) -> NamedTuple:
+    def run(self) -> FMNPOutput:
         r"""
         Run the model with the config and data provided at initialisation.
 
         Returns
         -------
-        Named tuple with the following fields defined:
-        t : np.ndarray, shape (n_timesteps,)
-            Time series over which the model was run
-        c: np.ndarray, shape (n_size_classes, n_timesteps)
-            Mass concentrations for each size class over the time
-            series
-        n : np.ndarray, shape (n_size_classes, n_timesteps)
-            Particle number concentrations for each size class over
-            the time series
-        c_diss : np.ndarray, shape (n_size_classes, n_timesteps)
-            Mass concentrations of dissolved organics
-        n_diss : np.ndarray, shape (n_size_classes, n_timesteps)
-            Particle number concentrations lost from size classes due
-            to dissolution
+        :class:`fragmentmnp.output.FMNPOutput` object containing model output data.
 
         Notes
         -----
@@ -117,9 +106,10 @@ class FragmentMNP():
 
         # Numerically solve this given the initial values for n
         soln = solve_ivp(fun=f,
-                         t_span=(0, self.n_timesteps - 1),
+                         method=self.config['ode_solver_method'],
+                         t_span=(0, self.n_timesteps),
                          y0=self.initial_concs,
-                         t_eval=np.arange(0, self.n_timesteps - 1))
+                         t_eval=np.arange(0, self.n_timesteps))
         # If we didn't find a solution, raise an error
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be ' +
@@ -138,14 +128,8 @@ class FragmentMNP():
         n_diss = c_diss / (self.density * (4/3) * np.pi
                  * (self.psd[:, None] / 2) ** 3)
 
-        # Create a named tuple to return the results in
-        FMNPOutput = NamedTuple('FMNPOutput', [('t', npt.NDArray),
-                                               ('c', npt.NDArray),
-                                               ('n', npt.NDArray),
-                                               ('c_diss', npt.NDArray),
-                                               ('n_diss', npt.NDArray)])
-        # Return the solution in this named tuple
-        return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss)
+        # Return the solution in an FMNPOutput object
+        return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss, soln, self.psd)
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """
@@ -178,7 +162,7 @@ class FragmentMNP():
 
         Parameters
         ----------
-        k_frag: float or iterable
+        k_frag : float or iterable
             Either the average :math:`k_frag` for the median particle
             size bin, or a distribution of :math:`k_frag` values
         theta_1 : float
@@ -219,16 +203,30 @@ class FragmentMNP():
         return k_frag_ts
 
     @staticmethod
-    def _set_fsd(n_size_classes: int) -> npt.NDArray[np.float64]:
-        """
+    def set_fsd(n: int,
+                psd: npt.NDArray[np.float64],
+                beta: float) -> npt.NDArray[np.float64]:
+        r"""
         Set the fragment size distribution matrix, assuming that
-        fragmentation events result in even split between size classes
-        of daughter particles
+        fragmentation events result in a split in mass between daughter
+        fragments that scales proportionally to :math:`d^\beta`,
+        where :math:`d` is the particle diameter and :math:`\beta`
+        is an empirical fragment size distribution parameter. For
+        example, if :math:`\beta` is negative, then a larger
+        proportion of the fragmenting mass goes to smaller size
+        classes than larger.
+
+        For an equal split between daughter size classes, set
+        :math:`\beta` to 0.
 
         Parameters
         ----------
-        n_size_classes : int
+        n : int
             Number of particle size classes
+        psd : np.ndarray
+            Particle size distribution
+        beta : float
+            Fragment size distribution empirical parameter
 
         Returns
         -------
@@ -236,13 +234,13 @@ class FragmentMNP():
             Matrix of fragment size distributions for all size classes
         """
         # Start with a zero-filled array of shape (N,N)
-        fsd = np.zeros((n_size_classes, n_size_classes))
-        # Fill with an equal split between daughter size classes
-        for i in np.arange(n_size_classes):
-            fsd[i, :] = 1 / i if i != 0 else 0
-        # Get the lower triangle of this matrix, which effectively sets fsd
-        # to zero for size classes larger or equal to the current one
-        return np.tril(fsd, k=-1)
+        fsd = np.zeros((n, n))
+        # Fill with the split to daughter size classes scaled
+        # proportionally to d^beta
+        for i in np.arange(1, n):
+            fsd[i, :-(n-i)] = (psd[:-(n-i)] ** beta
+                               / np.sum(psd[:-(n-i)] ** beta))
+        return fsd
 
     @staticmethod
     def _set_k_diss(k_diss: float,
@@ -293,7 +291,7 @@ class FragmentMNP():
             else:
                 # We shouldn't get here, if validation has been performed!
                 raise ValueError('Invalid k_diss_scaling_factor provided: ',
-                                {scaling_method})
+                                 {scaling_method})
         # Otherwise we will have been given a distribution, so use
         # that directly
         else:

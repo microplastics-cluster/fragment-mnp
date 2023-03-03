@@ -3,9 +3,7 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
-## [0.0.1] - 2023-04-14
+* Documentation.
+* Initial model version.
 
-Project scafold and basic model setup.
-
-[Unreleased]: https://github.com/samharrison7/json2netcdf/tree/develop 
-[0.0.1]: https://github.com/samharrison7/json2netcdf/tree/0.0.1
+[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/tree/develop 
