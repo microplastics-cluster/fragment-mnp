@@ -42,6 +42,14 @@ for i in np.arange(1, n):
     fsd[i, :-(n-i)] = psd[:-(n-i)] ** beta / np.sum(psd[:-(n-i)] ** beta)
 ```
 
+For example, using the [example model config and data](../example-usage.ipynb), if $\beta = 0$:
+
+![](../img/fragment-size-distribution-beta0.png)
+
+If $\beta = -0.1$:
+
+![](../img/fragment-size-distribution-beta-0.1.png)
+
 To change this over and above the $d^\beta$ dependence outlined above, you must generate your own $f_{i,j}$ matrix and directly set the `fsd` variable:
 
 ```python
