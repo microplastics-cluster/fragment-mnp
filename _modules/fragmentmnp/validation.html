@@ -137,6 +137,11 @@ const thebe_selector_output = ".output, .cell_output"
      Fragment size distribution
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../advanced-usage/numerical-instability.html">
+     Dealing with numerical instability
+    </a>
+   </li>
   </ul>
  </li>
 </ul>
@@ -292,7 +297,13 @@ const thebe_selector_output = ".output, .cell_output"
     <span class="c1"># size classes?</span>
     <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_diss_scaling_method&#39;</span><span class="p">,</span>
              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">):</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="s1">&#39;surface_area&#39;</span><span class="p">),</span>
-    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;ode_solver_method&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;RK45&#39;</span><span class="p">):</span> <span class="nb">str</span>
+    <span class="c1"># What ODE solver method should be used? Should be one of</span>
+    <span class="c1"># those available in scipy.solve_ivp:</span>
+    <span class="c1"># https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html</span>
+    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;ode_solver_method&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;LSODA&#39;</span><span class="p">):</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="c1"># Error tolerances for the ODE solver</span>
+    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;atol&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="p">[</span><span class="nb">float</span><span class="p">]),</span>
+    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;rtol&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span> <span class="nb">float</span>
 <span class="p">})</span>
 
 
