@@ -22,7 +22,9 @@ full_config = {
     'n_timesteps': 100,
     'dt': 1,
     'k_diss_scaling_method': 'constant',
-    'ode_solver_method': 'RK45'
+    'ode_solver_method': 'RK45',
+    'rtol': 1e-3,
+    'atol': 1e-6
 }
 
 # Example model config specifying only required options

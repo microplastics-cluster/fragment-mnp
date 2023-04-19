@@ -190,3 +190,19 @@ def test_noniterable_array():
         assert False
     except SchemaError:
         assert True
+
+
+def test_atol_array_and_scalar():
+    """
+    Test that atol can be input as an array or a scalar
+    """
+    valid_config_scalar = valid_minimal_config.copy()
+    valid_config_array = valid_minimal_config.copy()
+    valid_config_scalar['atol'] = 1e-6
+    valid_config_array['atol'] = [1e-6] * 7
+    try:
+        validate_config(valid_config_scalar)
+        validate_config(valid_config_array)
+        assert True
+    except SchemaError:
+        assert False

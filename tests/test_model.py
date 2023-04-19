@@ -25,7 +25,7 @@ def test_model_run():
     output = FragmentMNP(minimal_config, minimal_data).run()
     assert (
         np.array_equal(output.t, np.arange(minimal_config['n_timesteps'])) and
-        output.c.sum() == 29400.0
+        np.allclose(output.c.sum(), 29400.0)
     )
 
 

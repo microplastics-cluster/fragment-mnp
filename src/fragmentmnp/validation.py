@@ -45,7 +45,13 @@ config_schema = Schema({
     # size classes?
     Optional('k_diss_scaling_method',
              default='constant'): lambda x: x in ('constant', 'surface_area'),
-    Optional('ode_solver_method', default='RK45'): str
+    # What ODE solver method should be used? Should be one of
+    # those available in scipy.solve_ivp:
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+    Optional('ode_solver_method', default='LSODA'): str,
+    # Error tolerances for the ODE solver
+    Optional('atol', default=1e-6): Or(float, [float]),
+    Optional('rtol', default=1e-3): float
 })
 
 
