@@ -14,6 +14,7 @@ Dictionaries
 - ``mininal_data``: Data with only variables that don't
   have defaults
 """
+import numpy as np
 
 # Example model config specifying all options
 full_config = {
@@ -22,9 +23,10 @@ full_config = {
     'n_timesteps': 100,
     'dt': 1,
     'k_diss_scaling_method': 'constant',
-    'ode_solver_method': 'RK45',
-    'rtol': 1e-3,
-    'atol': 1e-6
+    'solver_method': 'RK45',
+    'solver_rtol': 1e-3,
+    'solver_atol': 1e-6,
+    'solver_max_step': np.inf
 }
 
 # Example model config specifying only required options

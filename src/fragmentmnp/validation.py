@@ -4,6 +4,7 @@ Validation of config and data (:mod:`fragmentmnp.validation`)
 
 Provides config and input data validation for the FRAGMENT-MNP model
 """
+import numpy as np
 from schema import Schema, Or, And, Optional
 from ._errors import FMNPIncorrectDistributionLength
 
@@ -48,10 +49,12 @@ config_schema = Schema({
     # What ODE solver method should be used? Should be one of
     # those available in scipy.solve_ivp:
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-    Optional('ode_solver_method', default='LSODA'): str,
+    Optional('solver_method', default='RK45'): str,
     # Error tolerances for the ODE solver
-    Optional('atol', default=1e-6): Or(float, [float]),
-    Optional('rtol', default=1e-3): float
+    Optional('solver_atol', default=1e-6): Or(float, [float]),
+    Optional('solver_rtol', default=1e-3): float,
+    # Max step size for the ODE solver
+    Optional('solver_max_step', default=np.inf): float
 })
 
 

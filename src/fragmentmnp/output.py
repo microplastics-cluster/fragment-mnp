@@ -1,4 +1,5 @@
 import uuid
+import numpy as np
 import numpy.typing as npt
 from scipy.integrate import OdeSolution
 import matplotlib.pyplot as plt
@@ -65,8 +66,9 @@ class FMNPOutput():
             self.id = id
 
     def plot(self,
-             type : str = 'particle_number_conc',
-             options : dict = {}):
+             type: str = 'particle_number_conc',
+             plot_dissolution: bool = False,
+             log_yaxis=False):
         """
         Plot the output data by choosing from a number of
         pre-defined plot types.
@@ -77,11 +79,13 @@ class FMNPOutput():
             Tells the function what type of plot to produce.
             Either `particle_number_conc`, `mass_conc`,
             or `dissolution_mass_conc`.
-        options : dict, default={}
-            Options that control the different plots:
-            * `'plot_dissolution': True` plots the mass lost
-            to dissolution as a separate y-axis (not on
-            `dissolution_mass_conc` plot type, default=False)
+        plot_dissolution : bool, default=False
+            Should dissolution be plotted on a separate y-axis
+        log_yaxis: bool or str, default=False
+            True and "log" plots the y axis on a log scale,
+            "symlog" plots the y axis on a symlog scale (useful
+            if the data contain zeros), and False plots the y
+            axis on a linear scale
 
         Returns
         -------
@@ -89,16 +93,52 @@ class FMNPOutput():
             A Matplotlib figure object containing the
             produced plot
         """
+        # Are we plotting number or mass concentrations?
         if type == 'particle_number_conc':
-            fig = self._plot_particle_number_conc(options)
+            ylabel = 'Particle number concentration'
+            yvals = self.n.T
         elif type == 'mass_conc':
-            pass
-        elif type == 'dissolution_mass_conc':
-            pass
+            ylabel = 'Mass concentration'
+            yvals = self.c.T
         else:
-            raise Exception(f'Invalid type "{type}" specified for ' +
-                            'FMNPOutput plot')
+            # Raise an error if an invalid plot type is given
+            raise ValueError(f'Invalid option for plot `type`: {type}.'
+                             'Should be `particle_number_conc` or'
+                             '`mass_conc`.')
+        # Change the colourmap to something useful
+        plt.rcParams['axes.prop_cycle'] = \
+            plt.cycler('color',
+                       plt.cm.viridis(np.linspace(0, 1, self.n_size_classes)))
 
+        # Create the figure and axes - we need to this because we need to
+        # add a second axis for the dissolution data
+        fig, ax1 = plt.subplots()
 
-    def _plot_particle_number_conc(self, options):
-        pass
+        # Add labels to axes
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel(ylabel)
+        # Should the y axis be logged?
+        if log_yaxis in [True, 'log']:
+            ax1.set_yscale('log')
+        elif log_yaxis == 'symlog':
+            ax1.set_yscale('symlog')
+
+        # Plot the concentrations
+        ax1.plot(self.t, yvals)
+        ax1.legend([f'{d:<1g} µm' for d in self.psd])
+
+        # Create and format the dissolution y axis
+        if plot_dissolution:
+            ax2 = ax1.twinx()
+            ax2.set_ylabel('Dissolution mass concentration')
+            ax2.set_yscale('log')
+            ax2.plot(self.t, np.sum(self.c_diss, axis=0), '--')
+            ax2.legend(['c_diss'])
+            # Should the y axis be logged?
+            if log_yaxis in [True, 'log']:
+                ax2.set_yscale('log')
+            elif log_yaxis == 'symlog':
+                ax2.set_yscale('symlog')
+            return fig, (ax1, ax2)
+        else:
+            return fig, ax1

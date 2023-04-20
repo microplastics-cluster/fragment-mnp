@@ -114,11 +114,13 @@ class FragmentMNP():
 
         # Numerically solve this given the initial values for n
         soln = solve_ivp(fun=f,
-                         method=self.config['ode_solver_method'],
+                         method=self.config['solver_method'],
                          t_span=(0, self.n_timesteps),
                          y0=self.initial_concs,
                          t_eval=np.arange(0, self.n_timesteps),
-                         rtol=self.config['rtol'], atol=self.config['atol'])
+                         rtol=self.config['solver_rtol'],
+                         atol=self.config['solver_atol'],
+                         max_step=self.config['solver_max_step'])
         # If we didn't find a solution, raise an error
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be ' +
