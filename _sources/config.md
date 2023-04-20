@@ -37,12 +37,17 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 : *Optional, str equal to `constant` or `surface_area`, default: `constant`.*
 : The method by which the dissolution rate `k_diss` is scaled across size classes. If `constant`, then `k_diss` is the same across all size classes. If `surface_area`, then `k_diss` scales as $s^\gamma$, where $s$ is the surface area to volume ratio of the polymer particles, and $\gamma$ is an empirical scaling parameter set by the `k_diss_gamma` variable in the [model input data dict](input-data). If `k_diss` is given as a distribution in the input data, then `k_diss_scaling_method` is ignored and this distribution is used directly instead.
 
-(config:ode_solver_method)=
-`ode_solver_method`
-: *Optional, str equal to a valid method, default: `LSODA`.*
-: The method that is used to numerically solve the model differential equation. This method is passed directly to [`scipy.intergrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and must be a valid method available in SciPy ("RK45", "RK23", "DOP853", "Radau", "BDF" or "LSODA"). By default, LSODA is used as stiffness is an issue for certain input parameter ranges. See the [SciPy documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) for more details.
+(config:solver_method)=
+`solver_method`
+: *Optional, str equal to a valid method, default: `RK45`.*
+: The method that is used to numerically solve the model differential equation. This method is passed directly to [`scipy.intergrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and must be a valid method available in SciPy ("RK45", "RK23", "DOP853", "Radau", "BDF" or "LSODA"). By default, RK45 is used. See the [SciPy documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) for more details. If you are having numerical stability issues, try "Radau", "BDF" or "LSODA", and read [](./advanced-usage/numerical-instability.ipynb).
 
-(config:rtol-atol)=
-`rtol`, `atol`
+(config:solver_rtol_atol)=
+`solver_rtol`, `solver_atol`
 : *Optional, float or list of floats for atol, defaults: rtol=1e-3, atol=1e-6*
-: Relative and absolute tolerances passed to [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html). The solver keeps the local error estimates less than `atol + rtol * abs(y)`. For `atol`, a list of length `n_size_classes` can be given, such that a different absolute tolerance is used for each size class. Setting these tolerances might be particularly useful for stiff problems where mass concentrations in certain size classes trend towards zero.
+: Relative and absolute tolerances passed to [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html). The solver keeps the local error estimates less than `solver_atol + solver_rtol * abs(y)`. For `solver_atol`, a list of length `n_size_classes` can be given, such that a different absolute tolerance is used for each size class. Setting these tolerances might be particularly useful for stiff problems that cause numerical instability.
+
+(config:solver_max_step)=
+`solver_max_step`
+: *Optional, float, default: np.inf.*
+: Set a maximum step size for the ODE solver. This might be particularly useful for stiff problems that cause numerical instability.

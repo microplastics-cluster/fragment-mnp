@@ -456,7 +456,7 @@ each of the particle size classes</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="fragmentmnp.output.FMNPOutput.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'particle_number_conc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput.plot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'particle_number_conc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_dissolution</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_yaxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot the output data by choosing from a number of
 pre-defined plot types.</p>
 <dl class="field-list simple">
@@ -465,10 +465,11 @@ pre-defined plot types.</p>
 <li><p><strong>type</strong> (<em>str</em><em>, </em><em>default='particle_number_conc'</em>) – Tells the function what type of plot to produce.
 Either <cite>particle_number_conc</cite>, <cite>mass_conc</cite>,
 or <cite>dissolution_mass_conc</cite>.</p></li>
-<li><p><strong>options</strong> (<em>dict</em><em>, </em><em>default={}</em>) – Options that control the different plots:
-* <cite>‘plot_dissolution’: True</cite> plots the mass lost
-to dissolution as a separate y-axis (not on
-<cite>dissolution_mass_conc</cite> plot type, default=False)</p></li>
+<li><p><strong>plot_dissolution</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Should dissolution be plotted on a separate y-axis</p></li>
+<li><p><strong>log_yaxis</strong> (<em>bool</em><em> or </em><em>str</em><em>, </em><em>default=False</em>) – True and “log” plots the y axis on a log scale,
+“symlog” plots the y axis on a symlog scale (useful
+if the data contain zeros), and False plots the y
+axis on a linear scale</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
