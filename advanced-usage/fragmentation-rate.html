@@ -400,7 +400,8 @@ const thebe_selector_output = ".output, .cell_output"
 <p>If the time and size dependencies that can be achieved using <span class="math notranslate nohighlight">\(\theta_1\)</span> and <span class="math notranslate nohighlight">\(\tau\)</span> are not suitable for your application, you can of course set your own <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> array by modifying the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> attribute directly after initialising the model:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fmnp</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">fmnp</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">,</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set a random k_frag array (really?!)</span>
+<span class="n">fmnp</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">fmnp</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">,</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

@@ -318,7 +318,7 @@ const thebe_selector_output = ".output, .cell_output"
                 
   <div class="tex2jax_ignore mathjax_ignore section" id="example-usage">
 <h1>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h1>
-<p>Running the FRAGMENT-MNP model is a two-step process. First, the model must be initialised by passing it config and input data. Example config and data is given in the <code class="docutils literal notranslate"><span class="pre">fragmentmnp.examples</span></code> module, which is used here. Then the <code class="docutils literal notranslate"><span class="pre">FragmentMNP.run()</span></code> method runs the model and returns a <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> named tuple with the output data.</p>
+<p>Running the FRAGMENT-MNP model is a two-step process. First, the model must be initialised by passing it config and input data. Example config and data is given in the <a class="reference external" href="./developers/api.html#example-config-and-data-fragmentmnp-examples"><code class="docutils literal notranslate"><span class="pre">fragmentmnp.examples</span></code> module</a>, which is used here. Then the <code class="docutils literal notranslate"><span class="pre">FragmentMNP.run()</span></code> method runs the model and returns a <a class="reference external" href="./developers/api.html#fragment-mnp-output"><code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code></a> object with the output data.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fragmentmnp</span> <span class="kn">import</span> <span class="n">FragmentMNP</span>
@@ -336,17 +336,11 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-<p>The returned <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> object contains a timeseries <code class="docutils literal notranslate"><span class="pre">t</span></code>, particle mass and number concentrations for each size class, <code class="docutils literal notranslate"><span class="pre">c</span></code> and <code class="docutils literal notranslate"><span class="pre">n</span></code>, particle number concentration lost from each size class due to dissolution <code class="docutils literal notranslate"><span class="pre">n_diss</span></code>, and corresponding concentration of dissolved organics from each size class <code class="docutils literal notranslate"><span class="pre">c_diss</span></code>. We can easily plot these to show model outputs:</p>
+<p>The returned <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> object contains a timeseries <code class="docutils literal notranslate"><span class="pre">t</span></code>, particle mass and number concentrations for each size class, <code class="docutils literal notranslate"><span class="pre">c</span></code> and <code class="docutils literal notranslate"><span class="pre">n</span></code>, particle number concentration lost from each size class due to dissolution <code class="docutils literal notranslate"><span class="pre">n_diss</span></code>, and corresponding concentration of dissolved organics from each size class <code class="docutils literal notranslate"><span class="pre">c_diss</span></code>. See the <a class="reference external" href="./developers/api.html#fragment-mnp-output">API reference for full details</a>. A convenient plotting function can be used to quickly plot model output (see <a class="reference internal" href="plotting.html"><span class="doc std std-doc">Plotting</span></a>):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We transpose the mass concentrations `c` to be able to pass all the</span>
-<span class="c1"># size classes to matplotlib in one line, but we could just have</span>
-<span class="c1"># looped through the size classes</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-<span class="c1"># fmnp.psd is the particle size distribution used in the model, so we can</span>
-<span class="c1"># use that to put the size class diameters in the legend</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1"> m&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">psd</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the time evolution of mass concentrations</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -357,10 +351,7 @@ const thebe_selector_output = ".output, .cell_output"
 <p>We can also plot the particle number concentrations <code class="docutils literal notranslate"><span class="pre">n</span></code>. Note the logged y-axis:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">n</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1"> m&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">psd</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;particle_number_conc&#39;</span><span class="p">,</span> <span class="n">log_yaxis</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -384,28 +375,11 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-<p>Dissolution data is included in the <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> class: <code class="docutils literal notranslate"><span class="pre">n_diss</span></code> is a timeseries of particle number concentrations lost from each size class, and <code class="docutils literal notranslate"><span class="pre">c_diss</span></code> is corresponding mass concentration assuming spherical particles. Let’s sum the mass concentration across size classes and plot that as well as the particle number concentrations given by <code class="docutils literal notranslate"><span class="pre">n</span></code>:</p>
+<p>Dissolution data is included in the <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> class: <code class="docutils literal notranslate"><span class="pre">n_diss</span></code> is a timeseries of particle number concentrations lost from each size class, and <code class="docutils literal notranslate"><span class="pre">c_diss</span></code> is corresponding mass concentration assuming spherical particles. We can use the <code class="docutils literal notranslate"><span class="pre">FMNPOutput.plot()</span></code> method again to plot the time evolution graph with dissolution mass concentrations:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create the figure and axes - we need to this because we need to</span>
-<span class="c1"># add a second axis for the dissolution data</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-
-<span class="c1"># Add labels to the mass concentration axis</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;particle mass concentration [mass/volume]&#39;</span><span class="p">)</span>
-<span class="c1"># Plot the mass concentrations</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s1"> m&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">psd</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">)</span>
-
-<span class="c1"># Create and format the dissolution y axis</span>
-<span class="n">ax2</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;dissolution mass concentration [mass/volume]&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">c_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;--&#39;</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;c_diss&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
-
-<span class="c1"># Show the plot</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the model outputs with dissolution included</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_dissolution</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
