@@ -9,6 +9,7 @@ parts:
     - file: example-usage
     - file: config
     - file: input-data
+    - file: plotting
     - file: advanced-usage
       sections:
       - file: advanced-usage/fragmentation-rate
