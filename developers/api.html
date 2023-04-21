@@ -120,6 +120,11 @@ const thebe_selector_output = ".output, .cell_output"
    Input data
   </a>
  </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../plotting.html">
+   Plotting
+  </a>
+ </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="../advanced-usage.html">
    Advanced usage
@@ -262,6 +267,11 @@ const thebe_selector_output = ".output, .cell_output"
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#fragment-mnp-output">
+   FRAGMENT-MNP Output
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#example-config-and-data-fragmentmnp-examples">
    Example config and data (
    <code class="xref py py-mod docutils literal notranslate">
@@ -313,6 +323,11 @@ const thebe_selector_output = ".output, .cell_output"
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#fragment-mnp-model">
    FRAGMENT-MNP model
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#fragment-mnp-output">
+   FRAGMENT-MNP Output
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
@@ -431,11 +446,14 @@ classes than larger.</p>
 </dd></dl>
 
 </div>
-<span class="target" id="module-fragmentmnp.output"></span><dl class="py class">
+<span class="target" id="module-fragmentmnp.output"></span><div class="section" id="fragment-mnp-output">
+<h2>FRAGMENT-MNP Output<a class="headerlink" href="#fragment-mnp-output" title="Permalink to this headline">¶</a></h2>
+<p>Provides functionality for processing and visulalising model output data.</p>
+<dl class="py class">
 <dt class="sig sig-object py" id="fragmentmnp.output.FMNPOutput">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fragmentmnp.output.</span></span><span class="sig-name descname"><span class="pre">FMNPOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_diss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_diss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy._typing._generic_alias.ScalarType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">soln</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class that holds output data from the model, and
-includes a number of useful plotting functions</p>
+<dd><p>Class that holds output data from the model and provides plotting
+functionalities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -456,25 +474,37 @@ each of the particle size classes</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="fragmentmnp.output.FMNPOutput.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'particle_number_conc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_dissolution</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_yaxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput.plot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mass_conc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_dissolution</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_yaxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot the output data by choosing from a number of
 pre-defined plot types.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>type</strong> (<em>str</em><em>, </em><em>default='particle_number_conc'</em>) – Tells the function what type of plot to produce.
-Either <cite>particle_number_conc</cite>, <cite>mass_conc</cite>,
-or <cite>dissolution_mass_conc</cite>.</p></li>
+<li><p><strong>type</strong> (<em>str</em><em>, </em><em>default='mass_conc'</em>) – Tells the function what type of plot to produce.
+Either <cite>particle_number_conc</cite> or <cite>mass_conc</cite>.</p></li>
 <li><p><strong>plot_dissolution</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Should dissolution be plotted on a separate y-axis</p></li>
 <li><p><strong>log_yaxis</strong> (<em>bool</em><em> or </em><em>str</em><em>, </em><em>default=False</em>) – True and “log” plots the y axis on a log scale,
 “symlog” plots the y axis on a symlog scale (useful
 if the data contain zeros), and False plots the y
 axis on a linear scale</p></li>
+<li><p><strong>units</strong> (<em>dict</em><em> or </em><em>str</em><em>, </em><em>default=None</em>) – Units to be used in axis labels. Must either be “SI” to
+use SI units, “dim” to use dimensional labels (“mass”,
+“volume”, etc), or a dictionary containing elements for
+<cite>mass</cite>, <cite>volume</cite> and <cite>time</cite>. E.g. <cite>units={‘mass’: ‘kg’,
+‘volume’: ‘m3’, ‘time’: ‘s’, ‘length’: ‘nm’}</cite>. Note that
+these units are used purely for axis labelling and are
+not used to modify the model output data (which is unit
+agnostic). If <cite>None</cite> (the default), no units are added to
+labels.</p></li>
+<li><p><strong>cmap</strong> (<em>str</em><em>, </em><em>default='viridis'</em>) – The colormap to use for the plot. Must be one of the
+colormaps [available in
+matplotlib](<a class="reference external" href="https://matplotlib.org/stable/gallery/color/colormap_reference.html">https://matplotlib.org/stable/gallery/color/colormap_reference.html</a>).
+Note that these are case-sensitive.</p></li>
+<li><p><strong>show_legend</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Should size classes be shown on a legend?</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A Matplotlib figure object containing the
-produced plot</p>
+<dd class="field-even"><p>A Matplotlib figure object containing the plot</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>matplotlib.figure.Figure</p>
@@ -484,6 +514,7 @@ produced plot</p>
 
 </dd></dl>
 
+</div>
 <span class="target" id="module-fragmentmnp.examples"></span><div class="section" id="example-config-and-data-fragmentmnp-examples">
 <h2>Example config and data (<a class="reference internal" href="#module-fragmentmnp.examples" title="fragmentmnp.examples"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fragmentmnp.examples</span></code></a>)<a class="headerlink" href="#example-config-and-data-fragmentmnp-examples" title="Permalink to this headline">¶</a></h2>
 <p>Provides example config and data dictionaries for use

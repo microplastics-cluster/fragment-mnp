@@ -117,6 +117,11 @@ const thebe_selector_output = ".output, .cell_output"
    Input data
   </a>
  </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../plotting.html">
+   Plotting
+  </a>
+ </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="../../advanced-usage.html">
    Advanced usage
@@ -250,17 +255,22 @@ const thebe_selector_output = ".output, .cell_output"
               <div>
                 
   <h1>Source code for fragmentmnp.output</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">uuid</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">FRAGMENT-MNP Output</span>
+<span class="sd">===================</span>
+
+<span class="sd">Provides functionality for processing and visulalising model output data.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
-<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">OdeSolution</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 
 <div class="viewcode-block" id="FMNPOutput"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.output.FMNPOutput">[docs]</a><span class="k">class</span> <span class="nc">FMNPOutput</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Class that holds output data from the model, and</span>
-<span class="sd">    includes a number of useful plotting functions</span>
+<span class="sd">    Class that holds output data from the model and provides plotting</span>
+<span class="sd">    functionalities.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -318,19 +328,21 @@ const thebe_selector_output = ".output, .cell_output"
             <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
 
 <div class="viewcode-block" id="FMNPOutput.plot"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.output.FMNPOutput.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-             <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;particle_number_conc&#39;</span><span class="p">,</span>
+             <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;mass_conc&#39;</span><span class="p">,</span>
              <span class="n">plot_dissolution</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-             <span class="n">log_yaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+             <span class="n">log_yaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span>
+             <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Plot the output data by choosing from a number of</span>
 <span class="sd">        pre-defined plot types.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        type : str, default=&#39;particle_number_conc&#39;</span>
+<span class="sd">        type : str, default=&#39;mass_conc&#39;</span>
 <span class="sd">            Tells the function what type of plot to produce.</span>
-<span class="sd">            Either `particle_number_conc`, `mass_conc`,</span>
-<span class="sd">            or `dissolution_mass_conc`.</span>
+<span class="sd">            Either `particle_number_conc` or `mass_conc`.</span>
 <span class="sd">        plot_dissolution : bool, default=False</span>
 <span class="sd">            Should dissolution be plotted on a separate y-axis</span>
 <span class="sd">        log_yaxis: bool or str, default=False</span>
@@ -338,36 +350,70 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">            &quot;symlog&quot; plots the y axis on a symlog scale (useful</span>
 <span class="sd">            if the data contain zeros), and False plots the y</span>
 <span class="sd">            axis on a linear scale</span>
+<span class="sd">        units: dict or str, default=None</span>
+<span class="sd">            Units to be used in axis labels. Must either be &quot;SI&quot; to</span>
+<span class="sd">            use SI units, &quot;dim&quot; to use dimensional labels (&quot;mass&quot;,</span>
+<span class="sd">            &quot;volume&quot;, etc), or a dictionary containing elements for</span>
+<span class="sd">            `mass`, `volume` and `time`. E.g. `units={&#39;mass&#39;: &#39;kg&#39;,</span>
+<span class="sd">            &#39;volume&#39;: &#39;m3&#39;, &#39;time&#39;: &#39;s&#39;, &#39;length&#39;: &#39;nm&#39;}`. Note that</span>
+<span class="sd">            these units are used purely for axis labelling and are</span>
+<span class="sd">            not used to modify the model output data (which is unit</span>
+<span class="sd">            agnostic). If `None` (the default), no units are added to</span>
+<span class="sd">            labels.</span>
+<span class="sd">        cmap: str, default=&#39;viridis&#39;</span>
+<span class="sd">            The colormap to use for the plot. Must be one of the</span>
+<span class="sd">            colormaps [available in</span>
+<span class="sd">            matplotlib](https://matplotlib.org/stable/gallery/color/colormap_reference.html).</span>
+<span class="sd">            Note that these are case-sensitive.</span>
+<span class="sd">        show_legend: bool, default=True</span>
+<span class="sd">            Should size classes be shown on a legend?</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        matplotlib.figure.Figure</span>
-<span class="sd">            A Matplotlib figure object containing the</span>
-<span class="sd">            produced plot</span>
+<span class="sd">            A Matplotlib figure object containing the plot</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Are we plotting number or mass concentrations?</span>
+        <span class="n">unit_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_units</span><span class="p">(</span><span class="n">units</span><span class="p">)</span>
+        <span class="c1"># Are we plotting number or mass concentrations? Set the</span>
+        <span class="c1"># y values and labels accordingly</span>
         <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;particle_number_conc&#39;</span><span class="p">:</span>
+            <span class="c1"># Set the yaxis label</span>
             <span class="n">ylabel</span> <span class="o">=</span> <span class="s1">&#39;Particle number concentration&#39;</span>
+            <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ylabel</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; [</span><span class="si">{</span><span class="n">unit_labels</span><span class="p">[</span><span class="s2">&quot;number_conc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">]&#39;</span>
+            <span class="c1"># Set the yaxis values, transposed to pass to mpl</span>
             <span class="n">yvals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="o">.</span><span class="n">T</span>
         <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;mass_conc&#39;</span><span class="p">:</span>
             <span class="n">ylabel</span> <span class="o">=</span> <span class="s1">&#39;Mass concentration&#39;</span>
+            <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ylabel</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; [</span><span class="si">{</span><span class="n">unit_labels</span><span class="p">[</span><span class="s2">&quot;mass_conc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">]&#39;</span>
             <span class="n">yvals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">T</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Raise an error if an invalid plot type is given</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid option for plot `type`: </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid option for plot `type`: </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s1">. &#39;</span>
                              <span class="s1">&#39;Should be `particle_number_conc` or&#39;</span>
                              <span class="s1">&#39;`mass_conc`.&#39;</span><span class="p">)</span>
-        <span class="c1"># Change the colourmap to something useful</span>
+        <span class="c1"># Set the xaxis label</span>
+        <span class="n">xlabel</span> <span class="o">=</span> <span class="s1">&#39;Time&#39;</span>
+        <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">xlabel</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; [</span><span class="si">{</span><span class="n">unit_labels</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">]&#39;</span>
+
+        <span class="c1"># Change the colourmap to something useful (Viridis)</span>
+        <span class="n">cmap_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colormaps</span><span class="p">[</span><span class="n">cmap</span><span class="p">]</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.prop_cycle&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">plt</span><span class="o">.</span><span class="n">cycler</span><span class="p">(</span><span class="s1">&#39;color&#39;</span><span class="p">,</span>
-                       <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">viridis</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)))</span>
+                       <span class="n">cmap_</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)))</span>
 
         <span class="c1"># Create the figure and axes - we need to this because we need to</span>
         <span class="c1"># add a second axis for the dissolution data</span>
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 
-        <span class="c1"># Add labels to axes</span>
-        <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+        <span class="c1"># Construct the xlabel with(out) units</span>
+        <span class="n">xlabel</span> <span class="o">=</span> <span class="s1">&#39;Time&#39;</span>
+        <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">xlabel</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; [</span><span class="si">{</span><span class="n">unit_labels</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">]&#39;</span>
+        <span class="c1"># Add the x and y labels</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
         <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">)</span>
         <span class="c1"># Should the y axis be logged?</span>
         <span class="k">if</span> <span class="n">log_yaxis</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">]:</span>
@@ -377,15 +423,27 @@ const thebe_selector_output = ".output, .cell_output"
 
         <span class="c1"># Plot the concentrations</span>
         <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">yvals</span><span class="p">)</span>
-        <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">:</span><span class="s1">&lt;1g</span><span class="si">}</span><span class="s1"> µm&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">])</span>
+
+        <span class="c1"># Add a size class legend, if requested</span>
+        <span class="k">if</span> <span class="n">show_legend</span><span class="p">:</span>
+            <span class="c1"># Construct the legend with(out) units</span>
+            <span class="n">legend</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">:</span><span class="s1">&lt;1g</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">legend</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sc</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">unit_labels</span><span class="p">[</span><span class="s2">&quot;length&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">sc</span> <span class="ow">in</span> <span class="n">legend</span><span class="p">]</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">legend</span><span class="p">)</span>
 
         <span class="c1"># Create and format the dissolution y axis</span>
         <span class="k">if</span> <span class="n">plot_dissolution</span><span class="p">:</span>
             <span class="n">ax2</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
-            <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Dissolution mass concentration&#39;</span><span class="p">)</span>
-            <span class="n">ax2</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+            <span class="c1"># Construct the ylabel</span>
+            <span class="n">ylabel_diss</span> <span class="o">=</span> <span class="s1">&#39;Dissolution mass concentration&#39;</span>
+            <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ylabel_diss</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; [</span><span class="si">{</span><span class="n">unit_labels</span><span class="p">[</span><span class="s2">&quot;mass_conc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">]&#39;</span>
+            <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel_diss</span><span class="p">)</span>
             <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">c_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;--&#39;</span><span class="p">)</span>
-            <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;c_diss&#39;</span><span class="p">])</span>
+            <span class="c1"># Always show the dissolution legend to make it clear</span>
+            <span class="c1"># which line is dissolution</span>
+            <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;Dissolution&#39;</span><span class="p">])</span>
             <span class="c1"># Should the y axis be logged?</span>
             <span class="k">if</span> <span class="n">log_yaxis</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">]:</span>
                 <span class="n">ax2</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
@@ -393,7 +451,45 @@ const thebe_selector_output = ".output, .cell_output"
                 <span class="n">ax2</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;symlog&#39;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax1</span></div></div>
+            <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax1</span></div>
+
+    <span class="k">def</span> <span class="nf">_construct_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct strings for axis labels based on the units</span>
+<span class="sd">        dictionary or string provided. Options given in `plot()`</span>
+<span class="sd">        method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">units_out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">units</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span>
+                <span class="ow">and</span> <span class="p">{</span><span class="s1">&#39;mass&#39;</span><span class="p">,</span> <span class="s1">&#39;volume&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">}</span> <span class="o">&lt;=</span> <span class="n">units</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="c1"># If we&#39;ve been provided a dict of units, use these</span>
+            <span class="n">units_out</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">units</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">and</span> <span class="n">units</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;si&#39;</span><span class="p">:</span>
+            <span class="c1"># Use SI units</span>
+            <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;kg&#39;</span>
+            <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;m3&#39;</span>
+            <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span>
+            <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;m&#39;</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">units</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">and</span> <span class="n">units</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dim&#39;</span><span class="p">:</span>
+            <span class="c1"># Use dimensional labels as the units</span>
+            <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;mass&#39;</span>
+            <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;volume&#39;</span>
+            <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;time&#39;</span>
+            <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;length&#39;</span>
+        <span class="k">elif</span> <span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Nothing in, nothing out...</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`units` parameter of `plot` function must be &#39;</span>
+                             <span class="s1">&#39;a dictionary with keys {`mass`, `volume`, `time` &#39;</span>
+                             <span class="s1">&#39;and `length`}, `SI` to denote use of SI &#39;</span>
+                             <span class="s1">&#39;units, or `dim` to denote use of dimensions.&#39;</span><span class="p">)</span>
+        <span class="c1"># Construct the required compound units</span>
+        <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;mass_conc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">units_out</span><span class="p">[</span><span class="s2">&quot;mass&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">units_out</span><span class="p">[</span><span class="s2">&quot;volume&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;number_conc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;/</span><span class="si">{</span><span class="n">units_out</span><span class="p">[</span><span class="s2">&quot;volume&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;rate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;/</span><span class="si">{</span><span class="n">units_out</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="c1"># Return the unit strings</span>
+        <span class="k">return</span> <span class="n">units_out</span></div>
 </pre></div>
 
               </div>
