@@ -20,17 +20,13 @@ Here is a bare minimum example. See also the [](example-usage.ipynb).
 
 ```python
 from fragmentmnp import FragmentMNP
-from fragmentmnp.examples import minimal_config, data
-import matplotlib.pyplot as plt
+from fragmentmnp.examples import minimal_config, minmal_data
 
-# Create the model, pass it config and data, then run it
-fmnp = FragmentMNP(minimal_config, data)
+# Create the model, pass it example config and data, then run it
+fmnp = FragmentMNP(minimal_config, minimal_data)
 output = fmnp.run()
-
 # Plot the mass concentration time series
-plt.plot(output.t, output.c.T)
-plt.legend([f'{d} m' for d in fmnp.psd])
-plt.show()
+output.plot()
 ```
 
 ## Developing FRAGMENT-MNP
