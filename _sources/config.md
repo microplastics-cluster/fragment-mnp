@@ -51,3 +51,8 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 `solver_max_step`
 : *Optional, float, default: np.inf.*
 : Set a maximum step size for the ODE solver. This might be particularly useful for stiff problems that cause numerical instability.
+
+(config:solver_t_eval)=
+`solver_t_eval`
+: *Optional, str equal to `integer`, None, or list of integers or floats, default: `integer`.*
+: Time points at which to store the computed solution, passed to [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html). If the string "integer" is provide, the model stores monotonic integer timesteps from 0 to `n_timesteps`, i.e. `solver_t_eval = np.arange(n_timesteps)`. If `None`, the points selected by the solver are used (which might be controlled by the `solver_max_step` option). If a list or integers or floats is provided, these are used directly as the time points. An error will be thrown if these lie outside of the model time span.

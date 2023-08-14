@@ -333,7 +333,8 @@ const thebe_selector_output = ".output, .cell_output"
              <span class="n">log_yaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
              <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span>
-             <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+             <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+             <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Plot the output data by choosing from a number of</span>
 <span class="sd">        pre-defined plot types.</span>
@@ -362,16 +363,16 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">            labels.</span>
 <span class="sd">        cmap: str, default=&#39;viridis&#39;</span>
 <span class="sd">            The colormap to use for the plot. Must be one of the</span>
-<span class="sd">            colormaps [available in</span>
-<span class="sd">            matplotlib](https://matplotlib.org/stable/gallery/color/colormap_reference.html).</span>
+<span class="sd">            colormaps `available in matplotlib</span>
+<span class="sd">            &lt;https://matplotlib.org/stable/gallery/color/colormap_reference.html&gt;`.</span>
 <span class="sd">            Note that these are case-sensitive.</span>
 <span class="sd">        show_legend: bool, default=True</span>
 <span class="sd">            Should size classes be shown on a legend?</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        matplotlib.figure.Figure</span>
-<span class="sd">            A Matplotlib figure object containing the plot</span>
+<span class="sd">        (matplotlib.figure.Figure, matplotlib.axes.Axes)</span>
+<span class="sd">            Matplotlib figure and axes objects for the plot</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">unit_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_units</span><span class="p">(</span><span class="n">units</span><span class="p">)</span>
         <span class="c1"># Are we plotting number or mass concentrations? Set the</span>

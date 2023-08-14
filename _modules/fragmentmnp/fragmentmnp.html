@@ -284,7 +284,7 @@ const thebe_selector_output = ".output, .cell_output"
 
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;n_size_classes&#39;</span><span class="p">,</span> <span class="s1">&#39;psd&#39;</span><span class="p">,</span> <span class="s1">&#39;fsd&#39;</span><span class="p">,</span>
                  <span class="s1">&#39;n_timesteps&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;theta_1&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;initial_concs&#39;</span><span class="p">]</span>
+                 <span class="s1">&#39;initial_concs&#39;</span><span class="p">,</span> <span class="s1">&#39;t_eval&#39;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -299,9 +299,12 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="c1"># If we passed validation (or aren&#39;t validating), save attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
-        <span class="c1"># Set the number of particle size classes and number of timesteps</span>
+        <span class="c1"># Set the number of particle size classes and timesteps, and</span>
+        <span class="c1"># the times at which to store the computed solution</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_size_classes&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_timesteps&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_eval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">)</span> \
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_t_eval&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_t_eval&#39;</span><span class="p">]</span>
         <span class="c1"># Initial concentrations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;initial_concs&#39;</span><span class="p">])</span>
         <span class="c1"># Set the particle phys-chem properties</span>
@@ -374,7 +377,7 @@ const thebe_selector_output = ".output, .cell_output"
                          <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_method&#39;</span><span class="p">],</span>
                          <span class="n">t_span</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">),</span>
                          <span class="n">y0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span><span class="p">,</span>
-                         <span class="n">t_eval</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">),</span>
+                         <span class="n">t_eval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t_eval</span><span class="p">,</span>
                          <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_rtol&#39;</span><span class="p">],</span>
                          <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_atol&#39;</span><span class="p">],</span>
                          <span class="n">max_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_max_step&#39;</span><span class="p">])</span>

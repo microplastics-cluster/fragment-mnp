@@ -474,7 +474,7 @@ each of the particle size classes</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="fragmentmnp.output.FMNPOutput.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mass_conc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_dissolution</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_yaxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput.plot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mass_conc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_dissolution</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_yaxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/output.html#FMNPOutput.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.output.FMNPOutput.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot the output data by choosing from a number of
 pre-defined plot types.</p>
 <dl class="field-list simple">
@@ -497,17 +497,17 @@ not used to modify the model output data (which is unit
 agnostic). If <cite>None</cite> (the default), no units are added to
 labels.</p></li>
 <li><p><strong>cmap</strong> (<em>str</em><em>, </em><em>default='viridis'</em>) – The colormap to use for the plot. Must be one of the
-colormaps [available in
-matplotlib](<a class="reference external" href="https://matplotlib.org/stable/gallery/color/colormap_reference.html">https://matplotlib.org/stable/gallery/color/colormap_reference.html</a>).
+colormaps <cite>available in matplotlib
+&lt;https://matplotlib.org/stable/gallery/color/colormap_reference.html&gt;</cite>.
 Note that these are case-sensitive.</p></li>
 <li><p><strong>show_legend</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Should size classes be shown on a legend?</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A Matplotlib figure object containing the plot</p>
+<dd class="field-even"><p>Matplotlib figure and axes objects for the plot</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>matplotlib.figure.Figure</p>
+<dd class="field-odd"><p>(matplotlib.figure.Figure, matplotlib.axes.Axes)</p>
 </dd>
 </dl>
 </dd></dl>

@@ -331,6 +331,12 @@ const thebe_selector_output = ".output, .cell_output"
 <dd><p>Set a maximum step size for the ODE solver. This might be particularly useful for stiff problems that cause numerical instability.</p>
 </dd>
 </dl>
+<dl class="simple myst" id="config-solver-t-eval">
+<dt><code class="docutils literal notranslate"><span class="pre">solver_t_eval</span></code></dt><dd><p><em>Optional, str equal to <code class="docutils literal notranslate"><span class="pre">integer</span></code>, None, or list of integers or floats, default: <code class="docutils literal notranslate"><span class="pre">integer</span></code>.</em></p>
+</dd>
+<dd><p>Time points at which to store the computed solution, passed to <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html">scipy.integrate.solve_ivp</a>. If the string “integer” is provide, the model stores monotonic integer timesteps from 0 to <code class="docutils literal notranslate"><span class="pre">n_timesteps</span></code>, i.e. <code class="docutils literal notranslate"><span class="pre">solver_t_eval</span> <span class="pre">=</span> <span class="pre">np.arange(n_timesteps)</span></code>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the points selected by the solver are used (which might be controlled by the <code class="docutils literal notranslate"><span class="pre">solver_max_step</span></code> option). If a list or integers or floats is provided, these are used directly as the time points. An error will be thrown if these lie outside of the model time span.</p>
+</dd>
+</dl>
 </div>
 
     <script type="text/x-thebe-config">
