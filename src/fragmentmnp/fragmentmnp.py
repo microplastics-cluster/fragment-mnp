@@ -27,7 +27,7 @@ class FragmentMNP():
 
     __slots__ = ['config', 'data', 'n_size_classes', 'psd', 'fsd',
                  'n_timesteps', 'density', 'k_frag', 'theta_1', 'k_diss',
-                 'initial_concs']
+                 'initial_concs', 't_eval']
 
     def __init__(self,
                  config: dict,
@@ -42,9 +42,12 @@ class FragmentMNP():
         # If we passed validation (or aren't validating), save attributes
         self.config = config
         self.data = data
-        # Set the number of particle size classes and number of timesteps
+        # Set the number of particle size classes and timesteps, and
+        # the times at which to store the computed solution
         self.n_size_classes = self.config['n_size_classes']
         self.n_timesteps = self.config['n_timesteps']
+        self.t_eval = np.arange(0, self.n_timesteps) \
+            if self.config['solver_t_eval'] else self.config['solver_t_eval']
         # Initial concentrations
         self.initial_concs = np.array(data['initial_concs'])
         # Set the particle phys-chem properties
@@ -117,7 +120,7 @@ class FragmentMNP():
                          method=self.config['solver_method'],
                          t_span=(0, self.n_timesteps),
                          y0=self.initial_concs,
-                         t_eval=np.arange(0, self.n_timesteps),
+                         t_eval=self.t_eval,
                          rtol=self.config['solver_rtol'],
                          atol=self.config['solver_atol'],
                          max_step=self.config['solver_max_step'])

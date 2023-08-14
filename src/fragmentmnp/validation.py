@@ -54,7 +54,10 @@ config_schema = Schema({
     Optional('solver_atol', default=1e-6): Or(float, [float]),
     Optional('solver_rtol', default=1e-3): float,
     # Max step size for the ODE solver
-    Optional('solver_max_step', default=np.inf): float
+    Optional('solver_max_step', default=np.inf): float,
+    Optional('solver_t_eval', default='integer'): Or(lambda x: x == 'integer',
+                                                     None,
+                                                     _is_positive_array)
 })
 
 

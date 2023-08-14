@@ -26,7 +26,8 @@ full_config = {
     'solver_method': 'RK45',
     'solver_rtol': 1e-3,
     'solver_atol': 1e-6,
-    'solver_max_step': np.inf
+    'solver_max_step': np.inf,
+    'solver_t_eval': 'integer'
 }
 
 # Example model config specifying only required options

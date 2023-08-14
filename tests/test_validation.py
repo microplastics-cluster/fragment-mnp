@@ -206,3 +206,19 @@ def test_atol_array_and_scalar():
         assert True
     except SchemaError:
         assert False
+
+
+def test_t_eval_is_array():
+    """
+    Test that solver_t_eval can be input as an array
+    """
+    valid_config = valid_minimal_config.copy()
+    # Arbitrarily spaced timestep evaluation points
+    valid_config['solver_t_eval'] = list(np.arange(0,
+                                                   valid_config['n_timesteps'],
+                                                   42))
+    try:
+        validate_config(valid_config)
+        assert True
+    except SchemaError:
+        assert False

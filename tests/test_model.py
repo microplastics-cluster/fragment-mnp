@@ -29,6 +29,18 @@ def test_model_run():
     )
 
 
+def test_model_init_integer_t_eval():
+    """
+    Test that specifying an integer t_eval results in the correct
+    monotonically spaced t_eval timesteps 
+    """
+    config_t_eval = minimal_config.copy()
+    config_t_eval['solver_t_eval'] = 'integer'
+    fmnp = FragmentMNP(config_t_eval, minimal_data)
+    np.testing.assert_array_equal(fmnp.t_eval,
+                                  np.arange(0, config_t_eval['n_timesteps']))
+
+
 def test_fsd_equal_split():
     """
     Test the fragment size distribution is calculated correctly

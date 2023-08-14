@@ -76,7 +76,8 @@ class FMNPOutput():
              log_yaxis=False,
              units=None,
              cmap='viridis',
-             show_legend=True):
+             show_legend=True,
+             ax=None):
         """
         Plot the output data by choosing from a number of
         pre-defined plot types.
@@ -105,16 +106,16 @@ class FMNPOutput():
             labels.
         cmap: str, default='viridis'
             The colormap to use for the plot. Must be one of the
-            colormaps [available in
-            matplotlib](https://matplotlib.org/stable/gallery/color/colormap_reference.html).
+            colormaps `available in matplotlib
+            <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`.
             Note that these are case-sensitive.
         show_legend: bool, default=True
             Should size classes be shown on a legend?
 
         Returns
         -------
-        matplotlib.figure.Figure
-            A Matplotlib figure object containing the plot
+        (matplotlib.figure.Figure, matplotlib.axes.Axes)
+            Matplotlib figure and axes objects for the plot
         """
         unit_labels = self._construct_units(units)
         # Are we plotting number or mass concentrations? Set the
