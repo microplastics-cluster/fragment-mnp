@@ -34,12 +34,12 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 : The length of each timestep. Defaults to 1 second.
 
 `k_diss_scaling_method`
-: *Optional, str equal to `constant` or `surface_area`, default: `constant`.*
+: *Optional, str equal to "constant" or "surface_area", default: "constant".*
 : The method by which the dissolution rate `k_diss` is scaled across size classes. If `constant`, then `k_diss` is the same across all size classes. If `surface_area`, then `k_diss` scales as $s^\gamma$, where $s$ is the surface area to volume ratio of the polymer particles, and $\gamma$ is an empirical scaling parameter set by the `k_diss_gamma` variable in the [model input data dict](input-data). If `k_diss` is given as a distribution in the input data, then `k_diss_scaling_method` is ignored and this distribution is used directly instead.
 
 (config:solver_method)=
 `solver_method`
-: *Optional, str equal to a valid method, default: `RK45`.*
+: *Optional, str equal to a valid method, default: "RK45".*
 : The method that is used to numerically solve the model differential equation. This method is passed directly to [`scipy.intergrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and must be a valid method available in SciPy ("RK45", "RK23", "DOP853", "Radau", "BDF" or "LSODA"). By default, RK45 is used. See the [SciPy documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) for more details. If you are having numerical stability issues, try "Radau", "BDF" or "LSODA", and read [](./advanced-usage/numerical-instability.ipynb).
 
 (config:solver_rtol_atol)=
@@ -49,10 +49,10 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 
 (config:solver_max_step)=
 `solver_max_step`
-: *Optional, float, default: np.inf.*
+: *Optional, float, default: `np.inf`.*
 : Set a maximum step size for the ODE solver. This might be particularly useful for stiff problems that cause numerical instability.
 
 (config:solver_t_eval)=
 `solver_t_eval`
-: *Optional, str equal to `integer`, None, or list of integers or floats, default: `integer`.*
-: Time points at which to store the computed solution, passed to [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html). If the string "integer" is provide, the model stores monotonic integer timesteps from 0 to `n_timesteps`, i.e. `solver_t_eval = np.arange(n_timesteps)`. If `None`, the points selected by the solver are used (which might be controlled by the `solver_max_step` option). If a list or integers or floats is provided, these are used directly as the time points. An error will be thrown if these lie outside of the model time span.
+: *Optional, str equal to "integer", None, or list of integers or floats, default: "integer".*
+: Time points at which to store the computed solution, passed to [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html). If the string "integer" is provided, the model stores iterative integer timesteps with a step of 1 from 0 to `n_timesteps`, i.e. `solver_t_eval = np.arange(n_timesteps)`. If `None`, the points selected by the solver are used (which might be controlled by the `solver_max_step` option). If a list of integers or floats is provided, these are used directly as the time points. An error will be thrown if these lie outside of the model time span.
