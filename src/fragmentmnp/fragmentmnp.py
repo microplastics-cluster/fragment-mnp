@@ -25,10 +25,6 @@ class FragmentMNP():
         config and data are correct and wish to speed up model initialisation
     """
 
-    __slots__ = ['config', 'data', 'n_size_classes', 'psd', 'fsd',
-                 'n_timesteps', 'density', 'k_frag', 'theta_1', 'k_diss',
-                 'initial_concs', 't_eval']
-
     def __init__(self,
                  config: dict,
                  data: dict,
@@ -72,7 +68,8 @@ class FragmentMNP():
 
         Returns
         -------
-        :class:`fragmentmnp.output.FMNPOutput` object containing model output data.
+        :class:`fragmentmnp.output.FMNPOutput` object containing model output
+        data.
 
         Notes
         -----
@@ -85,10 +82,11 @@ class FragmentMNP():
             \frac{dc_k}{dt} = -k_{\text{frag},k,t} c_k +
             \Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k
 
-        Here, :math:`k_{\text{frag},k,t}` is the fragmentation rate of size class
-        `k` on timestep `t`, :math:`f_{i,k}` is the fraction of daughter fragments
-        produced from a fragmenting particle of size `i` that are of size `k`, and
-        :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.
+        Here, :math:`k_{\text{frag},k,t}` is the fragmentation rate of size
+        class `k` on timestep `t`, :math:`f_{i,k}` is the fraction of daughter
+        fragments produced from a fragmenting particle of size `i` that are of
+        size `k`, and :math:`k_{\text{diss},k}` is the dissolution rate from
+        size class `k`.
 
         Mass concentrations are converted to particle number concentrations by
         assuming spherical particles with the density given in the input data.
@@ -135,15 +133,22 @@ class FragmentMNP():
         # lost to dissolution
         c_diss = np.cumsum(j_diss, axis=1)
         # Now we have the solutions as mass concentrations, we can
-        # convert to particle number concentrations, assuming spherical
-        # particles and using the polymer density
-        n = soln.y / (self.density * (4.0/3.0) * np.pi
-            * (self.psd[:, None] / 2) ** 3)
-        n_diss = c_diss / (self.density * (4/3) * np.pi
-                 * (self.psd[:, None] / 2) ** 3)
+        # convert to particle number concentrations
+        n = self.mass_to_particle_number(soln.y)
+        n_diss = self.mass_to_particle_number(c_diss)
 
         # Return the solution in an FMNPOutput object
         return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss, soln, self.psd)
+
+    def mass_to_particle_number(self, mass):
+        """
+        Convert mass (concentration) to particle number (concentration).
+        Here, particles are assumed to be spherical, but this function
+        can be overloaded to account for different shape particles.
+        """
+        n = mass / (self.density * (4.0/3.0) * np.pi
+                    * (self.psd[:, None] / 2) ** 3)
+        return n
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """

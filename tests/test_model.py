@@ -2,6 +2,7 @@
 Integration tests for the full model
 """
 import numpy as np
+from types import MethodType
 from fragmentmnp import FragmentMNP
 from fragmentmnp.examples import minimal_config, minimal_data
 
@@ -131,3 +132,26 @@ def test_k_frag_time_dependence():
     fmnp = FragmentMNP(minimal_config, minimal_data)
     assert fmnp.k_frag.shape == (minimal_config['n_timesteps'],
                                  minimal_config['n_size_classes'])
+
+
+def test_mass_to_particle_number_overload():
+    """
+    Testing that overloaded the fragmentmnp.mass_to_particle_number
+    function works as expected.
+    """
+    fmnp = FragmentMNP(minimal_config, minimal_data)
+
+    def cube_mass_to_particle_number(self, mass):
+        # Presuming particles are cubes instead and the particle
+        # size distribution is the length of each face
+        n = mass / (self.density + self.psd[:, None] ** 3)
+        return n
+
+    # Assign this new function
+    setattr(fmnp, "mass_to_particle_number",
+            MethodType(cube_mass_to_particle_number, fmnp))
+    # Run the model and check the mass to number conversion is
+    # done correctly
+    output = fmnp.run()
+    np.testing.assert_array_equal(output.n,
+                                  cube_mass_to_particle_number(fmnp, output.c))
