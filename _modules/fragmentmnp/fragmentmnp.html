@@ -282,10 +282,6 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">        config and data are correct and wish to speed up model initialisation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;n_size_classes&#39;</span><span class="p">,</span> <span class="s1">&#39;psd&#39;</span><span class="p">,</span> <span class="s1">&#39;fsd&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;n_timesteps&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;theta_1&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;initial_concs&#39;</span><span class="p">,</span> <span class="s1">&#39;t_eval&#39;</span><span class="p">]</span>
-
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
                  <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -329,7 +325,8 @@ const thebe_selector_output = ".output, .cell_output"
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        :class:`fragmentmnp.output.FMNPOutput` object containing model output data.</span>
+<span class="sd">        :class:`fragmentmnp.output.FMNPOutput` object containing model output</span>
+<span class="sd">        data.</span>
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
@@ -342,10 +339,11 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">            \frac{dc_k}{dt} = -k_{\text{frag},k,t} c_k +</span>
 <span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k</span>
 
-<span class="sd">        Here, :math:`k_{\text{frag},k,t}` is the fragmentation rate of size class</span>
-<span class="sd">        `k` on timestep `t`, :math:`f_{i,k}` is the fraction of daughter fragments</span>
-<span class="sd">        produced from a fragmenting particle of size `i` that are of size `k`, and</span>
-<span class="sd">        :math:`k_{\text{diss},k}` is the dissolution rate from size class `k`.</span>
+<span class="sd">        Here, :math:`k_{\text{frag},k,t}` is the fragmentation rate of size</span>
+<span class="sd">        class `k` on timestep `t`, :math:`f_{i,k}` is the fraction of daughter</span>
+<span class="sd">        fragments produced from a fragmenting particle of size `i` that are of</span>
+<span class="sd">        size `k`, and :math:`k_{\text{diss},k}` is the dissolution rate from</span>
+<span class="sd">        size class `k`.</span>
 
 <span class="sd">        Mass concentrations are converted to particle number concentrations by</span>
 <span class="sd">        assuming spherical particles with the density given in the input data.</span>
@@ -392,15 +390,22 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="c1"># lost to dissolution</span>
         <span class="n">c_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">j_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="c1"># Now we have the solutions as mass concentrations, we can</span>
-        <span class="c1"># convert to particle number concentrations, assuming spherical</span>
-        <span class="c1"># particles and using the polymer density</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-            <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
-        <span class="n">n_diss</span> <span class="o">=</span> <span class="n">c_diss</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-                 <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="c1"># convert to particle number concentrations</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_to_particle_number</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">n_diss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_to_particle_number</span><span class="p">(</span><span class="n">c_diss</span><span class="p">)</span>
 
         <span class="c1"># Return the solution in an FMNPOutput object</span>
         <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span> <span class="n">n_diss</span><span class="p">,</span> <span class="n">soln</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FragmentMNP.mass_to_particle_number"><a class="viewcode-back" href="../../developers/api.html#fragmentmnp.FragmentMNP.mass_to_particle_number">[docs]</a>    <span class="k">def</span> <span class="nf">mass_to_particle_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert mass (concentration) to particle number (concentration).</span>
+<span class="sd">        Here, particles are assumed to be spherical, but this function</span>
+<span class="sd">        can be overloaded to account for different shape particles.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">mass</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">*</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+                    <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">n</span></div>
 
     <span class="k">def</span> <span class="nf">_set_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

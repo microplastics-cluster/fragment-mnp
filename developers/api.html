@@ -389,12 +389,24 @@ config and data are correct and wish to speed up model initialisation</p></li>
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.mass_to_particle_number">
+<span class="sig-name descname"><span class="pre">mass_to_particle_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mass</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.mass_to_particle_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.mass_to_particle_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert mass (concentration) to particle number (concentration).
+Here, particles are assumed to be spherical, but this function
+can be overloaded to account for different shape particles.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.run">
 <span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><span class="pre">fragmentmnp.output.FMNPOutput</span></a></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the model with the config and data provided at initialisation.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.output.FMNPOutput</span></code></a> object containing model output data.</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><a class="reference internal" href="#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.output.FMNPOutput</span></code></a> object containing model output</p></li>
+<li><p><em>data.</em></p></li>
+</ul>
+</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
@@ -405,10 +417,11 @@ daughter size classes.</p>
 <div class="math notranslate nohighlight">
 \[\frac{dc_k}{dt} = -k_{\text{frag},k,t} c_k +
 \Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k\]</div>
-<p>Here, <span class="math notranslate nohighlight">\(k_{\text{frag},k,t}\)</span> is the fragmentation rate of size class
-<cite>k</cite> on timestep <cite>t</cite>, <span class="math notranslate nohighlight">\(f_{i,k}\)</span> is the fraction of daughter fragments
-produced from a fragmenting particle of size <cite>i</cite> that are of size <cite>k</cite>, and
-<span class="math notranslate nohighlight">\(k_{\text{diss},k}\)</span> is the dissolution rate from size class <cite>k</cite>.</p>
+<p>Here, <span class="math notranslate nohighlight">\(k_{\text{frag},k,t}\)</span> is the fragmentation rate of size
+class <cite>k</cite> on timestep <cite>t</cite>, <span class="math notranslate nohighlight">\(f_{i,k}\)</span> is the fraction of daughter
+fragments produced from a fragmenting particle of size <cite>i</cite> that are of
+size <cite>k</cite>, and <span class="math notranslate nohighlight">\(k_{\text{diss},k}\)</span> is the dissolution rate from
+size class <cite>k</cite>.</p>
 <p>Mass concentrations are converted to particle number concentrations by
 assuming spherical particles with the density given in the input data.</p>
 </dd></dl>
