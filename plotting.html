@@ -293,6 +293,11 @@ const thebe_selector_output = ".output, .cell_output"
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#selecting-which-size-classes-to-plot">
+   Selecting which size classes to plot
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#advanced-control-through-matplotlib">
    Advanced control through matplotlib
   </a>
@@ -330,6 +335,11 @@ const thebe_selector_output = ".output, .cell_output"
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#legends-and-colourmaps">
    Legends and colourmaps
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#selecting-which-size-classes-to-plot">
+   Selecting which size classes to plot
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
@@ -443,6 +453,21 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
+<div class="section" id="selecting-which-size-classes-to-plot">
+<h2>Selecting which size classes to plot<a class="headerlink" href="#selecting-which-size-classes-to-plot" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">size_classes_to_plot</span></code> parameter lets you choose which size classes you want to plot. This might be useful if you are plotting the model output data against measurement data that is binned with a coarser size resolution, and you only wish to plot size classes for which there are measurement data. The <code class="docutils literal notranslate"><span class="pre">size_classes_to_plot</span></code> parameter takes a list of size class indices, with 0 representing the smallest size class. Setting <code class="docutils literal notranslate"><span class="pre">size_classes_to_plot</span></code> to <code class="docutils literal notranslate"><span class="pre">None</span></code> will result in all size classes being plotted, which is the default.</p>
+<p>For example, to plot only the smallest and largest size classes:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">size_classes_to_plot</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">n_size_classes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/plotting_11_0.png" src="_images/plotting_11_0.png" />
+</div>
+</div>
+</div>
 <div class="section" id="advanced-control-through-matplotlib">
 <span id="plotting-fig-ax"></span><h2>Advanced control through matplotlib<a class="headerlink" href="#advanced-control-through-matplotlib" title="Permalink to this headline">¶</a></h2>
 <p>If the simple options provided directly by the <code class="docutils literal notranslate"><span class="pre">plot()</span></code> function don’t meet your requirements, the underlying matplotlib <code class="docutils literal notranslate"><span class="pre">fig</span></code> and <code class="docutils literal notranslate"><span class="pre">ax</span></code> objects are returned from the function. For example, to change an axis label to a custom value:</p>
@@ -454,7 +479,7 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/plotting_11_0.png" src="_images/plotting_11_0.png" />
+<img alt="_images/plotting_13_0.png" src="_images/plotting_13_0.png" />
 </div>
 </div>
 <p>Note that, if <code class="docutils literal notranslate"><span class="pre">plot_dissolution=False</span></code> (default), then only one axis is created and returned by the function. If <code class="docutils literal notranslate"><span class="pre">plot_dissolution=True</span></code>, two axes are created and these are returned in a list:</p>
@@ -472,7 +497,7 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/plotting_13_0.png" src="_images/plotting_13_0.png" />
+<img alt="_images/plotting_15_0.png" src="_images/plotting_15_0.png" />
 </div>
 </div>
 </div>

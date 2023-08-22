@@ -334,7 +334,7 @@ const thebe_selector_output = ".output, .cell_output"
              <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span>
              <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-             <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+             <span class="n">size_classes_to_plot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Plot the output data by choosing from a number of</span>
 <span class="sd">        pre-defined plot types.</span>
@@ -368,6 +368,11 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">            Note that these are case-sensitive.</span>
 <span class="sd">        show_legend: bool, default=True</span>
 <span class="sd">            Should size classes be shown on a legend?</span>
+<span class="sd">        size_classes_to_plot: list of ints, default=None</span>
+<span class="sd">            Only plot specific size classes by providing a list of</span>
+<span class="sd">            size class indices to plot, where 0 is the index of the</span>
+<span class="sd">            smallest size class. By default, all size classes are</span>
+<span class="sd">            plotted.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -394,6 +399,9 @@ const thebe_selector_output = ".output, .cell_output"
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid option for plot `type`: </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s1">. &#39;</span>
                              <span class="s1">&#39;Should be `particle_number_conc` or&#39;</span>
                              <span class="s1">&#39;`mass_conc`.&#39;</span><span class="p">)</span>
+        <span class="c1"># Only plot the size classes we have been asked to</span>
+        <span class="k">if</span> <span class="n">size_classes_to_plot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">yvals</span> <span class="o">=</span> <span class="n">yvals</span><span class="p">[:,</span> <span class="n">size_classes_to_plot</span><span class="p">]</span>
         <span class="c1"># Set the xaxis label</span>
         <span class="n">xlabel</span> <span class="o">=</span> <span class="s1">&#39;Time&#39;</span>
         <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -403,7 +411,7 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="n">cmap_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colormaps</span><span class="p">[</span><span class="n">cmap</span><span class="p">]</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.prop_cycle&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">plt</span><span class="o">.</span><span class="n">cycler</span><span class="p">(</span><span class="s1">&#39;color&#39;</span><span class="p">,</span>
-                       <span class="n">cmap_</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">)))</span>
+                       <span class="n">cmap_</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">yvals</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
 
         <span class="c1"># Create the figure and axes - we need to this because we need to</span>
         <span class="c1"># add a second axis for the dissolution data</span>
@@ -428,9 +436,12 @@ const thebe_selector_output = ".output, .cell_output"
         <span class="c1"># Add a size class legend, if requested</span>
         <span class="k">if</span> <span class="n">show_legend</span><span class="p">:</span>
             <span class="c1"># Construct the legend with(out) units</span>
-            <span class="n">legend</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">:</span><span class="s1">&lt;1g</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">]</span>
+            <span class="n">legend</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">d</span><span class="si">:</span><span class="s1">&lt;1g</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">legend</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sc</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">unit_labels</span><span class="p">[</span><span class="s2">&quot;length&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">sc</span> <span class="ow">in</span> <span class="n">legend</span><span class="p">]</span>
+            <span class="c1"># Only show the requested size classes on the legend</span>
+            <span class="k">if</span> <span class="n">size_classes_to_plot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">legend</span> <span class="o">=</span> <span class="n">legend</span><span class="p">[</span><span class="n">size_classes_to_plot</span><span class="p">]</span>
             <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">legend</span><span class="p">)</span>
 
         <span class="c1"># Create and format the dissolution y axis</span>
