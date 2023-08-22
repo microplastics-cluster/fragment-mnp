@@ -144,7 +144,7 @@ def test_mass_to_particle_number_overload():
     def cube_mass_to_particle_number(self, mass):
         # Presuming particles are cubes instead and the particle
         # size distribution is the length of each face
-        n = mass / (self.density + self.psd[:, None] ** 3)
+        n = mass / (self.density * self.psd[:, None] ** 3)
         return n
 
     # Assign this new function

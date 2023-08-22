@@ -77,7 +77,7 @@ class FMNPOutput():
              units=None,
              cmap='viridis',
              show_legend=True,
-             ax=None):
+             size_classes_to_plot=None):
         """
         Plot the output data by choosing from a number of
         pre-defined plot types.
@@ -111,6 +111,11 @@ class FMNPOutput():
             Note that these are case-sensitive.
         show_legend: bool, default=True
             Should size classes be shown on a legend?
+        size_classes_to_plot: list of ints, default=None
+            Only plot specific size classes by providing a list of
+            size class indices to plot, where 0 is the index of the
+            smallest size class. By default, all size classes are
+            plotted.
 
         Returns
         -------
@@ -137,6 +142,9 @@ class FMNPOutput():
             raise ValueError(f'Invalid option for plot `type`: {type}. '
                              'Should be `particle_number_conc` or'
                              '`mass_conc`.')
+        # Only plot the size classes we have been asked to
+        if size_classes_to_plot is not None:
+            yvals = yvals[:, size_classes_to_plot]
         # Set the xaxis label
         xlabel = 'Time'
         if unit_labels is not None:
@@ -146,7 +154,7 @@ class FMNPOutput():
         cmap_ = plt.colormaps[cmap]
         plt.rcParams['axes.prop_cycle'] = \
             plt.cycler('color',
-                       cmap_(np.linspace(0, 1, self.n_size_classes)))
+                       cmap_(np.linspace(0, 1, yvals.shape[1])))
 
         # Create the figure and axes - we need to this because we need to
         # add a second axis for the dissolution data
@@ -171,9 +179,12 @@ class FMNPOutput():
         # Add a size class legend, if requested
         if show_legend:
             # Construct the legend with(out) units
-            legend = [f'{d:<1g}' for d in self.psd]
+            legend = np.array([f'{d:<1g}' for d in self.psd])
             if unit_labels is not None:
                 legend = [f'{sc} {unit_labels["length"]}' for sc in legend]
+            # Only show the requested size classes on the legend
+            if size_classes_to_plot is not None:
+                legend = legend[size_classes_to_plot]
             ax1.legend(legend)
 
         # Create and format the dissolution y axis
