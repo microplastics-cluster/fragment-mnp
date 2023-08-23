@@ -43,7 +43,8 @@ class FragmentMNP():
         self.n_size_classes = self.config['n_size_classes']
         self.n_timesteps = self.config['n_timesteps']
         self.t_eval = np.arange(0, self.n_timesteps) \
-            if self.config['solver_t_eval'] else self.config['solver_t_eval']
+            if self.config['solver_t_eval'] == 'integer' \
+            else self.config['solver_t_eval']
         # Initial concentrations
         self.initial_concs = np.array(data['initial_concs'])
         # Set the particle phys-chem properties
