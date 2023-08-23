@@ -22,9 +22,12 @@ def _is_positive_array(arr):
     """
     is_array = True
     try:
-        for x in arr:
-            if x < 0.0:
-                is_array = False
+        # Check it's iterable
+        _ = iter(arr)
+        # Check if any element is < 0
+        nparr = np.array(arr)
+        if np.any(nparr < 0.0):
+            is_array = False
     except TypeError:
         is_array = False
     return is_array
@@ -55,9 +58,9 @@ config_schema = Schema({
     Optional('solver_rtol', default=1e-3): float,
     # Max step size for the ODE solver
     Optional('solver_max_step', default=np.inf): float,
-    Optional('solver_t_eval', default='integer'): Or(lambda x: x == 'integer',
-                                                     None,
-                                                     _is_positive_array)
+    Optional('solver_t_eval', default='integer'): Or(_is_positive_array,
+                                                     'integer',
+                                                     None)
 })
 
 
