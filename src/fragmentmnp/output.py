@@ -179,9 +179,10 @@ class FMNPOutput():
         # Add a size class legend, if requested
         if show_legend:
             # Construct the legend with(out) units
-            legend = np.array([f'{d:<1g}' for d in self.psd])
+            legend = [f'{d:<1g}' for d in self.psd]
             if unit_labels is not None:
                 legend = [f'{sc} {unit_labels["length"]}' for sc in legend]
+            legend = np.array(legend)
             # Only show the requested size classes on the legend
             if size_classes_to_plot is not None:
                 legend = legend[size_classes_to_plot]
