@@ -20,7 +20,7 @@ Here is a bare minimum example. See also the [](example-usage.ipynb).
 
 ```python
 from fragmentmnp import FragmentMNP
-from fragmentmnp.examples import minimal_config, minmal_data
+from fragmentmnp.examples import minimal_config, minimal_data
 
 # Create the model, pass it example config and data, then run it
 fmnp = FragmentMNP(minimal_config, minimal_data)
