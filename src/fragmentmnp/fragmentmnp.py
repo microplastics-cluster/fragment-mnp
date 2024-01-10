@@ -81,7 +81,7 @@ class FragmentMNP():
 
         .. math::
             \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
-            \Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k
+            \Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
 
         Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size
         class `k`, :math:`f_{i,k}` is the fraction of daughter
