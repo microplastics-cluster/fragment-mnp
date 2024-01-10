@@ -255,7 +255,7 @@ const thebe_selector_output = ".output, .cell_output"
               <div>
                 
   <h1>Source code for fragmentmnp.fragmentmnp</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Tuple</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
 <span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">solve_ivp</span>
@@ -337,11 +337,11 @@ const thebe_selector_output = ".output, .cell_output"
 <span class="sd">        daughter size classes.</span>
 
 <span class="sd">        .. math::</span>
-<span class="sd">            \frac{dc_k}{dt} = -k_{\text{frag},k,t} c_k +</span>
+<span class="sd">            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +</span>
 <span class="sd">            \Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k</span>
 
-<span class="sd">        Here, :math:`k_{\text{frag},k,t}` is the fragmentation rate of size</span>
-<span class="sd">        class `k` on timestep `t`, :math:`f_{i,k}` is the fraction of daughter</span>
+<span class="sd">        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size</span>
+<span class="sd">        class `k`, :math:`f_{i,k}` is the fraction of daughter</span>
 <span class="sd">        fragments produced from a fragmenting particle of size `i` that are of</span>
 <span class="sd">        size `k`, and :math:`k_{\text{diss},k}` is the dissolution rate from</span>
 <span class="sd">        size class `k`.</span>
@@ -371,7 +371,7 @@ const thebe_selector_output = ".output, .cell_output"
             <span class="c1"># Return the solution for all of the size classes</span>
             <span class="k">return</span> <span class="n">dcdt</span>
 
-        <span class="c1"># Numerically solve this given the initial values for n</span>
+        <span class="c1"># Numerically solve this given the initial values for c</span>
         <span class="n">soln</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">fun</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
                          <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_method&#39;</span><span class="p">],</span>
                          <span class="n">t_span</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">),</span>
