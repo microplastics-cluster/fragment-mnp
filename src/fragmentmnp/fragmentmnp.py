@@ -1,4 +1,4 @@
-from typing import NamedTuple, Tuple
+from typing import Tuple
 import numpy as np
 import numpy.typing as npt
 from scipy.integrate import solve_ivp
@@ -80,11 +80,11 @@ class FragmentMNP():
         daughter size classes.
 
         .. math::
-            \frac{dc_k}{dt} = -k_{\text{frag},k,t} c_k +
+            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
             \Sigma_i f_{i,k} k_{\text{frag},i,t} c_i - k_{\text{diss},k} c_k
 
-        Here, :math:`k_{\text{frag},k,t}` is the fragmentation rate of size
-        class `k` on timestep `t`, :math:`f_{i,k}` is the fraction of daughter
+        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size
+        class `k`, :math:`f_{i,k}` is the fraction of daughter
         fragments produced from a fragmenting particle of size `i` that are of
         size `k`, and :math:`k_{\text{diss},k}` is the dissolution rate from
         size class `k`.
@@ -114,7 +114,7 @@ class FragmentMNP():
             # Return the solution for all of the size classes
             return dcdt
 
-        # Numerically solve this given the initial values for n
+        # Numerically solve this given the initial values for c
         soln = solve_ivp(fun=f,
                          method=self.config['solver_method'],
                          t_span=(0, self.n_timesteps),
