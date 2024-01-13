@@ -1,0 +1,15 @@
+name: fmnp
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy
+  - scipy
+  - matplotlib
+  - schema
+  # Development
+  - pytest
+  - pytest-cov
+  - flake8
+  - ipykernel
+  - ipywidgets

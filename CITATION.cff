@@ -1,0 +1,33 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: FRAGMENT-MNP
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Sam
+    family-names: Harrison
+    email: sharrison@ceh.ac.uk
+    affiliation: UK Centre for Ecology & Hydrology
+    orcid: 'https://orcid.org/0000-0001-8491-4720'
+  - given-names: Brandon
+    family-names: Lopez
+    email: brandon.d.lopez@duke.edu
+    affiliation: Duke University
+  - given-names: Mark
+    family-names: Wiesner
+    email: wiesner@duke.edu
+    affiliation: Duke University
+repository-code: 'https://github.com/microplastics-cluster/fragment-mnp'
+url: 'https://microplastics-cluster.github.io/fragment-mnp'
+abstract: >-
+  FRAGMENT-MNP is model of Micro and NanoPlastic
+  FRAGMentation in the ENvironmenT.
+keywords:
+  - microplastics
+  - nanoplastics
+  - environment
+license: BSD-3-Clause
