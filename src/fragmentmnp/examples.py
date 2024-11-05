@@ -22,7 +22,6 @@ full_config = {
     'particle_size_range': [-9, -3],
     'n_timesteps': 100,
     'dt': 1,
-    'k_diss_scaling_method': 'constant',
     'solver_method': 'RK45',
     'solver_rtol': 1e-3,
     'solver_atol': 1e-6,
@@ -37,15 +36,20 @@ minimal_config = {
     'n_timesteps': 100,
 }
 
+# Example rate constant distribution parameters
+_k_dist_params = {
+    f'{n}_{x}': 1.0 if ('A' in n) or ('gamma' in n) else 0.0
+    for n in ['A', 'alpha', 'B', 'beta', 'C', 'gamma', 'D', 'delta']
+    for x in ['t', 's']
+}
+
 # Example model data
 full_data = {
     'initial_concs': [42.0] * 7,
     'density': 1380,              # PET density [kg/m3]
-    'k_frag': 0.01,
-    'theta_1': 0.0,
-    'k_frag_tau': 0.0,
-    'k_diss': 0.0,
-    'k_diss_gamma': 1.0,
+    'k_frag': {'average': 0.01,
+               **_k_dist_params},
+    'k_diss': {'average': 0.0},
     'fsd_beta': 0.0
 }
 
