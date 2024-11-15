@@ -3,9 +3,10 @@ Unit tests for the config and data validation
 """
 import numpy as np
 from schema import SchemaError
+from fragmentmnp import FragmentMNP
 from fragmentmnp.validation import validate_config, validate_data
 import fragmentmnp.examples
-from fragmentmnp._errors import FMNPIncorrectDistributionLength
+from fragmentmnp._errors import FMNPIncorrectDistributionLength, FMNPDistributionValueError
 
 
 # Get some valid config from the examples module
@@ -119,20 +120,6 @@ def test_valid_minimal_data():
     assert validated['theta_1'] == 0.0
 
 
-def test_array_or_scalar():
-    """
-    Test that k_frag and k_diss can be either an array of
-    ints/floats or a scalar
-    """
-    valid_data = valid_minimal_data.copy()
-    valid_data['k_frag'] = np.array([1, 2, 3, 4, 5, 6, 7])
-    valid_data['k_diss'] = np.array([1, 2, 3, 4, 5, 6, 7])
-    try:
-        validate_data(valid_data, valid_config)
-        assert True
-    except SchemaError:
-        assert False
-
 
 def test_invalid_k_frag_distribution_length():
     """
@@ -175,6 +162,22 @@ def test_negative_initial_concs():
         validate_data(invalid_data, valid_config)
         assert False
     except SchemaError:
+        assert True
+
+
+def test_k_distribution_negative_values():
+    """
+    Test that specifying k distribution parameters that
+    result in negative values returns an error
+    """
+    invalid_data = valid_minimal_data.copy()
+    # Set a negative baseline correction with a constant
+    # distribution to make the entire k_frag array negative
+    invalid_data['k_frag'] = {'k_f': 0.0, 'k_1': -1.0}
+    try:
+        _ = FragmentMNP(valid_minimal_config, invalid_data)
+        assert False
+    except FMNPDistributionValueError:
         assert True
 
 

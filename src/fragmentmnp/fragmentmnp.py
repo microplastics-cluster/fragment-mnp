@@ -6,7 +6,7 @@ from scipy import interpolate
 from schema import SchemaError
 from . import validation
 from .output import FMNPOutput
-from ._errors import FMNPNumericalError
+from ._errors import FMNPNumericalError, FMNPDistributionValueError
 
 
 class FragmentMNP():
@@ -64,17 +64,28 @@ class FragmentMNP():
         # sure this is so) and use that as the average.
         for k in ['k_frag', 'k_diss']:
             if isinstance(data[k], dict):
-                k_av = data[k]['average']
+                k_f = data[k]['k_f']
+                k_0 = data[k]['k_0']
                 # Get the params from the dict, excluding the average
-                params = {n: p for n, p in data[k].items() if n != 'average'}
+                params = {n: p for n, p in data[k].items()
+                          if n not in ['k_f', 'k_0']}
             else:
-                k_av = data[k]
+                k_f = data[k]
+                k_0 = 0.0
                 params = {}
             # Calculate the 2D (t, s) distribution
-            k_dist = self.set_k_distribution(k_av,
-                                             dims={'s': self.surface_areas,
+            k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
                                                    't': self.t_grid},
+                                             k_f=k_f, k_0=k_0,
                                              params=params)
+            # Check no values are less than zero
+            if np.any(k_dist < 0.0):
+                msg = (f'Value for {k} distribution calculated from input '
+                       'data resulted in negative values. Ensure '
+                       f'distribution params are such that all {k} values'
+                       'are positive.')
+                raise FMNPDistributionValueError(msg)
+
             # Set self.k_[frag|diss] as this distribution
             setattr(self, k, k_dist)
 
@@ -85,7 +96,6 @@ class FragmentMNP():
         Returns
         -------
         :class:`fragmentmnp.output.FMNPOutput` object containing model output
-        data.
 
         Notes
         -----
@@ -116,7 +126,7 @@ class FragmentMNP():
             dcdt = np.empty(N)
             # Interpolate the time-dependent parameters to the specific
             # timestep given (which will be a float, rather than integer index)
-            t_model = np.arange(self.n_timesteps)
+            t_model = np.arange(1, self.n_timesteps + 1)
             f_frag = interpolate.interp1d(t_model, self.k_frag, axis=1,
                                           fill_value='extrapolate')
             f_diss = interpolate.interp1d(t_model, self.k_diss, axis=1,
@@ -185,19 +195,35 @@ class FragmentMNP():
         return psd
 
     @staticmethod
-    def set_k_distribution(k_av: float, dims: dict,
+    def set_k_distribution(dims: dict, k_f: float, k_0: float = 0.0,
                            params: dict = {}) -> npt.NDArray[np.float64]:
         r"""
-        Create a distribution for the scalar value `k_av` based on the
-        parameters and dimensions provided. The distribution will be a function
-        of power law, exponential, logarithmic and logistic regressions, and
-        have dimensions given by `dims`.
+        Create a distribution based on the rate constant scaling factor ``k_f``
+        and baseline adjustment factor ``k_0``. The distribution will be a
+        compound combination of power law / polynomial, exponential,
+        logarithmic and logistic regressions, encapsulated in the function
+        :math:`X(x)`, and have dimensions given by `dims`. For a distribution
+        with `D` dimensions:
+
+        .. math::
+            k(\mathbf{x}) = k_f \prod_{d=1}^D X(x_d) + k_0
+
+        :math:`X(x)` is then given either by:
+
+        .. math::
+            X(x) = A_x x^{\alpha_x} \cdot B_x e^{-\beta_x x}
+            \cdot C_x \ln (\gamma_x x) \cdot
+            \frac{D_x}{1 + e^{-\delta_{x,1}(x - \delta_{x,2})}}
+
+        or the user can specify a polynomial instead of the power law term:
+
+        .. math::
+            X(x) = \sum_{n=1}^N A_{x,n} \cdot x^n B_x e^{-\beta_x x} \cdot
+            C_x \ln (\gamma_x x) \cdot \frac{D_x}{1 + e^{-\delta_{x,1}(t
+            - \delta_{x,2})}}
 
         Parameters
         ----------
-        k_av : float
-            The scalar value to distribute, which will be the mean of the
-            resulting distribution.
         dims : dict
             A dictionary that maps dimension names to their grids, e.g. to
             create a distribution of time `t` and particle surface area `s`,
@@ -205,7 +231,11 @@ class FragmentMNP():
             timesteps and particle surface area bins over which to create this
             distribution. The dimension names must correspond to the subscripts
             used in `params`.
-        params : dict
+        k_f : float
+            Rate constant scaling factor
+        k_0 : float, default=0
+            Rate constant baseline adjustment factor
+        params : dict, default={}
             A dictionary of values to parameterise the distribution with. See
             the notes below.
 
@@ -217,42 +247,64 @@ class FragmentMNP():
         Notes
         -----
         `k` is modelled as a function of the dims provided, and the model
-        builds this distribution as a combination of power law, exponential,
-        logarithmic and logistic regression, enabling a broad range of
-        dependencies to be accounted for. This distribution is intended to be
-        applied to rate constant used in the model, such as `k_frag` and
-        `k_diss`. The resultant distribution is normalised such that the mean
-        `k` value is the `k_av` value provided. More specifically:
+        builds this distribution as a combination of power law / polynomial,
+        exponential, logarithmic and logistic regressions, enabling a broad
+        range of dependencies to be accounted for. This distribution is
+        intended to be applied to rate constants used in the model, such as
+        `k_frag` and `k_diss`. The `params` dict gives the parameters used
+        to construct this distribution using the equation above. That is,
+        :math:`A_{x}` (where `x` is the dimension), :math:`\alpha_{x_i}` etc
+        are given in the `params` dict as e.g. `A_t`, `alpha_t`, where the
+        subscript (`t` in this case) is the name of the dimension corresponding
+        to the `dims` dict.
 
-        .. math::
-            \Gamma(\mathbf{x}) = \sum_{i = 1}^{n} \left(
-            A_{x_i} x_i^{\alpha_{x_i}} + B_{x_i} e^{-\beta_{x_i} x_i}
-            + C_{x_i} \ln (\gamma_{x_i} x_i) + \frac{D_{x_i}}{1 + e^{-\delta_{x_i} (x_i -
-            \overline{x_i})}} \right)
+        This function does not require any parameters to be present in
+        `params`. Non-present values are defaulted to values that remove the
+        influence of that particular expression, and letting all parameters
+        default results in a constant `k` distribution.
 
-        .. math::
-            k(\mathbf{x}) = k_\text{av} \cdot
-            \frac{\Gamma(\mathbf{x})}{\overline{\Gamma(\mathbf{x})}}
+        More specifically, the params that can be specified are:
 
-        Here, :math`A_{x_i}` (where `x_i` is the dimension),
-        :math`\alpha_{x_i}` etc are fitting parameters, provided in the
-        `params` dict as e.g. `A_t`, `alpha_t`, where the subscript (`t` in
-        this case) is the name of the dimension corresponding to the `dims`
-        dict. `n` is the number of dimensions, and so the summation is across
-        the dimensions. :math`\overline\Gamma(\mathbf{x})` is the mean of this
-        function, and so the second equation normalises `k` such that the mean
-        of :math`k(\mathbf{x})` is the value provided by `k_av`.  This function
-        does not require any parameters to be present in `params`, and
-        non-present parameters are defaulted to zero, which the exception of
-        `A` and `gamma`, which are defaulted to 1. That is, the default
-        parameters result in the removal of the influence of that particular
-        relationship, and letting all parameters default results in a `k`
-        distribution that is constant in time and space.
+        A_x : array-like or scalar, default=1
+            Power law coefficient(s) for dim `x` (e.g. ``A_t`` for dim `t`).
+            If a scalar is provided, this is used as the coefficient for a
+            power law expression with ``alpha_x`` as the exponent. If a list is
+            provided, these are used as coefficients in a polynomial
+            expression, where the order of the polynomial is given by the
+            length of the list. For example, if a length-2 list ``A_t=[2, 3]``
+            is given, then the resulting polynomial will be :math:`3t^2 + 2t`
+            (note the list is in *ascending* order of polynomials).
+        alpha_x : scalar, default=0
+            If `A_x` is a scalar, `alpha_x` is the exponent for this power law
+            expression. For example, if ``A_t=2`` and ``alpha_t=0.5``, the
+            resulting power law will be :math:`2t^{0.5}`.
+        B_x : float, default=1
+            Exponential coefficient.
+        beta_x : float, default=0
+            Exponential scaling factor.
+        C_x : float or None, default=None
+            If a scalar is given, this is the coefficient for the logarithmic
+            express. If ``None`` is given, the logarithmic express is set to
+            1 (i.e. it is ignored).
+        gamma_x : float, default=1
+            Logarithmic scaling factor.
+        D_x : float or None, default=None
+            If a scalar is given, this is the coefficient for the logistic
+            expression. If `None` is given, the logistic expression is set
+            to 1.
+        delta1_x : float, default=1
+            Logistic growth rate (steepness of the logistic curve).
+        delta2_x : float, default=None
+            Midpoint of the logistic curve, which denotes the `x` value where
+            the logistic curve is at its midpoint. If `None` is given, the
+            midpoint is assumed to be the at the midpoint of the `x`. For
+            example, for the time dimension `t`, if the model timesteps go
+            from 1 to 100, then the default is ``delta2_t=50``.
 
-        ```{note} The parameters used for calculating distributions such as
-        `k_frag` and `k_diss` have changed from previous versions, which only
-        allowed for a power law relationship. This causes breaking changes
-        after v0.1.0. ```
+        .. warning:: The parameters used for calculating distributions such as
+            `k_frag` and `k_diss` have changed from previous versions, which
+            only allowed for a power law relationship. This causes breaking
+            changes after v0.1.0.
         """
         if dims == {}:
             raise Exception('Trying to create k distribution but `dims` dict',
@@ -263,126 +315,51 @@ class FragmentMNP():
             # indexing order with 'ij')
             grid = np.meshgrid(*[x for x in dims.values()],
                                indexing='ij')
-            # Create an empty grid for k to begin with
-            k = np.zeros(grid[0].shape)
-            # Loop over the dimensions as provided by the `dims` dict
-            for i, (name, x) in enumerate(dims.items()):
-                # Get the mesh grid coordinates for this dimension and
-                # normalise it so that coefficients act similarly in each
-                # dimension, regardless of their index values relative to
-                # each other
-                x = grid[i] / np.mean(grid[i])
+            # List of the regressions for each dimension, which will be
+            # populated when we loop over the dimensions
+            X = []
+            # Loop over the dimensions
+            for i, x in enumerate(grid):
+                # Get the name of this dim
+                name = list(dims.keys())[i]
                 # Pull out the params for convenience
                 A = float(params.get(f'A_{name}', 1.0))
                 alpha = float(params.get(f'alpha_{name}', 0.0))
-                B = float(params.get(f'B_{name}', 0.0))
+                B = float(params.get(f'B_{name}', 1.0))
                 beta = float(params.get(f'beta_{name}', 0.0))
-                C = float(params.get(f'C_{name}', 0.0))
+                C = params.get(f'C_{name}', None)
                 gamma = float(params.get(f'gamma_{name}', 1.0))
-                D = float(params.get(f'D_{name}', 0.0))
-                delta = float(params.get(f'delta_{name}', 0.0))
-                # Add this dimension's contribution to the overall distribution
-                Gamma = A*x**alpha + B*np.exp(-beta*x) + C*np.log(gamma*x) \
-                    + D/(1 + np.exp(-delta*(x - np.mean(x))))
-                # Normalize this dim based on k_av and add to the overall
-                # distribution
-                k += k_av * Gamma / np.mean(Gamma)
-            # Return the mean k distribution
-            return k / len(dims)
-
-    # def _set_k_frag(self, k_frag_av: float, params: dict) -> npt.NDArray[np.float64]:
-    #     r"""
-    #     Set the fragmentation rate `k_frag` distribution based on the
-    #     parameters provided.
-
-    #     Parameters
-    #     ----------
-    #     k_frag_av : float
-    #         The average `k_frag` across time and particle
-    #         surface area
-    #     params : dict
-    #         The parameters used to build the `k_frag` distribution. See
-    #         the notes below
-
-    #     Returns
-    #     -------
-    #     k_frag = np.ndarray (n_timesteps, n_size_classes)
-    #         Fragmentation rate array over timesteps and size classes
-
-    #     Notes
-    #     -----
-    #     `k_frag` is modelled as a function of particle surface area `s`
-    #     and time `t`, and the model builds this distribution as a
-    #     combination of power law, exponential, logarithmic and logistic
-    #     regressions, enabling a broad range of time and size dependencies
-    #     to the accounted for. The resultant distribution is normalised
-    #     such that the mean `k_frag` value is the `k_frag_av` value provided.
-    #     More specifically:
-
-    #     .. math::
-    #         \Gamma(s,t) = \sum_{x \in \{ t,s \}} \left(
-    #         A_x x^{\alpha_x} + B_x e^{-\beta_x x}
-    #         + C_x \ln (\gamma_x x) + \frac{D_x}{1 + e^{-\delta_x (x -
-    #         \overline{x})}} \right)
-
-    #     .. math::
-    #         k_\text{frag}(s,t) = k_\text{frag,av} \cdot
-    #         \frac{\Gamma(s,t)}{\overline{\Gamma(s,t)}}
-
-    #     Here, :math`A_x` (where `x` is `s` - surface area - or `t` - time),
-    #     :math`\alpha_x` etc. are fitting parameters, provided in the `params`
-    #     dict as `A_t`, `alpha_t`, etc. :math`\overline\Gamma(s,t)` is the
-    #     mean of this function, and so the second equation normalises `k_frag`
-    #     such that the mean of :math`k_\text{frag}(s,t)` is the value provided
-    #     by `k_frag_av`. This function does not require any parameters to be
-    #     present in `params`, and non-present parameters are defaulted to zero,
-    #     which the exception of `gamma`, which is defaulted to 1. This is, the
-    #     default parameters result in the removal of the influence of that
-    #     particular relationship, and letting all parameters default results in
-    #     a `k_frag` that is constant in time and space.
-
-    #     If you wish to use an alternative `k_frag` distribution to that made
-    #     possible by this function, you can overwrite the `self.k_frag` variable
-    #     after initialisation. `self.k_frag` must be an ndarray of shape
-    #     (n_timesteps, n_size_classes).
-
-    #     ```{note}
-    #     The parameters used for calculating `k_frag` have changed from
-    #     previous versions, which only allowed for a power law relationship.
-    #     This causes breaking changes after v0.1.0.
-    #     ```
-    #     """
-    #     # Calculate the particle surface area from the size distributions
-    #     s = 
-    #     # Loop over our dimensions (time and size) to get the relevant
-    #     # parameters from the params dict
-    #     for x in ['t', 's']:
-    #         # Pull out the params for convenience
-    #         A, alpha = params.get(f'A_{x}', 0.0), params.get(f'alpha_{x}', 0.0)
-    #         B, beta = params.get(f'B_{x}', 0.0), params.get(f'beta_{x}', 0.0)
-    #         C, gamma = params.get(f'C_{x}', 0.0), params.get(f'gamma_{x}', 1.0)
-    #         D, delta = params.get(f'D_{x}', 0.0), params.get(f'delta_{x}', 0.0)
-    #         # Calculate the non-normalised k_frag
-    #         Gamma = params.get(f'A_{x}', 0.0)
-    #     # Check if k_frag is a scalar value, in which case we need
-    #     # to calculate a distribution based on theta1
-    #     if isinstance(k_frag, (int, float)):
-    #         # Get the proportionality constant
-    #         k_prop = k_frag / (np.median(psd) ** (2 * theta_1))
-    #         # Now create the array of k_frags
-    #         k_frag_dist = k_prop * psd ** (2 * theta_1)
-    #         # We presume fragmentation from the smallest size class
-    #         # can't happen, and the only loss from this size class
-    #         # is from dissolution
-    #         k_frag_dist[0] = 0.0
-    #     # Else just set k_frag directly from the provided array.
-    #     # Validation makes sure this is the correct length
-    #     else:
-    #         k_frag_dist = np.array(k_frag)
-    #     # Now set the time dependence of k_frag using tau
-    #     t = np.arange(1, n_timesteps + 1)
-    #     k_frag_2d = k_frag_dist * t[:, np.newaxis] ** tau / np.median(t) ** tau
-    #     return k_frag_2d
+                D = params.get(f'D_{name}', None)
+                delta_1 = float(params.get(f'delta1_{name}', 1.0))
+                delta_2 = params.get(f'delta2_{name}', None)
+                # Let users specify a polynomial by listing A coefficients,
+                # presuming the exponents (alpha) will be 1, 2, 3 etc
+                # corresponding to the list elements in A. Otherwise, use
+                # A and alpha as a power law A*x**alpha
+                if isinstance(A, (list, tuple, np.ndarray)):
+                    powers = np.arange(1, len(A) + 1)
+                    power_x = 0.0
+                    for i, power in enumerate(powers):
+                        power_x = power_x + A[i] * x**power
+                else:
+                    power_x = A * x**alpha
+                # Exponential term
+                exp_x = B * np.exp(-beta*x)
+                # Only calculate the ln term if C is not None
+                ln_x = (float(C) * np.log(gamma*x)) if C is not None else 1.0
+                # If the logistic delta_2 term (the x value at the midpoint
+                # along the k axis) isn't specified, # then calculate it as
+                # halfway along the x axis
+                if (delta_2 is None) and (D is not None):
+                    delta_2 = (x.max() - x.min()) / 2
+                # Calculate the logistic contribution, only if D is not None
+                logit_x = float(D) / (1 + np.exp(-delta_1 * (x - float(delta_2)))) \
+                    if D is not None else 1.0
+                # Multiply all the expressions together for this dimension
+                X.append(power_x * exp_x * ln_x * logit_x)
+            # Calculate the final distribution by multiplying X across the
+            # dimensions
+            return k_f * np.prod(X, axis=0) + k_0
 
     @staticmethod
     def set_fsd(n: int,

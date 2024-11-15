@@ -37,19 +37,28 @@ minimal_config = {
 }
 
 # Example rate constant distribution parameters
-_k_dist_params = {
-    f'{n}_{x}': 1.0 if ('A' in n) or ('gamma' in n) else 0.0
-    for n in ['A', 'alpha', 'B', 'beta', 'C', 'gamma', 'D', 'delta']
-    for x in ['t', 's']
-}
+_k_dist_params = {}
+for x in ['t', 's']:
+    _k_dist_params[f'A_{x}'] = 1.0
+    _k_dist_params[f'alpha_{x}'] = 0.0
+    _k_dist_params[f'B_{x}'] = 1.0
+    _k_dist_params[f'beta_{x}'] = 0.0
+    _k_dist_params[f'C_{x}'] = None
+    _k_dist_params[f'gamma_{x}'] = 1.0
+    _k_dist_params[f'D_{x}'] = None
+    _k_dist_params[f'delta1_{x}'] = 1.0
+    _k_dist_params[f'delta2_{x}'] = None
 
 # Example model data
 full_data = {
     'initial_concs': [42.0] * 7,
     'density': 1380,              # PET density [kg/m3]
-    'k_frag': {'average': 0.01,
+    'k_frag': {'k_f': 0.01,
+               'k_0': 0.0,
                **_k_dist_params},
-    'k_diss': {'average': 0.0},
+    'k_diss': {'k_f': 0.0,
+               'k_0': 0.0,
+               **_k_dist_params},
     'fsd_beta': 0.0
 }
 

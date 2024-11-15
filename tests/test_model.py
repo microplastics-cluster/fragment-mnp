@@ -23,23 +23,27 @@ def test_model_run():
     """
     Test the model run by check the outputs
     """
-    output = FragmentMNP(minimal_config, minimal_data).run()
+    fmnp = FragmentMNP(minimal_config, minimal_data)
+    output = fmnp.run()
+    print(fmnp.k_diss)
     assert (
-        np.array_equal(output.t, np.arange(minimal_config['n_timesteps'])) and
-        np.allclose(output.c.sum(), 29400.0)
+        np.array_equal(output.t, np.arange(1,
+                                           minimal_config['n_timesteps'] + 1))
+        and np.allclose(output.c.sum(), 29400.0)
     )
 
 
 def test_model_init_integer_t_eval():
     """
     Test that specifying an integer t_eval results in the correct
-    monotonically spaced t_eval timesteps 
+    monotonically spaced t_eval timesteps
     """
     config_t_eval = minimal_config.copy()
     config_t_eval['solver_t_eval'] = 'integer'
     fmnp = FragmentMNP(config_t_eval, minimal_data)
     np.testing.assert_array_equal(fmnp.t_eval,
-                                  np.arange(0, config_t_eval['n_timesteps']))
+                                  np.arange(1,
+                                            config_t_eval['n_timesteps'] + 1))
 
 
 def test_fsd_equal_split():

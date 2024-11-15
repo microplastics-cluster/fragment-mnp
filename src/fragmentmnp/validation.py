@@ -8,28 +8,6 @@ import numpy as np
 from schema import Schema, Or, And, Optional
 from ._errors import FMNPIncorrectDistributionLength
 
-# The schema that particle size ranges should follow
-particle_size_range_schema = And(Or((int, float), [int, float]),
-                                 And(lambda d: len(d) == 2,
-                                     error='particle_size_range must ' +
-                                           'be a length-2 iterable'))
-
-# The schema that rate constant 2D (time and particle size)
-# distributions, like k_frag and k_diss, should follow
-k_dist_2d_schema = Or(
-    Or(And(int, lambda x: x >= 0.0),
-       And(float, lambda x: x >= 0.0)),
-    {
-        'average': And(Or(int, float), lambda x: x >= 0.0),
-        **{
-            Optional(f'{name}_{x}'): Or(int, float)
-            for x in ['t', 's']
-            for name in ['A', 'alpha', 'B', 'beta', 'C', 'gamma', 'D', 'delta']
-        }
-    }
-)
-
-
 def _is_positive_array(arr):
     """
     Check if arr is iterable and all elements
@@ -46,6 +24,46 @@ def _is_positive_array(arr):
     except TypeError:
         is_array = False
     return is_array
+
+
+# The schema that particle size ranges should follow
+particle_size_range_schema = And(Or((int, float), [int, float]),
+                                 And(lambda d: len(d) == 2,
+                                     error='particle_size_range must ' +
+                                           'be a length-2 iterable'))
+
+
+# The schema that rate constant 2D (time and surface area)
+# distributions, like k_frag and k_diss, should follow. Either
+# a scalar is given (and it is treated as constant), or
+# a dict is given with the params required to calculate the 2D
+# distribution. Basic checks here ensure k values given are
+# greater than zero, and auditing during the distribution
+# calculate makes sure no values in the calculated distribution
+# are less than zero
+k_dist_2d_schema = Or(
+    Or(And(int, lambda x: x >= 0.0),
+       And(float, lambda x: x >= 0.0)),
+    {
+        'k_f': And(Or(int, float), lambda x: x >= 0.0),
+        Optional('k_0'): And(Or(int, float), lambda x: x >= 0.0),
+        **{
+            Optional(f'{name}_{x}'): Or(int, float)
+            for x in ['t', 's']
+            for name in ['alpha', 'B', 'beta', 'gamma',
+                         'delta1']
+        },
+        **{
+            Optional(f'{name}_{x}'): Or(int, float, None)
+            for x in ['t', 's']
+            for name in ['C', 'D', 'delta2']
+        },
+        **{
+            Optional(f'A_{x}'): Or(int, float, _is_positive_array)
+            for x in ['t', 's']
+        },
+    }
+)
 
 
 # The schema that the config dict should follow
