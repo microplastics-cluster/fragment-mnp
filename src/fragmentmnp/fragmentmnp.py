@@ -42,9 +42,10 @@ class FragmentMNP():
         # the times at which to store the computed solution
         self.n_size_classes = self.config['n_size_classes']
         self.n_timesteps = self.config['n_timesteps']
-        self.t_grid = np.arange(1, self.n_timesteps + 1)
-        self.t_eval = np.arange(1, self.n_timesteps + 1) \
-            if self.config['solver_t_eval'] == 'integer' \
+        self.dt = self.config['dt']
+        self.t_grid = np.arange(0, self.n_timesteps*self.dt, self.dt)
+        self.t_eval = np.arange(0, self.n_timesteps*self.dt, self.dt) \
+            if self.config['solver_t_eval'] == 'timesteps' \
             else self.config['solver_t_eval']
         # Initial concentrations
         self.initial_concs = np.array(data['initial_concs'])
@@ -56,8 +57,8 @@ class FragmentMNP():
                                 self.data['fsd_beta'])
         self.density = data['density']
         # Stop Pylance complaining about k_frag and k_diss not being present
-        self.k_frag = 0.0
-        self.k_diss = 0.0
+        self.k_frag = np.empty((self.n_size_classes, self.n_timesteps))
+        self.k_diss = np.empty((self.n_size_classes, self.n_timesteps))
         # Calculate the rate constant distributions. If we've been given
         # a dict in data, use the contained params to create the distribution.
         # Else, presume that we've been given a scalar (validation will make
@@ -73,16 +74,21 @@ class FragmentMNP():
                 k_f = data[k]
                 k_0 = 0.0
                 params = {}
-            # Calculate the 2D (t, s) distribution
+            # Calculate the 2D (s, t) distribution
             k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
                                                    't': self.t_grid},
                                              k_f=k_f, k_0=k_0,
                                              params=params)
+            # If the rate constant is k_frag, then no fragmentation is
+            # allowed from the smallest size class and therefore we
+            # manually set this to zero
+            if k == 'k_frag':
+                k_dist[0, :] = 0.0
             # Check no values are less than zero
             if np.any(k_dist < 0.0):
                 msg = (f'Value for {k} distribution calculated from input '
                        'data resulted in negative values. Ensure '
-                       f'distribution params are such that all {k} values'
+                       f'distribution params are such that all {k} values '
                        'are positive.')
                 raise FMNPDistributionValueError(msg)
 
@@ -126,10 +132,9 @@ class FragmentMNP():
             dcdt = np.empty(N)
             # Interpolate the time-dependent parameters to the specific
             # timestep given (which will be a float, rather than integer index)
-            t_model = np.arange(1, self.n_timesteps + 1)
-            f_frag = interpolate.interp1d(t_model, self.k_frag, axis=1,
+            f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
                                           fill_value='extrapolate')
-            f_diss = interpolate.interp1d(t_model, self.k_diss, axis=1,
+            f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
                                           fill_value='extrapolate')
             k_frag = f_frag(t)
             k_diss = f_diss(t)
@@ -145,7 +150,7 @@ class FragmentMNP():
         # Numerically solve this given the initial values for c
         soln = solve_ivp(fun=f,
                          method=self.config['solver_method'],
-                         t_span=(1, self.n_timesteps + 1),
+                         t_span=(self.t_grid.min(), self.t_grid.max()),
                          y0=self.initial_concs,
                          t_eval=self.t_eval,
                          rtol=self.config['solver_rtol'],
@@ -156,8 +161,12 @@ class FragmentMNP():
             raise FMNPNumericalError('Model solution could not be ' +
                                      f'found: {soln.message}')
         # Calculate the timeseries of mass concentration lost to dissolution
-        # from the solution
-        j_diss = self.k_diss * soln.y
+        # from the solution, first interpolating k_diss to the t values
+        # we evaluated the solution over (t_eval)
+        f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
+                                      fill_value='extrapolate')
+        k_diss_eval = f_diss(self.t_eval)
+        j_diss = k_diss_eval * soln.y
         # Use this to calculate the cumulative mass concentration
         # lost to dissolution
         c_diss = np.cumsum(j_diss, axis=1)
@@ -284,7 +293,7 @@ class FragmentMNP():
             Exponential scaling factor.
         C_x : float or None, default=None
             If a scalar is given, this is the coefficient for the logarithmic
-            express. If ``None`` is given, the logarithmic express is set to
+            expression. If ``None`` is given, the logarithmic express is set to
             1 (i.e. it is ignored).
         gamma_x : float, default=1
             Logarithmic scaling factor.
@@ -300,6 +309,9 @@ class FragmentMNP():
             midpoint is assumed to be the at the midpoint of the `x`. For
             example, for the time dimension `t`, if the model timesteps go
             from 1 to 100, then the default is ``delta2_t=50``.
+
+        If any dimension values are equal to 0, the logarithmic term returns 0
+        rather than being undefined.
 
         .. warning:: The parameters used for calculating distributions such as
             `k_frag` and `k_diss` have changed from previous versions, which
@@ -323,7 +335,7 @@ class FragmentMNP():
                 # Get the name of this dim
                 name = list(dims.keys())[i]
                 # Pull out the params for convenience
-                A = float(params.get(f'A_{name}', 1.0))
+                A = params.get(f'A_{name}', 1.0)
                 alpha = float(params.get(f'alpha_{name}', 0.0))
                 B = float(params.get(f'B_{name}', 1.0))
                 beta = float(params.get(f'beta_{name}', 0.0))
@@ -342,11 +354,19 @@ class FragmentMNP():
                     for i, power in enumerate(powers):
                         power_x = power_x + A[i] * x**power
                 else:
-                    power_x = A * x**alpha
+                    power_x = float(A) * x**alpha
                 # Exponential term
                 exp_x = B * np.exp(-beta*x)
-                # Only calculate the ln term if C is not None
-                ln_x = (float(C) * np.log(gamma*x)) if C is not None else 1.0
+                # Only calculate the ln term if C is not None, and if x=0,
+                # then set ln(x) to 0
+                if C is not None:
+                    arg = gamma*x
+                    ln_term = np.log(arg,
+                                     out=np.zeros_like(arg, dtype=np.float64),
+                                     where=(arg != 0))
+                    ln_x = float(C) * ln_term
+                else:
+                    ln_x = 1.0
                 # If the logistic delta_2 term (the x value at the midpoint
                 # along the k axis) isn't specified, # then calculate it as
                 # halfway along the x axis

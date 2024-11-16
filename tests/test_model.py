@@ -27,8 +27,7 @@ def test_model_run():
     output = fmnp.run()
     print(fmnp.k_diss)
     assert (
-        np.array_equal(output.t, np.arange(1,
-                                           minimal_config['n_timesteps'] + 1))
+        np.array_equal(output.t, np.arange(0, minimal_config['n_timesteps']))
         and np.allclose(output.c.sum(), 29400.0)
     )
 
@@ -39,11 +38,10 @@ def test_model_init_integer_t_eval():
     monotonically spaced t_eval timesteps
     """
     config_t_eval = minimal_config.copy()
-    config_t_eval['solver_t_eval'] = 'integer'
+    config_t_eval['solver_t_eval'] = 'timesteps'
     fmnp = FragmentMNP(config_t_eval, minimal_data)
     np.testing.assert_array_equal(fmnp.t_eval,
-                                  np.arange(1,
-                                            config_t_eval['n_timesteps'] + 1))
+                                  np.arange(0, config_t_eval['n_timesteps']))
 
 
 def test_fsd_equal_split():
@@ -94,8 +92,20 @@ def test_k_dists_default_to_constant():
     in constant k_frag and k_diss values over time
     """
     fmnp = FragmentMNP(minimal_config, full_data)
-    np.testing.assert_array_equal(fmnp.k_frag, full_data['k_frag']['average'])
-    np.testing.assert_array_equal(fmnp.k_diss, full_data['k_diss']['average'])
+    # Only check all but the smallest size class, as the smallest size
+    # class should be zero
+    np.testing.assert_array_equal(fmnp.k_frag[1:, :],
+                                  full_data['k_frag']['k_f'])
+    np.testing.assert_array_equal(fmnp.k_diss, full_data['k_diss']['k_f'])
+
+
+def test_smallest_size_class_doesnt_fragment():
+    """
+    Test that the smallest size class has a k_frag equal to
+    0, such that there is no fragmentation from it
+    """
+    fmnp = FragmentMNP(minimal_config, minimal_data)
+    np.testing.assert_equal(fmnp.k_frag[0, :], 0.0)
 
 
 def test_k_frag_linear():
@@ -103,59 +113,17 @@ def test_k_frag_linear():
     Test that providing only linear params for the k_frag distribution
     results in linearly increasing k_frag values
     """
-    data = full_data.copy
-    data['k_frag']['A_t'] = 1.0
-    fmnp = FragmentMNP(minimal_config,)
-
-
-# def test_k_diss_scaling_method_equivalence():
-#     """
-#     Test that setting gamma=0 when the scaling method is surface_area
-#     results in the same output as constant scaling method
-#     """
-#     config_sa = minimal_config.copy()
-#     config_sa['k_diss_scaling_method'] = 'surface_area'
-#     data_sa = minimal_data.copy()
-#     data_sa['k_diss'] = 0.0001
-#     data_sa['k_diss_gamma'] = 0
-#     data_c = minimal_data.copy()
-#     data_c['k_diss'] = 0.0001
-#     output_sa = FragmentMNP(config_sa, data_sa).run()
-#     output_c = FragmentMNP(minimal_config, data_c).run()
-#     # Check the output is the same
-#     assert (
-#         np.array_equal(output_sa.n, output_c.n) and
-#         np.array_equal(output_sa.c_diss, output_c.c_diss)
-#     )
-
-
-# def test_k_frag_input_as_distribution():
-#     """
-#     Test that inputing k_frag as a distribution results
-#     in the correct k_frag being saved to the model.
-#     """
-#     data_np = minimal_data.copy()
-#     k_frag = np.array([1, 2, 3, 4, 5, 6, 7])
-#     data_np['k_frag'] = k_frag
-#     fmnp = FragmentMNP(minimal_config, data_np)
-#     # Repeat along the time axis to give the 2D k_frag
-#     # array stored internally by the model
-#     k_frag = np.repeat(k_frag[np.newaxis, :],
-#                        minimal_config['n_timesteps'],
-#                        axis=0)
-#     # Check the saved k_frag is what we specified
-#     assert np.array_equal(fmnp.k_frag, k_frag)
-
-
-# def test_k_frag_time_dependence():
-#     """
-#     Testing that inputing k_frag as a constant results
-#     in a 2D (n_timesteps, n_size_classes) array being
-#     saved to the model.
-#     """
-#     fmnp = FragmentMNP(minimal_config, minimal_data)
-#     assert fmnp.k_frag.shape == (minimal_config['n_timesteps'],
-#                                  minimal_config['n_size_classes'])
+    data = full_data.copy()
+    data['k_frag']['A_t'] = [1.0]
+    fmnp = FragmentMNP(minimal_config, data)
+    # Create the same distribution that k_frag should now have,
+    # which based on just A_t being set, should be k_frag = 1 * t^1 = t,
+    # making sure to set the smallest size class to k_frag=0
+    _, t = np.meshgrid(fmnp.surface_areas, fmnp.t_grid, indexing='ij')
+    k_frag = data['k_frag']['k_f'] * t
+    k_frag[0, :] = 0.0
+    # Check its the same
+    np.testing.assert_equal(fmnp.k_frag, k_frag)
 
 
 def test_mass_to_particle_number_overload():

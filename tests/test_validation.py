@@ -1,6 +1,7 @@
 """
 Unit tests for the config and data validation
 """
+import copy
 import numpy as np
 from schema import SchemaError
 from fragmentmnp import FragmentMNP
@@ -116,24 +117,8 @@ def test_valid_minimal_data():
     defaults filled in
     """
     validated = validate_data(valid_minimal_data, valid_config)
-    # theta_1 should have been defaulted to 0
-    assert validated['theta_1'] == 0.0
-
-
-
-def test_invalid_k_frag_distribution_length():
-    """
-    Test that inputting a k_frag distribution that
-    isn't the same length as the number of size classes
-    results in an error
-    """
-    invalid_data = valid_minimal_data.copy()
-    invalid_data['k_frag'] = [1]
-    try:
-        validate_data(invalid_data, valid_config)
-        assert False
-    except FMNPIncorrectDistributionLength:
-        assert True
+    # k_diss should have been defaulted to 0
+    assert validated['k_diss'] == 0.0
 
 
 def test_invalid_initial_concs_distribution_length():
@@ -142,7 +127,7 @@ def test_invalid_initial_concs_distribution_length():
     isn't the same length as the number of size classes
     results in an error
     """
-    invalid_data = valid_minimal_data.copy()
+    invalid_data = copy.deepcopy(valid_minimal_data)
     invalid_data['initial_concs'] = [1]
     try:
         validate_data(invalid_data, valid_config)
@@ -156,7 +141,7 @@ def test_negative_initial_concs():
     Test that inputting an initial_concs distribution that
     has a negative value results in an error
     """
-    invalid_data = valid_minimal_data.copy()
+    invalid_data = copy.deepcopy(valid_minimal_data)
     invalid_data['initial_concs'][0] = -1
     try:
         validate_data(invalid_data, valid_config)
@@ -165,15 +150,16 @@ def test_negative_initial_concs():
         assert True
 
 
-def test_k_distribution_negative_values():
+def test_k_dist_negative_values():
     """
     Test that specifying k distribution parameters that
     result in negative values returns an error
     """
-    invalid_data = valid_minimal_data.copy()
+    invalid_data = copy.deepcopy(valid_minimal_data)
     # Set a negative baseline correction with a constant
     # distribution to make the entire k_frag array negative
-    invalid_data['k_frag'] = {'k_f': 0.0, 'k_1': -1.0}
+    invalid_data['k_frag'] = {'k_f': 0.0, 'k_0': -1.0}
+    print(invalid_data)
     try:
         _ = FragmentMNP(valid_minimal_config, invalid_data)
         assert False
@@ -186,7 +172,7 @@ def test_noniterable_array():
     Test that inputting an initial_concs distribution that
     isn't iterable results in an error
     """
-    invalid_data = valid_minimal_data.copy()
+    invalid_data = copy.deepcopy(valid_minimal_data)
     invalid_data['initial_concs'] = 1
     try:
         validate_data(invalid_data, valid_config)
@@ -199,8 +185,8 @@ def test_atol_array_and_scalar():
     """
     Test that atol can be input as an array or a scalar
     """
-    valid_config_scalar = valid_minimal_config.copy()
-    valid_config_array = valid_minimal_config.copy()
+    valid_config_scalar = copy.deepcopy(valid_minimal_config)
+    valid_config_array = copy.deepcopy(valid_minimal_config)
     valid_config_scalar['solver_atol'] = 1e-6
     valid_config_array['solver_atol'] = [1e-6] * 7
     try:
@@ -215,15 +201,15 @@ def test_t_eval():
     """
     Test that solver_t_eval can be input as an array
     """
-    config_arr = valid_minimal_config.copy()
-    config_list = valid_minimal_config.copy()
-    config_str = valid_minimal_config.copy()
-    config_none = valid_minimal_config.copy()
+    config_arr = copy.deepcopy(valid_minimal_config)
+    config_list = copy.deepcopy(valid_minimal_config)
+    config_str = copy.deepcopy(valid_minimal_config)
+    config_none = copy.deepcopy(valid_minimal_config)
     # Arbitrarily spaced timestep evaluation points
     arr = np.arange(0, config_arr['n_timesteps'], 42)
     config_arr['solver_t_eval'] = arr
     config_list['solver_t_eval'] = list(arr)
-    config_str['solver_t_eval'] = 'integer'
+    config_str['solver_t_eval'] = 'timesteps'
     config_none['solver_t_eval'] = None
 
     try:

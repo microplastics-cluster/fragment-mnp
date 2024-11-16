@@ -46,7 +46,7 @@ k_dist_2d_schema = Or(
        And(float, lambda x: x >= 0.0)),
     {
         'k_f': And(Or(int, float), lambda x: x >= 0.0),
-        Optional('k_0'): And(Or(int, float), lambda x: x >= 0.0),
+        Optional('k_0', default=0.0): Or(int, float),
         **{
             Optional(f'{name}_{x}'): Or(int, float)
             for x in ['t', 's']
@@ -87,9 +87,9 @@ config_schema = Schema({
     Optional('solver_rtol', default=1e-3): float,
     # Max step size for the ODE solver
     Optional('solver_max_step', default=np.inf): float,
-    Optional('solver_t_eval', default='integer'): Or(_is_positive_array,
-                                                     'integer',
-                                                     None)
+    Optional('solver_t_eval', default='timesteps'): Or(_is_positive_array,
+                                                       'timesteps',
+                                                       None)
 })
 
 

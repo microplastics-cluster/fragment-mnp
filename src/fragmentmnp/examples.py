@@ -26,7 +26,7 @@ full_config = {
     'solver_rtol': 1e-3,
     'solver_atol': 1e-6,
     'solver_max_step': np.inf,
-    'solver_t_eval': 'integer'
+    'solver_t_eval': 'timesteps'
 }
 
 # Example model config specifying only required options
