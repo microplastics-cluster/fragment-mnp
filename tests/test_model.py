@@ -1,6 +1,7 @@
 """
 Integration tests for the full model
 """
+import copy
 import numpy as np
 from types import MethodType
 from fragmentmnp import FragmentMNP
@@ -25,23 +26,23 @@ def test_model_run():
     """
     fmnp = FragmentMNP(minimal_config, minimal_data)
     output = fmnp.run()
-    print(fmnp.k_diss)
     assert (
-        np.array_equal(output.t, np.arange(0, minimal_config['n_timesteps']))
+        np.array_equal(output.t,
+                       np.arange(0.5, minimal_config['n_timesteps'] + 0.5))
         and np.allclose(output.c.sum(), 29400.0)
     )
 
 
-def test_model_init_integer_t_eval():
+def test_model_init_timestep_t_eval():
     """
     Test that specifying an integer t_eval results in the correct
     monotonically spaced t_eval timesteps
     """
-    config_t_eval = minimal_config.copy()
+    config_t_eval = copy.deepcopy(minimal_config)
     config_t_eval['solver_t_eval'] = 'timesteps'
     fmnp = FragmentMNP(config_t_eval, minimal_data)
     np.testing.assert_array_equal(fmnp.t_eval,
-                                  np.arange(0, config_t_eval['n_timesteps']))
+                                  np.arange(0.5, config_t_eval['n_timesteps'] + 0.5))
 
 
 def test_fsd_equal_split():
@@ -113,7 +114,7 @@ def test_k_frag_linear():
     Test that providing only linear params for the k_frag distribution
     results in linearly increasing k_frag values
     """
-    data = full_data.copy()
+    data = copy.deepcopy(full_data)
     data['k_frag']['A_t'] = [1.0]
     fmnp = FragmentMNP(minimal_config, data)
     # Create the same distribution that k_frag should now have,
@@ -121,6 +122,23 @@ def test_k_frag_linear():
     # making sure to set the smallest size class to k_frag=0
     _, t = np.meshgrid(fmnp.surface_areas, fmnp.t_grid, indexing='ij')
     k_frag = data['k_frag']['k_f'] * t
+    k_frag[0, :] = 0.0
+    # Check its the same
+    np.testing.assert_equal(fmnp.k_frag, k_frag)
+
+
+def test_k_frag_logistic():
+    """
+    Test that providing logistic params for the k_frag distribution
+    results in a logistic regression
+    """
+    data = copy.deepcopy(full_data)
+    data['k_frag']['D_t'] = 1.0
+    fmnp = FragmentMNP(minimal_config, data)
+    # Create the same distribution that k_frag should now have,
+    _, t = np.meshgrid(fmnp.surface_areas, fmnp.t_grid, indexing='ij')
+    delta2 = (t.max() - t.min()) / 2
+    k_frag = data['k_frag']['k_f'] * (1.0 / (1 + np.exp(-t + delta2)))
     k_frag[0, :] = 0.0
     # Check its the same
     np.testing.assert_equal(fmnp.k_frag, k_frag)

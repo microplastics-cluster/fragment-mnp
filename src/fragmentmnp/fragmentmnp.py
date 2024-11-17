@@ -43,8 +43,10 @@ class FragmentMNP():
         self.n_size_classes = self.config['n_size_classes']
         self.n_timesteps = self.config['n_timesteps']
         self.dt = self.config['dt']
-        self.t_grid = np.arange(0, self.n_timesteps*self.dt, self.dt)
-        self.t_eval = np.arange(0, self.n_timesteps*self.dt, self.dt) \
+        self.t_grid = np.arange(0.5*self.dt,
+                                self.n_timesteps*self.dt + 0.5*self.dt,
+                                self.dt)
+        self.t_eval = self.t_grid \
             if self.config['solver_t_eval'] == 'timesteps' \
             else self.config['solver_t_eval']
         # Initial concentrations
@@ -67,18 +69,21 @@ class FragmentMNP():
             if isinstance(data[k], dict):
                 k_f = data[k]['k_f']
                 k_0 = data[k]['k_0']
+                is_compound = data[k]['is_compound']
                 # Get the params from the dict, excluding the average
                 params = {n: p for n, p in data[k].items()
                           if n not in ['k_f', 'k_0']}
             else:
                 k_f = data[k]
                 k_0 = 0.0
+                is_compound = True
                 params = {}
             # Calculate the 2D (s, t) distribution
             k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
                                                    't': self.t_grid},
                                              k_f=k_f, k_0=k_0,
-                                             params=params)
+                                             params=params,
+                                             is_compound=is_compound)
             # If the rate constant is k_frag, then no fragmentation is
             # allowed from the smallest size class and therefore we
             # manually set this to zero
@@ -205,7 +210,8 @@ class FragmentMNP():
 
     @staticmethod
     def set_k_distribution(dims: dict, k_f: float, k_0: float = 0.0,
-                           params: dict = {}) -> npt.NDArray[np.float64]:
+                           params: dict = {},
+                           is_compound: bool = True) -> npt.NDArray[np.float64]:
         r"""
         Create a distribution based on the rate constant scaling factor ``k_f``
         and baseline adjustment factor ``k_0``. The distribution will be a
@@ -220,16 +226,20 @@ class FragmentMNP():
         :math:`X(x)` is then given either by:
 
         .. math::
-            X(x) = A_x x^{\alpha_x} \cdot B_x e^{-\beta_x x}
-            \cdot C_x \ln (\gamma_x x) \cdot
-            \frac{D_x}{1 + e^{-\delta_{x,1}(x - \delta_{x,2})}}
+            X(x) = A_x \hat{x}^{\alpha_x} \cdot B_x e^{-\beta_x \hat{x}}
+            \cdot C_x \ln (\gamma_x \hat{x}) \cdot
+            \frac{D_x}{1 + e^{-\delta_{x,1}(\hat{x} - \delta_{x,2})}}
 
         or the user can specify a polynomial instead of the power law term:
 
         .. math::
-            X(x) = \sum_{n=1}^N A_{x,n} \cdot x^n B_x e^{-\beta_x x} \cdot
-            C_x \ln (\gamma_x x) \cdot \frac{D_x}{1 + e^{-\delta_{x,1}(t
-            - \delta_{x,2})}}
+            X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot
+            B_x e^{-\beta_x \hat{x}} \cdot
+            C_x \ln (\gamma_x \hat{x}) \cdot
+            \frac{D_x}{1 + e^{-\delta_{x,1}(\hat{x} - \delta_{x,2})}}
+
+        In the above, the dimension value :math:`\hat{x}` is normalised such
+        that the median value is equal to 1: :math:`\hat{x} = x/\tilde{x}`.
 
         Parameters
         ----------
@@ -239,7 +249,8 @@ class FragmentMNP():
             `dims` would equal `{'t': t, 's': s}`, where `t` and `s` are the
             timesteps and particle surface area bins over which to create this
             distribution. The dimension names must correspond to the subscripts
-            used in `params`.
+            used in `params`. The values are normalised such that the median
+            of each dimension is 1.
         k_f : float
             Rate constant scaling factor
         k_0 : float, default=0
@@ -247,6 +258,9 @@ class FragmentMNP():
         params : dict, default={}
             A dictionary of values to parameterise the distribution with. See
             the notes below.
+        is_compound : bool, default=True
+            Whether the regression for each dimension are combined by
+            multiplying (compound) or adding.
 
         Returns
         -------
@@ -274,7 +288,7 @@ class FragmentMNP():
 
         More specifically, the params that can be specified are:
 
-        A_x : array-like or scalar, default=1
+        A_x : array-like or float, default=1
             Power law coefficient(s) for dim `x` (e.g. ``A_t`` for dim `t`).
             If a scalar is provided, this is used as the coefficient for a
             power law expression with ``alpha_x`` as the exponent. If a list is
@@ -283,7 +297,7 @@ class FragmentMNP():
             length of the list. For example, if a length-2 list ``A_t=[2, 3]``
             is given, then the resulting polynomial will be :math:`3t^2 + 2t`
             (note the list is in *ascending* order of polynomials).
-        alpha_x : scalar, default=0
+        alpha_x : float, default=0
             If `A_x` is a scalar, `alpha_x` is the exponent for this power law
             expression. For example, if ``A_t=2`` and ``alpha_t=0.5``, the
             resulting power law will be :math:`2t^{0.5}`.
@@ -293,8 +307,8 @@ class FragmentMNP():
             Exponential scaling factor.
         C_x : float or None, default=None
             If a scalar is given, this is the coefficient for the logarithmic
-            expression. If ``None`` is given, the logarithmic express is set to
-            1 (i.e. it is ignored).
+            expression. If ``None`` is given, the logarithmic expression is
+            set to 1 (i.e. it is ignored).
         gamma_x : float, default=1
             Logarithmic scaling factor.
         D_x : float or None, default=None
@@ -303,10 +317,10 @@ class FragmentMNP():
             to 1.
         delta1_x : float, default=1
             Logistic growth rate (steepness of the logistic curve).
-        delta2_x : float, default=None
+        delta2_x : float or None, default=None
             Midpoint of the logistic curve, which denotes the `x` value where
             the logistic curve is at its midpoint. If `None` is given, the
-            midpoint is assumed to be the at the midpoint of the `x`. For
+            midpoint is assumed to be the at the midpoint of the `x` range. For
             example, for the time dimension `t`, if the model timesteps go
             from 1 to 100, then the default is ``delta2_t=50``.
 
@@ -332,6 +346,8 @@ class FragmentMNP():
             X = []
             # Loop over the dimensions
             for i, x in enumerate(grid):
+                # Normalise the values
+                x_norm = x / np.median(x)
                 # Get the name of this dim
                 name = list(dims.keys())[i]
                 # Pull out the params for convenience
@@ -352,15 +368,15 @@ class FragmentMNP():
                     powers = np.arange(1, len(A) + 1)
                     power_x = 0.0
                     for i, power in enumerate(powers):
-                        power_x = power_x + A[i] * x**power
+                        power_x = power_x + A[i] * x_norm**power
                 else:
-                    power_x = float(A) * x**alpha
+                    power_x = float(A) * x_norm**alpha
                 # Exponential term
-                exp_x = B * np.exp(-beta*x)
+                exp_x = B * np.exp(-beta*x_norm)
                 # Only calculate the ln term if C is not None, and if x=0,
                 # then set ln(x) to 0
                 if C is not None:
-                    arg = gamma*x
+                    arg = gamma * x_norm
                     ln_term = np.log(arg,
                                      out=np.zeros_like(arg, dtype=np.float64),
                                      where=(arg != 0))
@@ -371,15 +387,20 @@ class FragmentMNP():
                 # along the k axis) isn't specified, # then calculate it as
                 # halfway along the x axis
                 if (delta_2 is None) and (D is not None):
-                    delta_2 = (x.max() - x.min()) / 2
+                    delta_2 = (x_norm.max() - x_norm.min()) / 2
                 # Calculate the logistic contribution, only if D is not None
-                logit_x = float(D) / (1 + np.exp(-delta_1 * (x - float(delta_2)))) \
+                logit_x = float(D) / \
+                    (1 + np.exp(-delta_1 * (x_norm - float(delta_2)))) \
                     if D is not None else 1.0
                 # Multiply all the expressions together for this dimension
                 X.append(power_x * exp_x * ln_x * logit_x)
             # Calculate the final distribution by multiplying X across the
             # dimensions
-            return k_f * np.prod(X, axis=0) + k_0
+            if is_compound:
+                k = k_f * np.prod(X, axis=0) + k_0
+            else:
+                k = k_f * np.sum(X, axis=0) + k_0
+            return k
 
     @staticmethod
     def set_fsd(n: int,

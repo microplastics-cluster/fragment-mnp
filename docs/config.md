@@ -27,15 +27,11 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 
 `n_timesteps`
 : *Required, int.*
-: The number of timesteps to run the model for. Each timestep is of length `dt`, which can be provided as a parameter and defaults to 1 second.
+: The number of timesteps to run the model for.
 
 `dt`
 : *Optional, int, units: s, default: 1*.
-: The length of each timestep. Defaults to 1 second.
-
-`k_diss_scaling_method`
-: *Optional, str equal to "constant" or "surface_area", default: "constant".*
-: The method by which the dissolution rate `k_diss` is scaled across size classes. If `constant`, then `k_diss` is the same across all size classes. If `surface_area`, then `k_diss` scales as $s^\gamma$, where $s$ is the surface area to volume ratio of the polymer particles, and $\gamma$ is an empirical scaling parameter set by the `k_diss_gamma` variable in the [model input data dict](input-data). If `k_diss` is given as a distribution in the input data, then `k_diss_scaling_method` is ignored and this distribution is used directly instead.
+: The length of each timestep. Defaults to 1 second. The model time grid uses the midpoint of these timesteps, and therefore is calculated as `t_grid = np.arange(0.5*dt, n_timesteps*dt, 0.5*dt)`.
 
 (config:solver_method)=
 `solver_method`

@@ -8,11 +8,9 @@ import numpy as np
 from schema import Schema, Or, And, Optional
 from ._errors import FMNPIncorrectDistributionLength
 
+
 def _is_positive_array(arr):
-    """
-    Check if arr is iterable and all elements
-    are positive
-    """
+    """Check if arr is iterable and all elements are positive"""
     is_array = True
     try:
         # Check it's iterable
@@ -21,6 +19,17 @@ def _is_positive_array(arr):
         nparr = np.array(arr)
         if np.any(nparr < 0.0):
             is_array = False
+    except TypeError:
+        is_array = False
+    return is_array
+
+
+def _is_array(arr):
+    """Check if arr is iterable"""
+    is_array = True
+    try:
+        # Check it's iterable
+        _ = iter(arr)
     except TypeError:
         is_array = False
     return is_array
@@ -47,6 +56,7 @@ k_dist_2d_schema = Or(
     {
         'k_f': And(Or(int, float), lambda x: x >= 0.0),
         Optional('k_0', default=0.0): Or(int, float),
+        Optional('is_compound', default=True): bool,
         **{
             Optional(f'{name}_{x}'): Or(int, float)
             for x in ['t', 's']
@@ -59,7 +69,7 @@ k_dist_2d_schema = Or(
             for name in ['C', 'D', 'delta2']
         },
         **{
-            Optional(f'A_{x}'): Or(int, float, _is_positive_array)
+            Optional(f'A_{x}'): Or(int, float, _is_array)
             for x in ['t', 's']
         },
     }
