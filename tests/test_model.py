@@ -119,9 +119,10 @@ def test_k_frag_linear():
     fmnp = FragmentMNP(minimal_config, data)
     # Create the same distribution that k_frag should now have,
     # which based on just A_t being set, should be k_frag = 1 * t^1 = t,
-    # making sure to set the smallest size class to k_frag=0
+    # making sure to set the smallest size class to k_frag=0 and that
+    # t is normalised
     _, t = np.meshgrid(fmnp.surface_areas, fmnp.t_grid, indexing='ij')
-    k_frag = data['k_frag']['k_f'] * t
+    k_frag = data['k_frag']['k_f'] * (t / np.median(t))
     k_frag[0, :] = 0.0
     # Check its the same
     np.testing.assert_equal(fmnp.k_frag, k_frag)
@@ -137,8 +138,9 @@ def test_k_frag_logistic():
     fmnp = FragmentMNP(minimal_config, data)
     # Create the same distribution that k_frag should now have,
     _, t = np.meshgrid(fmnp.surface_areas, fmnp.t_grid, indexing='ij')
-    delta2 = (t.max() - t.min()) / 2
-    k_frag = data['k_frag']['k_f'] * (1.0 / (1 + np.exp(-t + delta2)))
+    t_norm = t / np.median(t)
+    delta2 = (t_norm.max() - t_norm.min()) / 2
+    k_frag = data['k_frag']['k_f'] * (1.0 / (1 + np.exp(-t_norm + delta2)))
     k_frag[0, :] = 0.0
     # Check its the same
     np.testing.assert_equal(fmnp.k_frag, k_frag)

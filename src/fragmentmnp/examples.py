@@ -55,9 +55,11 @@ full_data = {
     'density': 1380,              # PET density [kg/m3]
     'k_frag': {'k_f': 0.01,
                'k_0': 0.0,
+               'is_compound': True,
                **_k_dist_params},
     'k_diss': {'k_f': 0.0,
                'k_0': 0.0,
+               'is_compound': True,
                **_k_dist_params},
     'fsd_beta': 0.0
 }
