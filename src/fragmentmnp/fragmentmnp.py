@@ -442,62 +442,6 @@ class FragmentMNP():
                                / np.sum(psd[:-(n-i)] ** beta))
         return fsd
 
-    # @staticmethod
-    # def _set_k_diss(k_diss: float,
-    #                 scaling_method: str,
-    #                 psd: npt.NDArray[np.float64],
-    #                 n_size_classes: int,
-    #                 gamma: float = 1.0) -> npt.NDArray[np.float64]:
-    #     """
-    #     Set the dissolution rate for each of the size classes,
-    #     based on an average dissolution rate
-
-    #     Parameters
-    #     ----------
-    #     k_diss : float
-    #         Either average dissolution rate across size classes, or the
-    #         full distribution.
-    #     scaling_method: str
-    #         How to scale ``k_diss`` across size classes? Either `constant`
-    #         or `surface_area`. If `constant`, the same ``k_diss`` is used
-    #         for all size classes. If `surface_area`, ``k_diss`` is scaled
-    #         according to particle surface area per unit volume of polymer.
-    #     psd : np.ndarray
-    #         The particle size distribution
-    #     n_size_classes : int
-    #         The number of particle size classes
-
-    #     Returns
-    #     -------
-    #     np.ndarray
-    #         Dissolution rate distribution
-
-    #     Notes
-    #     -----
-    #     At the moment, we are assuming spherical particles when scaling
-    #     by surface area. This might change.
-    #     """
-    #     # Check if k_diss is a scalar value, in which case we need
-    #     # to calculate a distribution based on gamma
-    #     if isinstance(k_diss, (int, float)):
-    #         # What scaling method has been chosen?
-    #         if scaling_method == 'constant':
-    #             # Use the average k_diss across all size classes
-    #             k_diss_dist = np.full((n_size_classes,), k_diss)
-    #         elif scaling_method == 'surface_area':
-    #             # Scale the dissolution according to surface area per unit
-    #             # volume, assuming our particles are spheres
-    #             k_diss_dist = k_diss * FragmentMNP._f_surface_area(psd, gamma)
-    #         else:
-    #             # We shouldn't get here, if validation has been performed!
-    #             raise ValueError('Invalid k_diss_scaling_factor provided: ',
-    #                              {scaling_method})
-    #     # Otherwise we will have been given a distribution, so use
-    #     # that directly
-    #     else:
-    #         k_diss_dist = k_diss
-    #     return k_diss_dist
-
     @staticmethod
     def surface_area(psd: npt.NDArray[np.float64]) -> \
             npt.NDArray[np.float64]:
