@@ -8,18 +8,9 @@ import numpy as np
 from schema import Schema, Or, And, Optional
 from ._errors import FMNPIncorrectDistributionLength
 
-# The schema that particle size ranges should follow
-particle_size_range_schema = And(Or((int, float), [int, float]),
-                                 And(lambda d: len(d) == 2,
-                                     error='particle_size_range must ' +
-                                           'be a length-2 iterable'))
-
 
 def _is_positive_array(arr):
-    """
-    Check if arr is iterable and all elements
-    are positive
-    """
+    """Check if arr is iterable and all elements are positive"""
     is_array = True
     try:
         # Check it's iterable
@@ -31,6 +22,58 @@ def _is_positive_array(arr):
     except TypeError:
         is_array = False
     return is_array
+
+
+def _is_array(arr):
+    """Check if arr is iterable"""
+    is_array = True
+    try:
+        # Check it's iterable
+        _ = iter(arr)
+    except TypeError:
+        is_array = False
+    return is_array
+
+
+# The schema that particle size ranges should follow
+particle_size_range_schema = And(Or((int, float), [int, float]),
+                                 And(lambda d: len(d) == 2,
+                                     error='particle_size_range must ' +
+                                           'be a length-2 iterable'))
+
+
+# The schema that rate constant 2D (time and surface area)
+# distributions, like k_frag and k_diss, should follow. Either
+# a scalar is given (and it is treated as constant), or
+# a dict is given with the params required to calculate the 2D
+# distribution. Basic checks here ensure k values given are
+# greater than zero, and auditing during the distribution
+# calculate makes sure no values in the calculated distribution
+# are less than zero
+k_dist_2d_schema = Or(
+    Or(And(int, lambda x: x >= 0.0),
+       And(float, lambda x: x >= 0.0)),
+    {
+        'k_f': And(Or(int, float), lambda x: x >= 0.0),
+        Optional('k_0', default=0.0): Or(int, float),
+        Optional('is_compound', default=True): bool,
+        **{
+            Optional(f'{name}_{x}'): Or(int, float)
+            for x in ['t', 's']
+            for name in ['alpha', 'B', 'beta', 'gamma',
+                         'delta1']
+        },
+        **{
+            Optional(f'{name}_{x}'): Or(int, float, None)
+            for x in ['t', 's']
+            for name in ['C', 'D', 'delta2']
+        },
+        **{
+            Optional(f'A_{x}'): Or(int, float, _is_array)
+            for x in ['t', 's']
+        },
+    }
+)
 
 
 # The schema that the config dict should follow
@@ -45,22 +88,18 @@ config_schema = Schema({
     'n_timesteps': int,
     # Length of timesteps should be an integer (unit of seconds)
     Optional('dt', default=1): int,
-    # How should the average k_diss provided be scaled across
-    # size classes?
-    Optional('k_diss_scaling_method',
-             default='constant'): lambda x: x in ('constant', 'surface_area'),
     # What ODE solver method should be used? Should be one of
     # those available in scipy.solve_ivp:
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-    Optional('solver_method', default='RK45'): str,
+    Optional('solver_method', default='LSODA'): str,
     # Error tolerances for the ODE solver
     Optional('solver_atol', default=1e-6): Or(float, [float]),
     Optional('solver_rtol', default=1e-3): float,
     # Max step size for the ODE solver
     Optional('solver_max_step', default=np.inf): float,
-    Optional('solver_t_eval', default='integer'): Or(_is_positive_array,
-                                                     'integer',
-                                                     None)
+    Optional('solver_t_eval', default='timesteps'): Or(_is_positive_array,
+                                                       'timesteps',
+                                                       None)
 })
 
 
@@ -70,20 +109,11 @@ data_schema = Schema({
     'initial_concs': _is_positive_array,
     # Density must either be a float/int and greater than 0
     'density': And(Or(int, float), lambda x: x >= 0.0),
-    # k_frag must either be a float/int, or a list of floats/ints,
-    # and greater than 0
-    'k_frag': Or(And(Or(int, float), lambda x: x >= 0.0), _is_positive_array),
-    # theta1 (surface energy empirical parameter) must be a float or int
-    Optional('theta_1', default=0.0): Or(int, float),
-    # k_diss_tau (fragment time dependence) must be a float or int
-    Optional('k_frag_tau', default=0.0): Or(int, float),
-    # k_diss (dissolution) must be int or float
-    Optional('k_diss', default=0.0): Or(And(Or(int, float),
-                                            lambda x: x >= 0.0),
-                                            _is_positive_array),
-    # k_diss_gamma is an empirical param that scales
-    # the affect of surface area on dissolution rates
-    Optional('k_diss_gamma', default=1.0): Or(int, float),
+    # k_frag must either be a float/int, or a dict containing
+    # and average value and parameters to create distribution from.
+    # Both default to zero
+    'k_frag': k_dist_2d_schema,
+    Optional('k_diss', default=0.0): k_dist_2d_schema,
     # fsd_beta is an empirical param that scales the depedence
     # of the fragment size distribution on particle diameter d
     # accordingly to d^beta. beta=0 means an equal split
@@ -130,30 +160,6 @@ def validate_data(data: dict, config: dict) -> dict:
     # if it passes
     validated = Schema(data_schema).validate(data)
 
-    # If k_frag isn't a scalar (i.e. we're not calculating
-    # a k_frag distribution interally), then check the
-    # provided distribution is the correct length
-    if not isinstance(validated['k_frag'], (int, float)):
-        if len(data['k_frag']) != config['n_size_classes']:
-            raise FMNPIncorrectDistributionLength(
-                'k_frag distribution provided in input data ' +
-                'is not the same length as particle size distribution. ' +
-                f'Expecting {config["n_size_classes"]}-length array. ' +
-                f'Received {len(data["k_frag"])}-length array.'
-            )
-
-    # If k_diss isn't a scalar (i.e. we're not calculating
-    # a k_diss distribution interally), then check the
-    # provided distribution is the correct length
-    if not isinstance(validated['k_diss'], (int, float)):
-        if len(data['k_diss']) != config['n_size_classes']:
-            raise FMNPIncorrectDistributionLength(
-                'k_diss distribution provided in input data ' +
-                'is not the same length as particle size distribution. ' +
-                f'Expecting {config["n_size_classes"]}-length array. ' +
-                f'Received {len(data["k_diss"])}-length array.'
-            )
-
     # Check initial conc distribution is the correct length
     if len(data['initial_concs']) != config['n_size_classes']:
         raise FMNPIncorrectDistributionLength(
@@ -165,4 +171,3 @@ def validate_data(data: dict, config: dict) -> dict:
 
     # TODO extra validation here, e.g. check lengths are n_size_classes
     return validated
-

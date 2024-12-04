@@ -6,7 +6,7 @@ from scipy import interpolate
 from schema import SchemaError
 from . import validation
 from .output import FMNPOutput
-from ._errors import FMNPNumericalError
+from ._errors import FMNPNumericalError, FMNPDistributionValueError
 
 
 class FragmentMNP():
@@ -42,26 +42,63 @@ class FragmentMNP():
         # the times at which to store the computed solution
         self.n_size_classes = self.config['n_size_classes']
         self.n_timesteps = self.config['n_timesteps']
-        self.t_eval = np.arange(0, self.n_timesteps) \
-            if self.config['solver_t_eval'] == 'integer' \
+        self.dt = self.config['dt']
+        self.t_grid = np.arange(0.5*self.dt,
+                                self.n_timesteps*self.dt + 0.5*self.dt,
+                                self.dt)
+        self.t_eval = self.t_grid \
+            if self.config['solver_t_eval'] == 'timesteps' \
             else self.config['solver_t_eval']
         # Initial concentrations
         self.initial_concs = np.array(data['initial_concs'])
         # Set the particle phys-chem properties
         self.psd = self._set_psd()
+        self.surface_areas = self.surface_area(self.psd)
         self.fsd = self.set_fsd(self.n_size_classes,
                                 self.psd,
                                 self.data['fsd_beta'])
-        self.theta_1 = data['theta_1']
         self.density = data['density']
-        self.k_diss = self._set_k_diss(data['k_diss'],
-                                       config['k_diss_scaling_method'],
-                                       self.psd,
-                                       self.n_size_classes,
-                                       data['k_diss_gamma'])
-        self.k_frag = self._set_k_frag(data['k_frag'], self.theta_1,
-                                       self.data['k_frag_tau'],
-                                       self.psd, self.n_timesteps)
+        # Stop Pylance complaining about k_frag and k_diss not being present
+        self.k_frag = np.empty((self.n_size_classes, self.n_timesteps))
+        self.k_diss = np.empty((self.n_size_classes, self.n_timesteps))
+        # Calculate the rate constant distributions. If we've been given
+        # a dict in data, use the contained params to create the distribution.
+        # Else, presume that we've been given a scalar (validation will make
+        # sure this is so) and use that as the average.
+        for k in ['k_frag', 'k_diss']:
+            if isinstance(data[k], dict):
+                k_f = data[k]['k_f']
+                k_0 = data[k]['k_0']
+                is_compound = data[k]['is_compound']
+                # Get the params from the dict, excluding the average
+                params = {n: p for n, p in data[k].items()
+                          if n not in ['k_f', 'k_0']}
+            else:
+                k_f = data[k]
+                k_0 = 0.0
+                is_compound = True
+                params = {}
+            # Calculate the 2D (s, t) distribution
+            k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
+                                                   't': self.t_grid},
+                                             k_f=k_f, k_0=k_0,
+                                             params=params,
+                                             is_compound=is_compound)
+            # If the rate constant is k_frag, then no fragmentation is
+            # allowed from the smallest size class and therefore we
+            # manually set this to zero
+            if k == 'k_frag':
+                k_dist[0, :] = 0.0
+            # Check no values are less than zero
+            if np.any(k_dist < 0.0):
+                msg = (f'Value for {k} distribution calculated from input '
+                       'data resulted in negative values. Ensure '
+                       f'distribution params are such that all {k} values '
+                       'are positive.')
+                raise FMNPDistributionValueError(msg)
+
+            # Set self.k_[frag|diss] as this distribution
+            setattr(self, k, k_dist)
 
     def run(self) -> FMNPOutput:
         r"""
@@ -70,7 +107,6 @@ class FragmentMNP():
         Returns
         -------
         :class:`fragmentmnp.output.FMNPOutput` object containing model output
-        data.
 
         Notes
         -----
@@ -81,7 +117,7 @@ class FragmentMNP():
 
         .. math::
             \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
-            \Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
+            \sum_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
 
         Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size
         class `k`, :math:`f_{i,k}` is the fraction of daughter
@@ -101,23 +137,25 @@ class FragmentMNP():
             dcdt = np.empty(N)
             # Interpolate the time-dependent parameters to the specific
             # timestep given (which will be a float, rather than integer index)
-            t_model = np.arange(self.n_timesteps)
-            f = interpolate.interp1d(t_model, self.k_frag, axis=0,
-                                     fill_value='extrapolate')
-            k_frag = f(t)
+            f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
+                                          fill_value='extrapolate')
+            f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
+                                          fill_value='extrapolate')
+            k_frag = f_frag(t)
+            k_diss = f_diss(t)
             # Loop over the size classes and perform the calculation
             for k in np.arange(N):
                 # The differential equation that is being solved
                 dcdt[k] = - k_frag[k] * c[k] \
                     + np.sum(self.fsd[:, k] * k_frag * c[:N]) \
-                    - self.k_diss[k] * c[k]
+                    - k_diss[k] * c[k]
             # Return the solution for all of the size classes
             return dcdt
 
         # Numerically solve this given the initial values for c
         soln = solve_ivp(fun=f,
                          method=self.config['solver_method'],
-                         t_span=(0, self.n_timesteps),
+                         t_span=(self.t_grid.min(), self.t_grid.max()),
                          y0=self.initial_concs,
                          t_eval=self.t_eval,
                          rtol=self.config['solver_rtol'],
@@ -128,8 +166,12 @@ class FragmentMNP():
             raise FMNPNumericalError('Model solution could not be ' +
                                      f'found: {soln.message}')
         # Calculate the timeseries of mass concentration lost to dissolution
-        # from the solution
-        j_diss = self.k_diss[:, None] * soln.y
+        # from the solution, first interpolating k_diss to the t values
+        # we evaluated the solution over (t_eval)
+        f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
+                                      fill_value='extrapolate')
+        k_diss_eval = f_diss(self.t_eval)
+        j_diss = k_diss_eval * soln.y
         # Use this to calculate the cumulative mass concentration
         # lost to dissolution
         c_diss = np.cumsum(j_diss, axis=1)
@@ -144,12 +186,8 @@ class FragmentMNP():
     def mass_to_particle_number(self, mass):
         """
         Convert mass (concentration) to particle number (concentration).
-        Here, particles are assumed to be spherical, but this function
-        can be overloaded to account for different shape particles.
         """
-        n = mass / (self.density * (4.0/3.0) * np.pi
-                    * (self.psd[:, None] / 2) ** 3)
-        return n
+        return mass / (self.density * self.volume(self.psd))[:, np.newaxis]
 
     def _set_psd(self) -> npt.NDArray[np.float64]:
         """
@@ -171,54 +209,198 @@ class FragmentMNP():
         return psd
 
     @staticmethod
-    def _set_k_frag(k_frag: float, theta_1: float, tau: float,
-                    psd: npt.NDArray[np.float64],
-                    n_timesteps: int) -> npt.NDArray[np.float64]:
+    def set_k_distribution(dims: dict, k_f: float, k_0: float = 0.0,
+                           params: dict = {},
+                           is_compound: bool = True) -> npt.NDArray[np.float64]:
         r"""
-        Set the fragmentation rate `k_frag` based on either the average
-        `k_frag` for the median particle size bin and `theta_1` (surface
-        energy empirical parameter), or directly if a distribution is
-        provided. `tau` (time dependence empirical parameter) then scales
-        `k_frag` to be dependent on time.
+        Create a distribution based on the rate constant scaling factor ``k_f``
+        and baseline adjustment factor ``k_0``. The distribution will be a
+        compound combination of power law / polynomial, exponential,
+        logarithmic and logistic regressions, encapsulated in the function
+        :math:`X(x)`, and have dimensions given by `dims`. For a distribution
+        with `D` dimensions:
+
+        .. math::
+            k(\mathbf{x}) = k_f \prod_{d=1}^D X(x_d) + k_0
+
+        :math:`X(x)` is then given either by:
+
+        .. math::
+            X(x) = A_x \hat{x}^{\alpha_x} \cdot B_x e^{-\beta_x \hat{x}}
+            \cdot C_x \ln (\gamma_x \hat{x}) \cdot
+            \frac{D_x}{1 + e^{-\delta_{x,1}(\hat{x} - \delta_{x,2})}}
+
+        or the user can specify a polynomial instead of the power law term:
+
+        .. math::
+            X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot
+            B_x e^{-\beta_x \hat{x}} \cdot
+            C_x \ln (\gamma_x \hat{x}) \cdot
+            \frac{D_x}{1 + e^{-\delta_{x,1}(\hat{x} - \delta_{x,2})}}
+
+        In the above, the dimension value :math:`\hat{x}` is normalised such
+        that the median value is equal to 1: :math:`\hat{x} = x/\tilde{x}`.
 
         Parameters
         ----------
-        k_frag : float or iterable
-            Either the average :math:`k_frag` for the median particle
-            size bin, or a distribution of :math:`k_frag` values
-        theta_1 : float
-            The surface energy empirical parameter :math:`\theta_1`
-        tau : float
-            The time-dependence parameter :math:`\tau`
-        psd : np.ndarray
-            The particle size distribution
-        n_timesteps : int
-            The number of model timesteps
+        dims : dict
+            A dictionary that maps dimension names to their grids, e.g. to
+            create a distribution of time `t` and particle surface area `s`,
+            `dims` would equal `{'t': t, 's': s}`, where `t` and `s` are the
+            timesteps and particle surface area bins over which to create this
+            distribution. The dimension names must correspond to the subscripts
+            used in `params`. The values are normalised such that the median
+            of each dimension is 1.
+        k_f : float
+            Rate constant scaling factor
+        k_0 : float, default=0
+            Rate constant baseline adjustment factor
+        params : dict, default={}
+            A dictionary of values to parameterise the distribution with. See
+            the notes below.
+        is_compound : bool, default=True
+            Whether the regression for each dimension are combined by
+            multiplying (compound) or adding.
 
         Returns
         -------
-        k_frag = np.ndarray (n_timesteps, n_size_classes)
-            Fragmentation rate array over timesteps and size classes
+        k = np.ndarray
+            Distribution array over the dims provided
+
+        Notes
+        -----
+        `k` is modelled as a function of the dims provided, and the model
+        builds this distribution as a combination of power law / polynomial,
+        exponential, logarithmic and logistic regressions, enabling a broad
+        range of dependencies to be accounted for. This distribution is
+        intended to be applied to rate constants used in the model, such as
+        `k_frag` and `k_diss`. The `params` dict gives the parameters used
+        to construct this distribution using the equation above. That is,
+        :math:`A_{x}` (where `x` is the dimension), :math:`\alpha_{x_i}` etc
+        are given in the `params` dict as e.g. `A_t`, `alpha_t`, where the
+        subscript (`t` in this case) is the name of the dimension corresponding
+        to the `dims` dict.
+
+        This function does not require any parameters to be present in
+        `params`. Non-present values are defaulted to values that remove the
+        influence of that particular expression, and letting all parameters
+        default results in a constant `k` distribution.
+
+        More specifically, the params that can be specified are:
+
+        A_x : array-like or float, default=1
+            Power law coefficient(s) for dim `x` (e.g. ``A_t`` for dim `t`).
+            If a scalar is provided, this is used as the coefficient for a
+            power law expression with ``alpha_x`` as the exponent. If a list is
+            provided, these are used as coefficients in a polynomial
+            expression, where the order of the polynomial is given by the
+            length of the list. For example, if a length-2 list ``A_t=[2, 3]``
+            is given, then the resulting polynomial will be :math:`3t^2 + 2t`
+            (note the list is in *ascending* order of polynomials).
+        alpha_x : float, default=0
+            If `A_x` is a scalar, `alpha_x` is the exponent for this power law
+            expression. For example, if ``A_t=2`` and ``alpha_t=0.5``, the
+            resulting power law will be :math:`2t^{0.5}`.
+        B_x : float, default=1
+            Exponential coefficient.
+        beta_x : float, default=0
+            Exponential scaling factor.
+        C_x : float or None, default=None
+            If a scalar is given, this is the coefficient for the logarithmic
+            expression. If ``None`` is given, the logarithmic expression is
+            set to 1 (i.e. it is ignored).
+        gamma_x : float, default=1
+            Logarithmic scaling factor.
+        D_x : float or None, default=None
+            If a scalar is given, this is the coefficient for the logistic
+            expression. If `None` is given, the logistic expression is set
+            to 1.
+        delta1_x : float, default=1
+            Logistic growth rate (steepness of the logistic curve).
+        delta2_x : float or None, default=None
+            Midpoint of the logistic curve, which denotes the `x` value where
+            the logistic curve is at its midpoint. If `None` is given, the
+            midpoint is assumed to be the at the midpoint of the `x` range. For
+            example, for the time dimension `t`, if the model timesteps go
+            from 1 to 100, then the default is ``delta2_t=50``.
+
+        If any dimension values are equal to 0, the logarithmic term returns 0
+        rather than being undefined.
+
+        .. warning:: The parameters used for calculating distributions such as
+            `k_frag` and `k_diss` have changed from previous versions, which
+            only allowed for a power law relationship. This causes breaking
+            changes after v0.1.0.
         """
-        # Check if k_frag is a scalar value, in which case we need
-        # to calculate a distribution based on theta1
-        if isinstance(k_frag, (int, float)):
-            # Get the proportionality constant
-            k_prop = k_frag / (np.median(psd) ** (2 * theta_1))
-            # Now create the array of k_frags
-            k_frag_dist = k_prop * psd ** (2 * theta_1)
-            # We presume fragmentation from the smallest size class
-            # can't happen, and the only loss from this size class
-            # is from dissolution
-            k_frag_dist[0] = 0.0
-        # Else just set k_frag directly from the provided array.
-        # Validation makes sure this is the correct length
+        if dims == {}:
+            raise Exception('Trying to create k distribution but `dims` dict',
+                            'is empty. You must provide at least one',
+                            'dimension.')
         else:
-            k_frag_dist = np.array(k_frag)
-        # Now set the time dependence of k_frag using tau
-        t = np.arange(1, n_timesteps + 1)
-        k_frag_2d = k_frag_dist * t[:, np.newaxis] ** tau / np.median(t) ** tau
-        return k_frag_2d
+            # Create a grid out of our dimensions (and preserve the matrix
+            # indexing order with 'ij')
+            grid = np.meshgrid(*[x for x in dims.values()],
+                               indexing='ij')
+            # List of the regressions for each dimension, which will be
+            # populated when we loop over the dimensions
+            X = []
+            # Loop over the dimensions
+            for i, x in enumerate(grid):
+                # Normalise the values
+                x_norm = x / np.median(x)
+                # Get the name of this dim
+                name = list(dims.keys())[i]
+                # Pull out the params for convenience
+                A = params.get(f'A_{name}', 1.0)
+                alpha = float(params.get(f'alpha_{name}', 0.0))
+                B = float(params.get(f'B_{name}', 1.0))
+                beta = float(params.get(f'beta_{name}', 0.0))
+                C = params.get(f'C_{name}', None)
+                gamma = float(params.get(f'gamma_{name}', 1.0))
+                D = params.get(f'D_{name}', None)
+                delta_1 = float(params.get(f'delta1_{name}', 1.0))
+                delta_2 = params.get(f'delta2_{name}', None)
+                # Let users specify a polynomial by listing A coefficients,
+                # presuming the exponents (alpha) will be 1, 2, 3 etc
+                # corresponding to the list elements in A. Otherwise, use
+                # A and alpha as a power law A*x**alpha
+                if isinstance(A, (list, tuple, np.ndarray)):
+                    powers = np.arange(1, len(A) + 1)
+                    power_x = 0.0
+                    for i, power in enumerate(powers):
+                        power_x = power_x + A[i] * x_norm**power
+                else:
+                    power_x = float(A) * x_norm**alpha
+                # Exponential term
+                exp_x = B * np.exp(-beta*x_norm)
+                # Only calculate the ln term if C is not None, and if x=0,
+                # then set ln(x) to 0
+                if C is not None:
+                    arg = gamma * x_norm
+                    ln_term = np.log(arg,
+                                     out=np.zeros_like(arg, dtype=np.float64),
+                                     where=(arg != 0))
+                    ln_x = float(C) * ln_term
+                else:
+                    ln_x = 1.0
+                # If the logistic delta_2 term (the x value at the midpoint
+                # along the k axis) isn't specified, # then calculate it as
+                # halfway along the x axis
+                if (delta_2 is None) and (D is not None):
+                    delta_2 = (x_norm.max() - x_norm.min()) / 2
+                # Calculate the logistic contribution, only if D is not None
+                logit_x = float(D) / \
+                    (1 + np.exp(-delta_1 * (x_norm - float(delta_2)))) \
+                    if D is not None else 1.0
+                # Multiply all the expressions together for this dimension
+                X.append(power_x * exp_x * ln_x * logit_x)
+            # Calculate the final distribution by multiplying X across the
+            # dimensions
+            if is_compound:
+                k = k_f * np.prod(X, axis=0) + k_0
+            else:
+                k = k_f * np.sum(X, axis=0) + k_0
+            return k
 
     @staticmethod
     def set_fsd(n: int,
@@ -261,60 +443,24 @@ class FragmentMNP():
         return fsd
 
     @staticmethod
-    def _set_k_diss(k_diss: float,
-                    scaling_method: str,
-                    psd: npt.NDArray[np.float64],
-                    n_size_classes: int,
-                    gamma: float = 1.0) -> npt.NDArray[np.float64]:
+    def surface_area(psd: npt.NDArray[np.float64]) -> \
+            npt.NDArray[np.float64]:
         """
-        Set the dissolution rate for each of the size classes,
-        based on an average dissolution rate
-
-        Parameters
-        ----------
-        k_diss : float
-            Either average dissolution rate across size classes, or the
-            full distribution.
-        scaling_method: str
-            How to scale ``k_diss`` across size classes? Either `constant`
-            or `surface_area`. If `constant`, the same ``k_diss`` is used
-            for all size classes. If `surface_area`, ``k_diss`` is scaled
-            according to particle surface area per unit volume of polymer.
-        psd : np.ndarray
-            The particle size distribution
-        n_size_classes : int
-            The number of particle size classes
-
-        Returns
-        -------
-        np.ndarray
-            Dissolution rate distribution
-
-        Notes
-        -----
-        At the moment, we are assuming spherical particles when scaling
-        by surface area. This might change.
+        Return the surface area of the particles, presuming they are
+        spheres. This function can be overloaded to account for different
+        shaped particles.
         """
-        # Check if k_diss is a scalar value, in which case we need
-        # to calculate a distribution based on gamma
-        if isinstance(k_diss, (int, float)):
-            # What scaling method has been chosen?
-            if scaling_method == 'constant':
-                # Use the average k_diss across all size classes
-                k_diss_dist = np.full((n_size_classes,), k_diss)
-            elif scaling_method == 'surface_area':
-                # Scale the dissolution according to surface area per unit
-                # volume, assuming our particles are spheres
-                k_diss_dist = k_diss * FragmentMNP._f_surface_area(psd, gamma)
-            else:
-                # We shouldn't get here, if validation has been performed!
-                raise ValueError('Invalid k_diss_scaling_factor provided: ',
-                                 {scaling_method})
-        # Otherwise we will have been given a distribution, so use
-        # that directly
-        else:
-            k_diss_dist = k_diss
-        return k_diss_dist
+        return 4.0 * np.pi * (psd / 2.0) ** 2
+
+    @staticmethod
+    def volume(psd: npt.NDArray[np.float64]) -> \
+            npt.NDArray[np.float64]:
+        """
+        Return the volume of the particles, presuming they are spheres.
+        This function can be overloaded to account for different shaped
+        particles.
+        """
+        return (4.0/3.0) * np.pi * (psd / 2.0) ** 3
 
     @staticmethod
     def _f_surface_area(psd: npt.NDArray[np.float64],

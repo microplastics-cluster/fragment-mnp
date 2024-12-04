@@ -9,10 +9,10 @@ parts:
     - file: example-usage
     - file: config
     - file: input-data
+    - file: fragmentation-dissolution-rates
     - file: plotting
     - file: advanced-usage
       sections:
-      - file: advanced-usage/fragmentation-rate
       - file: advanced-usage/fragment-size-distribution
       - file: advanced-usage/numerical-instability
   - caption: Developers

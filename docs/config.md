@@ -27,15 +27,11 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 
 `n_timesteps`
 : *Required, int.*
-: The number of timesteps to run the model for. Each timestep is of length `dt`, which can be provided as a parameter and defaults to 1 second.
+: The number of timesteps to run the model for.
 
 `dt`
 : *Optional, int, units: s, default: 1*.
-: The length of each timestep. Defaults to 1 second.
-
-`k_diss_scaling_method`
-: *Optional, str equal to "constant" or "surface_area", default: "constant".*
-: The method by which the dissolution rate `k_diss` is scaled across size classes. If `constant`, then `k_diss` is the same across all size classes. If `surface_area`, then `k_diss` scales as $s^\gamma$, where $s$ is the surface area to volume ratio of the polymer particles, and $\gamma$ is an empirical scaling parameter set by the `k_diss_gamma` variable in the [model input data dict](input-data). If `k_diss` is given as a distribution in the input data, then `k_diss_scaling_method` is ignored and this distribution is used directly instead.
+: The length of each timestep. Defaults to 1 second. The model time grid uses the midpoint of these timesteps, and therefore is calculated as `t_grid = np.arange(0.5*dt, n_timesteps*dt, 0.5*dt)`.
 
 (config:solver_method)=
 `solver_method`
@@ -54,5 +50,5 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 
 (config:solver_t_eval)=
 `solver_t_eval`
-: *Optional, str equal to "integer", None, or list of integers or floats, default: "integer".*
-: Time points at which to store the computed solution, passed to [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html). If the string "integer" is provided, the model stores iterative integer timesteps with a step of 1 from 0 to `n_timesteps`, i.e. `solver_t_eval = np.arange(n_timesteps)`. If `None`, the points selected by the solver are used (which might be controlled by the `solver_max_step` option). If a list of integers or floats is provided, these are used directly as the time points. An error will be thrown if these lie outside of the model time span.
+: *Optional, str equal to "timesteps", None, or list of integers or floats, default: "timesteps".*
+: Time points at which to store the computed solution, passed to [scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html). If the string "timesteps" is provided, the model stores the model timesteps deduced from the `n_timestep` and `dt` config options, i.e. `solver_t_eval = np.arange(0, n_timesteps, dt)`. If `None`, the points selected by the solver are used (which might be controlled by the `solver_max_step` option). If a list of integers or floats is provided, these are used directly as the time points. An error will be thrown if these lie outside of the model time span.
