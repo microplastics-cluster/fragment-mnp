@@ -122,6 +122,11 @@ const thebe_selector_output = ".output, .cell_output"
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../fragmentation-dissolution-rates.html">
+   Fragmentation and dissolution rates
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../plotting.html">
    Plotting
   </a>
@@ -136,11 +141,6 @@ const thebe_selector_output = ".output, .cell_output"
    </i>
   </label>
   <ul class="current">
-   <li class="toctree-l2">
-    <a class="reference internal" href="fragmentation-rate.html">
-     Fragmentation rate
-    </a>
-   </li>
    <li class="toctree-l2">
     <a class="reference internal" href="fragment-size-distribution.html">
      Fragment size distribution
@@ -284,6 +284,11 @@ const thebe_selector_output = ".output, .cell_output"
    Example of a numerically unstable problem
   </a>
  </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#numerical-instability-due-to-timestep-size">
+   Numerical instability due to timestep size
+  </a>
+ </li>
 </ul>
 
             </nav>
@@ -307,6 +312,11 @@ const thebe_selector_output = ".output, .cell_output"
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#example-of-a-numerically-unstable-problem">
    Example of a numerically unstable problem
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#numerical-instability-due-to-timestep-size">
+   Numerical instability due to timestep size
   </a>
  </li>
 </ul>
@@ -400,7 +410,7 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>569
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>568
 </pre></div>
 </div>
 <img alt="../_images/numerical-instability_7_1.png" src="../_images/numerical-instability_7_1.png" />
@@ -429,6 +439,10 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 <p>Note that we have to set considerably smaller tolerances than the defaults to solve the instability.</p>
+</div>
+<div class="section" id="numerical-instability-due-to-timestep-size">
+<h2>Numerical instability due to timestep size<a class="headerlink" href="#numerical-instability-due-to-timestep-size" title="Permalink to this headline">¶</a></h2>
+<p>The model does not do any scaling of timesteps when they are input to the numerical solver. Whilst this shouldn’t normally cause issues, specifying very large timestep lengths <code class="docutils literal notranslate"><span class="pre">dt</span></code> may be a problem. To alleviate this, you might want to consider using a different unit for your time dimension. For example, if you want your timesteps to be 1 year long, then instead of <code class="docutils literal notranslate"><span class="pre">dt=31526000</span></code> (the number of seconds in a year), use <code class="docutils literal notranslate"><span class="pre">dt=1</span></code> and provide rate constants (<code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>) with units of <code class="docutils literal notranslate"><span class="pre">/year</span></code> instead of <code class="docutils literal notranslate"><span class="pre">/s</span></code>. Rate constant scaling parameters most also follow your unit conventions.</p>
 </div>
 </div>
 

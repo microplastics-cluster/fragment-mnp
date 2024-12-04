@@ -120,6 +120,11 @@ const thebe_selector_output = ".output, .cell_output"
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="fragmentation-dissolution-rates.html">
+   Fragmentation and dissolution rates
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="plotting.html">
    Plotting
   </a>
@@ -134,11 +139,6 @@ const thebe_selector_output = ".output, .cell_output"
    </i>
   </label>
   <ul>
-   <li class="toctree-l2">
-    <a class="reference internal" href="advanced-usage/fragmentation-rate.html">
-     Fragmentation rate
-    </a>
-   </li>
    <li class="toctree-l2">
     <a class="reference internal" href="advanced-usage/fragment-size-distribution.html">
      Fragment size distribution
@@ -364,15 +364,156 @@ const thebe_selector_output = ".output, .cell_output"
 <p>The example data has a dissolution rate <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> of 0. Let’s simulate dissolution by setting this to an average (median) of 0.001, and use the <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> config parameter set to <code class="docutils literal notranslate"><span class="pre">surface_area</span></code> to scale this by the surface area to volume ratio (the default is <code class="docutils literal notranslate"><span class="pre">constant</span></code>). We will keep <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> set to the default of 1, such that <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is directly proportional to surface area to volume ratio.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Change the dissolution parameters</span>
-<span class="n">minimal_data</span><span class="p">[</span><span class="s1">&#39;k_diss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0005</span>
-<span class="n">minimal_config</span><span class="p">[</span><span class="s1">&#39;k_diss_scaling_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;surface_area&#39;</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fragmentmnp</span> <span class="kn">import</span> <span class="n">FragmentMNP</span>
+<span class="kn">from</span> <span class="nn">fragmentmnp.examples</span> <span class="kn">import</span> <span class="n">minimal_config</span><span class="p">,</span> <span class="n">minimal_data</span>
+
+<span class="c1"># Change the dissolution parameters</span>
+<span class="n">minimal_config</span><span class="p">[</span><span class="s1">&#39;n_timesteps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">minimal_data</span><span class="p">[</span><span class="s1">&#39;k_diss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;average&#39;</span><span class="p">:</span> <span class="mf">0.0005</span><span class="p">,</span>
+    <span class="s1">&#39;alpha_s&#39;</span><span class="p">:</span> <span class="mi">2</span>
+<span class="p">}</span>
+<span class="c1"># minimal_config[&#39;k_diss_scaling_method&#39;] = &#39;surface_area&#39;</span>
 
 <span class="c1"># Rerun the model</span>
 <span class="n">fmnp</span> <span class="o">=</span> <span class="n">FragmentMNP</span><span class="p">(</span><span class="n">minimal_config</span><span class="p">,</span> <span class="n">minimal_data</span><span class="p">)</span>
 <span class="n">output</span> <span class="o">=</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span>---------------------------------------------------------------------------
+SchemaError                               Traceback (most recent call last)
+File ~/work/fragment-mnp/fragment-mnp/.venv/lib/python3.9/site-packages/schema.py:443, in Schema.validate(self, data, **kwargs)
+    442 try:
+--&gt; 443     return s.validate(data, **kwargs)
+    444 except SchemaError as x:
+
+File ~/work/fragment-mnp/fragment-mnp/.venv/lib/python3.9/site-packages/schema.py:167, in Or.validate(self, data, **kwargs)
+    166         errors += _x.errors
+--&gt; 167 raise SchemaError(
+    168     [&quot;%r did not validate %r&quot; % (self, data)] + autos,
+    169     [self._error.format(data) if self._error else None] + errors,
+    170 )
+
+SchemaError: Or(Or(And(&lt;class &#39;int&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f790&gt;), And(&lt;class &#39;float&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f820&gt;)), {&#39;k_f&#39;: And(Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), &lt;function &lt;lambda&gt; at 0x7f872d25f8b0&gt;), Optional(&#39;k_0&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;is_compound&#39;): &lt;class &#39;bool&#39;&gt;, Optional(&#39;alpha_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;B_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;beta_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;gamma_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;delta1_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;alpha_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;B_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;beta_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;gamma_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;delta1_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;C_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;D_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;delta2_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;C_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;D_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;delta2_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;A_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, &lt;function _is_array at 0x7f872d25f550&gt;), Optional(&#39;A_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, &lt;function _is_array at 0x7f872d25f550&gt;)}) did not validate {&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2}
+Or(And(&lt;class &#39;int&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f790&gt;), And(&lt;class &#39;float&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f820&gt;)) did not validate {&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2}
+{&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2} should be instance of &#39;int&#39;
+{&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2} should be instance of &#39;float&#39;
+Missing key: &#39;k_f&#39;
+
+During handling of the above exception, another exception occurred:
+
+SchemaError                               Traceback (most recent call last)
+File ~/work/fragment-mnp/fragment-mnp/.venv/lib/python3.9/site-packages/schema.py:405, in Schema.validate(self, data, **kwargs)
+    404 try:
+--&gt; 405     nvalue = Schema(svalue, error=e, ignore_extra_keys=i).validate(value, **kwargs)
+    406 except SchemaError as x:
+
+File ~/work/fragment-mnp/fragment-mnp/.venv/lib/python3.9/site-packages/schema.py:445, in Schema.validate(self, data, **kwargs)
+    444 except SchemaError as x:
+--&gt; 445     raise SchemaError([None] + x.autos, [e.format(data) if e else None] + x.errors)
+    446 except BaseException as x:
+
+SchemaError: Or(Or(And(&lt;class &#39;int&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f790&gt;), And(&lt;class &#39;float&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f820&gt;)), {&#39;k_f&#39;: And(Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), &lt;function &lt;lambda&gt; at 0x7f872d25f8b0&gt;), Optional(&#39;k_0&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;is_compound&#39;): &lt;class &#39;bool&#39;&gt;, Optional(&#39;alpha_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;B_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;beta_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;gamma_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;delta1_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;alpha_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;B_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;beta_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;gamma_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;delta1_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;C_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;D_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;delta2_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;C_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;D_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;delta2_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;A_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, &lt;function _is_array at 0x7f872d25f550&gt;), Optional(&#39;A_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, &lt;function _is_array at 0x7f872d25f550&gt;)}) did not validate {&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2}
+Or(And(&lt;class &#39;int&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f790&gt;), And(&lt;class &#39;float&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f820&gt;)) did not validate {&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2}
+{&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2} should be instance of &#39;int&#39;
+{&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2} should be instance of &#39;float&#39;
+Missing key: &#39;k_f&#39;
+
+During handling of the above exception, another exception occurred:
+
+SchemaError                               Traceback (most recent call last)
+File ~/work/fragment-mnp/fragment-mnp/.venv/lib/python3.9/site-packages/schema.py:443, in Schema.validate(self, data, **kwargs)
+    442 try:
+--&gt; 443     return s.validate(data, **kwargs)
+    444 except SchemaError as x:
+
+File ~/work/fragment-mnp/fragment-mnp/.venv/lib/python3.9/site-packages/schema.py:409, in Schema.validate(self, data, **kwargs)
+    408     message = self._prepend_schema_name(k)
+--&gt; 409     raise SchemaError([message] + x.autos, [e.format(data) if e else None] + x.errors)
+    410 else:
+
+SchemaError: Key &#39;k_diss&#39; error:
+Or(Or(And(&lt;class &#39;int&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f790&gt;), And(&lt;class &#39;float&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f820&gt;)), {&#39;k_f&#39;: And(Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), &lt;function &lt;lambda&gt; at 0x7f872d25f8b0&gt;), Optional(&#39;k_0&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;is_compound&#39;): &lt;class &#39;bool&#39;&gt;, Optional(&#39;alpha_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;B_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;beta_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;gamma_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;delta1_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;alpha_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;B_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;beta_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;gamma_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;delta1_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;C_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;D_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;delta2_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;C_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;D_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;delta2_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;A_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, &lt;function _is_array at 0x7f872d25f550&gt;), Optional(&#39;A_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, &lt;function _is_array at 0x7f872d25f550&gt;)}) did not validate {&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2}
+Or(And(&lt;class &#39;int&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f790&gt;), And(&lt;class &#39;float&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f820&gt;)) did not validate {&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2}
+{&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2} should be instance of &#39;int&#39;
+{&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2} should be instance of &#39;float&#39;
+Missing key: &#39;k_f&#39;
+
+During handling of the above exception, another exception occurred:
+
+SchemaError                               Traceback (most recent call last)
+File ~/work/fragment-mnp/fragment-mnp/src/fragmentmnp/fragmentmnp.py:542, in FragmentMNP._validate_inputs(config, data)
+    540 try:
+    541     # Returns the data dict with defaults filled
+--&gt; 542     data = validation.validate_data(data, config)
+    543 except SchemaError as err:
+
+File ~/work/fragment-mnp/fragment-mnp/src/fragmentmnp/validation.py:161, in validate_data(data, config)
+    159 # Run the validation, and return the validated dict
+    160 # if it passes
+--&gt; 161 validated = Schema(data_schema).validate(data)
+    163 # Check initial conc distribution is the correct length
+
+File ~/work/fragment-mnp/fragment-mnp/.venv/lib/python3.9/site-packages/schema.py:445, in Schema.validate(self, data, **kwargs)
+    444 except SchemaError as x:
+--&gt; 445     raise SchemaError([None] + x.autos, [e.format(data) if e else None] + x.errors)
+    446 except BaseException as x:
+
+SchemaError: Key &#39;k_diss&#39; error:
+Or(Or(And(&lt;class &#39;int&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f790&gt;), And(&lt;class &#39;float&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f820&gt;)), {&#39;k_f&#39;: And(Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), &lt;function &lt;lambda&gt; at 0x7f872d25f8b0&gt;), Optional(&#39;k_0&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;is_compound&#39;): &lt;class &#39;bool&#39;&gt;, Optional(&#39;alpha_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;B_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;beta_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;gamma_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;delta1_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;alpha_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;B_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;beta_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;gamma_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;delta1_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;), Optional(&#39;C_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;D_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;delta2_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;C_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;D_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;delta2_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, None), Optional(&#39;A_t&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, &lt;function _is_array at 0x7f872d25f550&gt;), Optional(&#39;A_s&#39;): Or(&lt;class &#39;int&#39;&gt;, &lt;class &#39;float&#39;&gt;, &lt;function _is_array at 0x7f872d25f550&gt;)}) did not validate {&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2}
+Or(And(&lt;class &#39;int&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f790&gt;), And(&lt;class &#39;float&#39;&gt;, &lt;function &lt;lambda&gt; at 0x7f872d25f820&gt;)) did not validate {&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2}
+{&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2} should be instance of &#39;int&#39;
+{&#39;average&#39;: 0.0005, &#39;alpha_s&#39;: 2} should be instance of &#39;float&#39;
+Missing key: &#39;k_f&#39;
+
+The above exception was the direct cause of the following exception:
+
+SchemaError                               Traceback (most recent call last)
+Cell In[4], line 13
+      6 minimal_data[&#39;k_diss&#39;] = {
+      7     &#39;average&#39;: 0.0005,
+      8     &#39;alpha_s&#39;: 2
+      9 }
+     10 # minimal_config[&#39;k_diss_scaling_method&#39;] = &#39;surface_area&#39;
+     11 
+     12 # Rerun the model
+---&gt; 13 fmnp = FragmentMNP(minimal_config, minimal_data)
+     14 output = fmnp.run()
+
+File ~/work/fragment-mnp/fragment-mnp/src/fragmentmnp/fragmentmnp.py:37, in FragmentMNP.__init__(self, config, data, validate)
+     35 # Validate the config and data (if we are meant to)
+     36 if validate:
+---&gt; 37     config, data = self._validate_inputs(config, data)
+     38 # If we passed validation (or aren&#39;t validating), save attributes
+     39 self.config = config
+
+File ~/work/fragment-mnp/fragment-mnp/src/fragmentmnp/fragmentmnp.py:544, in FragmentMNP._validate_inputs(config, data)
+    542     data = validation.validate_data(data, config)
+    543 except SchemaError as err:
+--&gt; 544     raise SchemaError(&#39;Input data did not pass validation!&#39;) from err
+    545 # Return the config and data with filled defaults
+    546 return config, data
+
+SchemaError: Input data did not pass validation!
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fmnp</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">k_diss</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&lt;matplotlib.lines.Line2D at 0x7f5effb94310&gt;]
+</pre></div>
+</div>
+<img alt="_images/example-usage_8_1.png" src="_images/example-usage_8_1.png" />
 </div>
 </div>
 <p>Dissolution data is included in the <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> class: <code class="docutils literal notranslate"><span class="pre">n_diss</span></code> is a timeseries of particle number concentrations lost from each size class, and <code class="docutils literal notranslate"><span class="pre">c_diss</span></code> is corresponding mass concentration assuming spherical particles. We can use the <code class="docutils literal notranslate"><span class="pre">FMNPOutput.plot()</span></code> method again to plot the time evolution graph with dissolution mass concentrations:</p>
@@ -384,7 +525,7 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/example-usage_9_0.png" src="_images/example-usage_9_0.png" />
+<img alt="_images/example-usage_10_0.png" src="_images/example-usage_10_0.png" />
 </div>
 </div>
 </div>

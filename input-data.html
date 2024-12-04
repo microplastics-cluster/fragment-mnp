@@ -55,7 +55,7 @@ const thebe_selector_output = ".output, .cell_output"
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Plotting" href="plotting.html" />
+    <link rel="next" title="Fragmentation and dissolution rates" href="fragmentation-dissolution-rates.html" />
     <link rel="prev" title="Model configuration" href="config.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
@@ -122,6 +122,11 @@ const thebe_selector_output = ".output, .cell_output"
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="fragmentation-dissolution-rates.html">
+   Fragmentation and dissolution rates
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="plotting.html">
    Plotting
   </a>
@@ -136,11 +141,6 @@ const thebe_selector_output = ".output, .cell_output"
    </i>
   </label>
   <ul>
-   <li class="toctree-l2">
-    <a class="reference internal" href="advanced-usage/fragmentation-rate.html">
-     Fragmentation rate
-    </a>
-   </li>
    <li class="toctree-l2">
     <a class="reference internal" href="advanced-usage/fragment-size-distribution.html">
      Fragment size distribution
@@ -287,6 +287,10 @@ const thebe_selector_output = ".output, .cell_output"
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">minimal_data</span></code> contains only required variables, whilst <code class="docutils literal notranslate"><span class="pre">full_data</span></code> includes variables that have defaults. Here we take a look at the schema for this data dict.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In previous versions of the model, the variables <code class="docutils literal notranslate"><span class="pre">theta_1</span></code>, <code class="docutils literal notranslate"><span class="pre">k_frag_tau</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> were used to scale the size and time dependence of the fragmentation and dissolution rate constants <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>. These have been replaced with a more flexible regressions and new parameters, as detailed belowed.</p>
+</div>
 <dl class="simple myst">
 <dt><code class="docutils literal notranslate"><span class="pre">initial_concs</span></code></dt><dd><p><em>Required, list of positive floats with length equal to <code class="docutils literal notranslate"><span class="pre">n_size_classes</span></code>, units: kg/m3.</em></p>
 </dd>
@@ -296,31 +300,17 @@ const thebe_selector_output = ".output, .cell_output"
 </dd>
 <dd><p>The density of the polymer being modelled.</p>
 </dd>
-<dt><code class="docutils literal notranslate"><span class="pre">k_frag</span></code></dt><dd><p><em>Required, float or iterable with length equal to <code class="docutils literal notranslate"><span class="pre">n_size_classes</span></code>, units: s<sup>-1</sup>.</em></p>
+</dl>
+<dl class="simple myst" id="input-data-k">
+<dt><code class="docutils literal notranslate"><span class="pre">k_frag</span></code>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code></dt><dd><p><em>Required, float or dict, units: s<sup>-1</sup>.</em></p>
 </dd>
-<dd><p>Either a scalar representing the average fragmentation rate <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> across the size classes, or the full <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> distribution for all size classes. <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> is defined as the fraction of the <em>mass</em> of a particular size class that fragments each second. If a scalar (average) is provided, <code class="docutils literal notranslate"><span class="pre">theta_1</span></code> and <code class="docutils literal notranslate"><span class="pre">k_frag_tau</span></code> are used to calculate the size- and time-dependent distribution. If a size class distribution is given, any value given for <code class="docutils literal notranslate"><span class="pre">theta_1</span></code> is ignored.</p>
+<dd><p>Either a scalar or dictionary of regression parameters. If a scalar is provided, the fragmentation (<code class="docutils literal notranslate"><span class="pre">k_frag</span></code>) or dissolution (<code class="docutils literal notranslate"><span class="pre">k_diss</span></code>) rate will be constant in time and across particle surface areas. If a dictionary is provided, the rate will follow the time and surface area dependence according to the parameters provided, as shown in the following table. See <span class="xref myst"></span> for more details.</p>
 </dd>
 </dl>
-<dl class="simple myst" id="input-data-theta-1">
-<dt><code class="docutils literal notranslate"><span class="pre">theta_1</span></code></dt><dd><p><em>Optional, float, default: 0.</em></p>
-</dd>
-<dd><p>Surface energy empirical parameter <span class="math notranslate nohighlight">\(\theta_1\)</span>, which dictates how <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> varies with particle size. <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> varies as <span class="math notranslate nohighlight">\(d^{2\theta_1}\)</span>, meaning that if <span class="math notranslate nohighlight">\(\theta_1 = 0\)</span>, the same <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> is used across size classes, and if <span class="math notranslate nohighlight">\(\theta_1 &gt; 0\)</span>, <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> is larger for larger size particles. <code class="docutils literal notranslate"><span class="pre">theta_1</span></code> is ignored if a distribution is given for <code class="docutils literal notranslate"><span class="pre">k_frag</span></code>.</p>
-</dd>
-</dl>
-<dl class="simple myst" id="input-data-k-frag-tau">
-<dt><code class="docutils literal notranslate"><span class="pre">k_frag_tau</span></code></dt><dd><p><em>Optional, float, default: 0.</em></p>
-</dd>
-<dd><p>Fragmentation rate time-dependence parameter <span class="math notranslate nohighlight">\(\tau\)</span>, which dictates how <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> varies over time. <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> varies as <span class="math notranslate nohighlight">\(t^\tau\)</span>, where <span class="math notranslate nohighlight">\(t\)</span> is the model timestep index, meaning that if <span class="math notranslate nohighlight">\(\tau = 0\)</span> (the default), <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> is constant in time. If <span class="math notranslate nohighlight">\(\tau &lt; 0\)</span>, <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> decreases in time, and vice-versa. Note that this dependence is on the timestep index, rather than the actual time.</p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">k_diss</span></code></dt><dd><p><em>Optional, float, default: 0.</em></p>
-</dd>
-<dd><p>Either the average (median) dissolution rate <span class="math notranslate nohighlight">\(k_\text{diss}\)</span> across the size classes, or the full <span class="math notranslate nohighlight">\(k_\text{diss}\)</span> distribution for all size classes. <span class="math notranslate nohighlight">\(k_\text{diss}\)</span> describes the rate of loss to “dissolved” organics from each size class. If an average (scalar) is given, how this average is distributed across size classes is determined by the <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> in the <a class="reference internal" href="config.html"><span class="doc std std-doc">model configuration</span></a>. If a distribution is given, the <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> is ignored.</p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code></dt><dd><p><em>Optional, float, default: 1.</em></p>
-</dd>
-<dd><p>If the config option <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> is set to <code class="docutils literal notranslate"><span class="pre">surface_area</span></code> and an average (scalar) <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is given in input data, then <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> <span class="math notranslate nohighlight">\(\gamma\)</span> is an empirical parameter that scales how dependent the distribution of <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> across size classes is on the particle surface area to volume ratio. In short, <span class="math notranslate nohighlight">\(k_\text{diss} \propto s^\gamma\)</span>, where <span class="math notranslate nohighlight">\(s\)</span> is the surface area to volume ratio. In other words, if <span class="math notranslate nohighlight">\(\gamma = 1\)</span>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> scales directly with the surface area to volume ratio, and if <span class="math notranslate nohighlight">\(\gamma = 0\)</span>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is constant across size classes (i.e. it has the same effect as setting <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> to <code class="docutils literal notranslate"><span class="pre">constant</span></code>). If a distribution is given for <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>, then <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> is ignored.</p>
-</dd>
-</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The 2D <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> array generated by the model has been transposed compared to previous versions of the model. <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> now has the shape <code class="docutils literal notranslate"><span class="pre">(n_size_classes,</span> <span class="pre">n_timesteps)</span></code> rather than <code class="docutils literal notranslate"><span class="pre">(n_timesteps,</span> <span class="pre">n_size_classes)</span></code>.</p>
+</div>
 <dl class="simple myst" id="input-data-fsd-beta">
 <dt><code class="docutils literal notranslate"><span class="pre">fsd_beta</span></code></dt><dd><p><em>Optional, float, default: 0.</em></p>
 </dd>
@@ -329,8 +319,7 @@ const thebe_selector_output = ".output, .cell_output"
 </dl>
 <div class="tip admonition">
 <p class="admonition-title">Units</p>
-<p>Strictly speaking, the FRAGMENT-MNP model is unit-agnostic. As long as the units of data specified in input data are consistent, then the units of variables output by the model will match these. For example, if you specify <code class="docutils literal notranslate"><span class="pre">initial_concs</span></code> and <code class="docutils literal notranslate"><span class="pre">density</span></code> with units of mg/m<sup>3</sup>, then output concentrations will be in mg/m<sup>3</sup>.</p>
-<p><strong>However</strong>, we strongly recommend you stick to SI units to avoid the chance of mistakes being made. Hence this page gives unit recommendations in SI units.</p>
+<p>Strictly speaking, the FRAGMENT-MNP model is unit-agnostic. As long as the units of data specified in input data are consistent, then the units of variables output by the model will match these. For example, if you specify <code class="docutils literal notranslate"><span class="pre">initial_concs</span></code> and <code class="docutils literal notranslate"><span class="pre">density</span></code> with units of mg/m<sup>3</sup>, then output concentrations will be in mg/m<sup>3</sup>. Notably, it is worth making sure that your rate constants (<code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>) follow the same units as your model timestep <code class="docutils literal notranslate"><span class="pre">dt</span></code>. Unless you have good reason not to (e.g. very long timesteps), we <em>strongly</em> recommend using SI units to avoid mistakes.</p>
 </div>
 </div>
 
@@ -366,10 +355,10 @@ const thebe_selector_output = ".output, .cell_output"
             <p class="prev-next-title">Model configuration</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="plotting.html" title="next page">
+    <a class='right-next' id="next-link" href="fragmentation-dissolution-rates.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Plotting</p>
+        <p class="prev-next-title">Fragmentation and dissolution rates</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>

@@ -121,6 +121,11 @@ const thebe_selector_output = ".output, .cell_output"
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../fragmentation-dissolution-rates.html">
+   Fragmentation and dissolution rates
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../plotting.html">
    Plotting
   </a>
@@ -135,11 +140,6 @@ const thebe_selector_output = ".output, .cell_output"
    </i>
   </label>
   <ul>
-   <li class="toctree-l2">
-    <a class="reference internal" href="../advanced-usage/fragmentation-rate.html">
-     Fragmentation rate
-    </a>
-   </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../advanced-usage/fragment-size-distribution.html">
      Fragment size distribution
@@ -391,9 +391,7 @@ config and data are correct and wish to speed up model initialisation</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.mass_to_particle_number">
 <span class="sig-name descname"><span class="pre">mass_to_particle_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mass</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.mass_to_particle_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.mass_to_particle_number" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert mass (concentration) to particle number (concentration).
-Here, particles are assumed to be spherical, but this function
-can be overloaded to account for different shape particles.</p>
+<dd><p>Convert mass (concentration) to particle number (concentration).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -401,12 +399,8 @@ can be overloaded to account for different shape particles.</p>
 <span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><span class="pre">fragmentmnp.output.FMNPOutput</span></a></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the model with the config and data provided at initialisation.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><a class="reference internal" href="#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.output.FMNPOutput</span></code></a> object containing model output</p></li>
-<li><p><em>data.</em></p></li>
-</ul>
-</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.output.FMNPOutput</span></code></a> object containing model output</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
@@ -416,7 +410,7 @@ concentrations <cite>c</cite>. <cite>k</cite> is the current size class, <cite>i
 daughter size classes.</p>
 <div class="math notranslate nohighlight">
 \[\frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
-\Sigma_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k\]</div>
+\sum_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k\]</div>
 <p>Here, <span class="math notranslate nohighlight">\(k_{\text{frag},k}\)</span> is the fragmentation rate of size
 class <cite>k</cite>, <span class="math notranslate nohighlight">\(f_{i,k}\)</span> is the fraction of daughter
 fragments produced from a fragmenting particle of size <cite>i</cite> that are of
@@ -454,6 +448,136 @@ classes than larger.</p>
 <dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.set_k_distribution">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">set_k_distribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_compound</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.set_k_distribution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.set_k_distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a distribution based on the rate constant scaling factor <code class="docutils literal notranslate"><span class="pre">k_f</span></code>
+and baseline adjustment factor <code class="docutils literal notranslate"><span class="pre">k_0</span></code>. The distribution will be a
+compound combination of power law / polynomial, exponential,
+logarithmic and logistic regressions, encapsulated in the function
+<span class="math notranslate nohighlight">\(X(x)\)</span>, and have dimensions given by <cite>dims</cite>. For a distribution
+with <cite>D</cite> dimensions:</p>
+<div class="math notranslate nohighlight">
+\[k(\mathbf{x}) = k_f \prod_{d=1}^D X(x_d) + k_0\]</div>
+<p><span class="math notranslate nohighlight">\(X(x)\)</span> is then given either by:</p>
+<div class="math notranslate nohighlight">
+\[X(x) = A_x \hat{x}^{\alpha_x} \cdot B_x e^{-\beta_x \hat{x}}
+\cdot C_x \ln (\gamma_x \hat{x}) \cdot
+\frac{D_x}{1 + e^{-\delta_{x,1}(\hat{x} - \delta_{x,2})}}\]</div>
+<p>or the user can specify a polynomial instead of the power law term:</p>
+<div class="math notranslate nohighlight">
+\[X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot
+B_x e^{-\beta_x \hat{x}} \cdot
+C_x \ln (\gamma_x \hat{x}) \cdot
+\frac{D_x}{1 + e^{-\delta_{x,1}(\hat{x} - \delta_{x,2})}}\]</div>
+<p>In the above, the dimension value <span class="math notranslate nohighlight">\(\hat{x}\)</span> is normalised such
+that the median value is equal to 1: <span class="math notranslate nohighlight">\(\hat{x} = x/\tilde{x}\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dims</strong> (<em>dict</em>) – A dictionary that maps dimension names to their grids, e.g. to
+create a distribution of time <cite>t</cite> and particle surface area <cite>s</cite>,
+<cite>dims</cite> would equal <cite>{‘t’: t, ‘s’: s}</cite>, where <cite>t</cite> and <cite>s</cite> are the
+timesteps and particle surface area bins over which to create this
+distribution. The dimension names must correspond to the subscripts
+used in <cite>params</cite>. The values are normalised such that the median
+of each dimension is 1.</p></li>
+<li><p><strong>k_f</strong> (<em>float</em>) – Rate constant scaling factor</p></li>
+<li><p><strong>k_0</strong> (<em>float</em><em>, </em><em>default=0</em>) – Rate constant baseline adjustment factor</p></li>
+<li><p><strong>params</strong> (<em>dict</em><em>, </em><em>default={}</em>) – A dictionary of values to parameterise the distribution with. See
+the notes below.</p></li>
+<li><p><strong>is_compound</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether the regression for each dimension are combined by
+multiplying (compound) or adding.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Distribution array over the dims provided</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>k = np.ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p><cite>k</cite> is modelled as a function of the dims provided, and the model
+builds this distribution as a combination of power law / polynomial,
+exponential, logarithmic and logistic regressions, enabling a broad
+range of dependencies to be accounted for. This distribution is
+intended to be applied to rate constants used in the model, such as
+<cite>k_frag</cite> and <cite>k_diss</cite>. The <cite>params</cite> dict gives the parameters used
+to construct this distribution using the equation above. That is,
+<span class="math notranslate nohighlight">\(A_{x}\)</span> (where <cite>x</cite> is the dimension), <span class="math notranslate nohighlight">\(\alpha_{x_i}\)</span> etc
+are given in the <cite>params</cite> dict as e.g. <cite>A_t</cite>, <cite>alpha_t</cite>, where the
+subscript (<cite>t</cite> in this case) is the name of the dimension corresponding
+to the <cite>dims</cite> dict.</p>
+<p>This function does not require any parameters to be present in
+<cite>params</cite>. Non-present values are defaulted to values that remove the
+influence of that particular expression, and letting all parameters
+default results in a constant <cite>k</cite> distribution.</p>
+<p>More specifically, the params that can be specified are:</p>
+<dl class="simple">
+<dt>A_x<span class="classifier">array-like or float, default=1</span></dt><dd><p>Power law coefficient(s) for dim <cite>x</cite> (e.g. <code class="docutils literal notranslate"><span class="pre">A_t</span></code> for dim <cite>t</cite>).
+If a scalar is provided, this is used as the coefficient for a
+power law expression with <code class="docutils literal notranslate"><span class="pre">alpha_x</span></code> as the exponent. If a list is
+provided, these are used as coefficients in a polynomial
+expression, where the order of the polynomial is given by the
+length of the list. For example, if a length-2 list <code class="docutils literal notranslate"><span class="pre">A_t=[2,</span> <span class="pre">3]</span></code>
+is given, then the resulting polynomial will be <span class="math notranslate nohighlight">\(3t^2 + 2t\)</span>
+(note the list is in <em>ascending</em> order of polynomials).</p>
+</dd>
+<dt>alpha_x<span class="classifier">float, default=0</span></dt><dd><p>If <cite>A_x</cite> is a scalar, <cite>alpha_x</cite> is the exponent for this power law
+expression. For example, if <code class="docutils literal notranslate"><span class="pre">A_t=2</span></code> and <code class="docutils literal notranslate"><span class="pre">alpha_t=0.5</span></code>, the
+resulting power law will be <span class="math notranslate nohighlight">\(2t^{0.5}\)</span>.</p>
+</dd>
+<dt>B_x<span class="classifier">float, default=1</span></dt><dd><p>Exponential coefficient.</p>
+</dd>
+<dt>beta_x<span class="classifier">float, default=0</span></dt><dd><p>Exponential scaling factor.</p>
+</dd>
+<dt>C_x<span class="classifier">float or None, default=None</span></dt><dd><p>If a scalar is given, this is the coefficient for the logarithmic
+expression. If <code class="docutils literal notranslate"><span class="pre">None</span></code> is given, the logarithmic expression is
+set to 1 (i.e. it is ignored).</p>
+</dd>
+<dt>gamma_x<span class="classifier">float, default=1</span></dt><dd><p>Logarithmic scaling factor.</p>
+</dd>
+<dt>D_x<span class="classifier">float or None, default=None</span></dt><dd><p>If a scalar is given, this is the coefficient for the logistic
+expression. If <cite>None</cite> is given, the logistic expression is set
+to 1.</p>
+</dd>
+<dt>delta1_x<span class="classifier">float, default=1</span></dt><dd><p>Logistic growth rate (steepness of the logistic curve).</p>
+</dd>
+<dt>delta2_x<span class="classifier">float or None, default=None</span></dt><dd><p>Midpoint of the logistic curve, which denotes the <cite>x</cite> value where
+the logistic curve is at its midpoint. If <cite>None</cite> is given, the
+midpoint is assumed to be the at the midpoint of the <cite>x</cite> range. For
+example, for the time dimension <cite>t</cite>, if the model timesteps go
+from 1 to 100, then the default is <code class="docutils literal notranslate"><span class="pre">delta2_t=50</span></code>.</p>
+</dd>
+</dl>
+<p>If any dimension values are equal to 0, the logarithmic term returns 0
+rather than being undefined.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The parameters used for calculating distributions such as
+<cite>k_frag</cite> and <cite>k_diss</cite> have changed from previous versions, which
+only allowed for a power law relationship. This causes breaking
+changes after v0.1.0.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.surface_area">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">surface_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.surface_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.surface_area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the surface area of the particles, presuming they are
+spheres. This function can be overloaded to account for different
+shaped particles.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.volume">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">volume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.volume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.volume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the volume of the particles, presuming they are spheres.
+This function can be overloaded to account for different shaped
+particles.</p>
 </dd></dl>
 
 </dd></dl>

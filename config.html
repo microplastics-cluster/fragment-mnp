@@ -51,8 +51,6 @@ const thebe_selector_input = "pre"
 const thebe_selector_output = ".output, .cell_output"
 </script>
     <script async="async" src="_static/sphinx-thebe.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Input data" href="input-data.html" />
@@ -122,6 +120,11 @@ const thebe_selector_output = ".output, .cell_output"
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="fragmentation-dissolution-rates.html">
+   Fragmentation and dissolution rates
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="plotting.html">
    Plotting
   </a>
@@ -136,11 +139,6 @@ const thebe_selector_output = ".output, .cell_output"
    </i>
   </label>
   <ul>
-   <li class="toctree-l2">
-    <a class="reference internal" href="advanced-usage/fragmentation-rate.html">
-     Fragmentation rate
-    </a>
-   </li>
    <li class="toctree-l2">
     <a class="reference internal" href="advanced-usage/fragment-size-distribution.html">
      Fragment size distribution
@@ -302,15 +300,11 @@ const thebe_selector_output = ".output, .cell_output"
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">n_timesteps</span></code></dt><dd><p><em>Required, int.</em></p>
 </dd>
-<dd><p>The number of timesteps to run the model for. Each timestep is of length <code class="docutils literal notranslate"><span class="pre">dt</span></code>, which can be provided as a parameter and defaults to 1 second.</p>
+<dd><p>The number of timesteps to run the model for.</p>
 </dd>
 <dt><code class="docutils literal notranslate"><span class="pre">dt</span></code></dt><dd><p><em>Optional, int, units: s, default: 1</em>.</p>
 </dd>
-<dd><p>The length of each timestep. Defaults to 1 second.</p>
-</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code></dt><dd><p><em>Optional, str equal to “constant” or “surface_area”, default: “constant”.</em></p>
-</dd>
-<dd><p>The method by which the dissolution rate <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is scaled across size classes. If <code class="docutils literal notranslate"><span class="pre">constant</span></code>, then <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is the same across all size classes. If <code class="docutils literal notranslate"><span class="pre">surface_area</span></code>, then <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> scales as <span class="math notranslate nohighlight">\(s^\gamma\)</span>, where <span class="math notranslate nohighlight">\(s\)</span> is the surface area to volume ratio of the polymer particles, and <span class="math notranslate nohighlight">\(\gamma\)</span> is an empirical scaling parameter set by the <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> variable in the <a class="reference internal" href="input-data.html"><span class="doc std std-doc">model input data dict</span></a>. If <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> is given as a distribution in the input data, then <code class="docutils literal notranslate"><span class="pre">k_diss_scaling_method</span></code> is ignored and this distribution is used directly instead.</p>
+<dd><p>The length of each timestep. Defaults to 1 second. The model time grid uses the midpoint of these timesteps, and therefore is calculated as <code class="docutils literal notranslate"><span class="pre">t_grid</span> <span class="pre">=</span> <span class="pre">np.arange(0.5*dt,</span> <span class="pre">n_timesteps*dt,</span> <span class="pre">0.5*dt)</span></code>.</p>
 </dd>
 </dl>
 <dl class="simple myst" id="config-solver-method">
@@ -332,9 +326,9 @@ const thebe_selector_output = ".output, .cell_output"
 </dd>
 </dl>
 <dl class="simple myst" id="config-solver-t-eval">
-<dt><code class="docutils literal notranslate"><span class="pre">solver_t_eval</span></code></dt><dd><p><em>Optional, str equal to “integer”, None, or list of integers or floats, default: “integer”.</em></p>
+<dt><code class="docutils literal notranslate"><span class="pre">solver_t_eval</span></code></dt><dd><p><em>Optional, str equal to “timesteps”, None, or list of integers or floats, default: “timesteps”.</em></p>
 </dd>
-<dd><p>Time points at which to store the computed solution, passed to <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html">scipy.integrate.solve_ivp</a>. If the string “integer” is provided, the model stores iterative integer timesteps with a step of 1 from 0 to <code class="docutils literal notranslate"><span class="pre">n_timesteps</span></code>, i.e. <code class="docutils literal notranslate"><span class="pre">solver_t_eval</span> <span class="pre">=</span> <span class="pre">np.arange(n_timesteps)</span></code>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the points selected by the solver are used (which might be controlled by the <code class="docutils literal notranslate"><span class="pre">solver_max_step</span></code> option). If a list of integers or floats is provided, these are used directly as the time points. An error will be thrown if these lie outside of the model time span.</p>
+<dd><p>Time points at which to store the computed solution, passed to <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html">scipy.integrate.solve_ivp</a>. If the string “timesteps” is provided, the model stores the model timesteps deduced from the <code class="docutils literal notranslate"><span class="pre">n_timestep</span></code> and <code class="docutils literal notranslate"><span class="pre">dt</span></code> config options, i.e. <code class="docutils literal notranslate"><span class="pre">solver_t_eval</span> <span class="pre">=</span> <span class="pre">np.arange(0,</span> <span class="pre">n_timesteps,</span> <span class="pre">dt)</span></code>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the points selected by the solver are used (which might be controlled by the <code class="docutils literal notranslate"><span class="pre">solver_max_step</span></code> option). If a list of integers or floats is provided, these are used directly as the time points. An error will be thrown if these lie outside of the model time span.</p>
 </dd>
 </dl>
 </div>
