@@ -1,7 +1,5 @@
 # FRAGMENT-MNP
 
-🏗️ *Currently in development* 🏗️
-
 FRAGMENT-MNP is a mechanistic model of Micro and NanoPlastic FRAGMentation in the ENvironmenT.
 
 [See the full model documentation here.](https://microplastics-cluster.github.io/fragment-mnp)
