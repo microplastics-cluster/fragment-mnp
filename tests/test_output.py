@@ -2,8 +2,9 @@
 Unit tests for model output
 """
 import numpy as np
-from _mock_output import mock_output, t, c, n, c_diss, n_diss
-from fragmentmnp.output import FMNPOutput
+
+from _mock_output import mock_output, t, c, n, c_diss_from_sc, c_diss, \
+                         n_diss_from_sc
 
 
 def test_saving_data():
@@ -15,8 +16,9 @@ def test_saving_data():
         np.array_equal(t, mock_output.t) and
         np.array_equal(c, mock_output.c) and
         np.array_equal(n, mock_output.n) and
+        np.array_equal(c_diss_from_sc, mock_output.c_diss_from_sc) and
         np.array_equal(c_diss, mock_output.c_diss) and
-        np.array_equal(n_diss, mock_output.n_diss)
+        np.array_equal(n_diss_from_sc, mock_output.n_diss_from_sc)
     )
 
 

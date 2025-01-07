@@ -51,6 +51,7 @@ class FragmentMNP():
             else self.config['solver_t_eval']
         # Initial concentrations
         self.initial_concs = np.array(data['initial_concs'])
+        self.initial_concs_diss = data['initial_concs_diss']
         # Set the particle phys-chem properties
         self.psd = self._set_psd()
         self.surface_areas = self.surface_area(self.psd)
@@ -174,14 +175,18 @@ class FragmentMNP():
         j_diss = k_diss_eval * soln.y
         # Use this to calculate the cumulative mass concentration
         # lost to dissolution
-        c_diss = np.cumsum(j_diss, axis=1)
+        c_diss_from_sc = np.cumsum(j_diss, axis=1)
+        # Add initial concentration and sum across size classes
+        c_diss = np.sum(np.cumsum(j_diss, axis=1), axis=0) \
+            + self.initial_concs_diss
         # Now we have the solutions as mass concentrations, we can
         # convert to particle number concentrations
         n = self.mass_to_particle_number(soln.y)
-        n_diss = self.mass_to_particle_number(c_diss)
+        n_diss_from_sc = self.mass_to_particle_number(c_diss)
 
         # Return the solution in an FMNPOutput object
-        return FMNPOutput(soln.t, soln.y, n, c_diss, n_diss, soln, self.psd)
+        return FMNPOutput(soln.t, soln.y, n, c_diss_from_sc, c_diss,
+                          n_diss_from_sc, soln, self.psd)
 
     def mass_to_particle_number(self, mass):
         """

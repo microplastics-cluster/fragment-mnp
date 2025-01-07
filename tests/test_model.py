@@ -6,6 +6,7 @@ import numpy as np
 from types import MethodType
 from fragmentmnp import FragmentMNP
 from fragmentmnp.examples import minimal_config, minimal_data, full_data
+from _mass_balance import check_mass_balance
 
 
 def test_model_init():
@@ -31,6 +32,26 @@ def test_model_run():
                        np.arange(0.5, minimal_config['n_timesteps'] + 0.5))
         and np.allclose(output.c.sum(), 29400.0)
     )
+
+
+def test_model_mass_balance_no_diss():
+    """
+    Test the model output mass balances when there is no dissolution
+    """
+    fmnp = FragmentMNP(minimal_config, minimal_data)
+    output = fmnp.run()
+    assert check_mass_balance(fmnp, output)
+
+
+def test_model_mass_balance_with_diss():
+    """
+    Test the model output mass balances when there is dissolution
+    """
+    data = copy.deepcopy(minimal_data)
+    data['k_diss'] = 0.01
+    fmnp = FragmentMNP(minimal_config, data)
+    output = fmnp.run()
+    assert check_mass_balance(fmnp, output)
 
 
 def test_model_init_timestep_t_eval():
@@ -167,3 +188,33 @@ def test_mass_to_particle_number_overload():
     output = fmnp.run()
     np.testing.assert_array_equal(output.n,
                                   cube_mass_to_particle_number(fmnp, output.c))
+
+
+def test_initial_concs_diss_with_no_diss():
+    """
+    Testing that inputting an initial dissolved fraction concentration
+    yields the expected results when there is no dissolution modelled
+    during the simulation.
+    """
+    # Set an arbitrary initial diss conc of 1, and run the model without
+    # dissolution. c_diss should equal 1 at the end of the model run
+    data = copy.deepcopy(full_data)
+    data['initial_concs_diss'] = 1.0
+    output = FragmentMNP(minimal_config, data).run()
+    np.testing.assert_equal(output.c_diss, 1.0)
+
+
+def test_initial_concs_diss_with_diss():
+    """
+    Testing that inputting an initial dissolved fraction concentration
+    yields the expected results when there is dissolution modelled during
+    the simulation, by using a mass balance check.
+    """
+    # Set an arbitrary initial diss conc of 1, and run the model with
+    # dissolution. Check the sum of c_diss is as expected
+    data = copy.deepcopy(full_data)
+    data['initial_concs_diss'] = 1.0
+    data['k_diss'] = 0.001
+    fmnp = FragmentMNP(minimal_config, data)
+    output = fmnp.run()
+    assert check_mass_balance(fmnp, output)

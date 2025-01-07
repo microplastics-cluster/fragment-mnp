@@ -25,11 +25,17 @@ class FMNPOutput():
     n : np.ndarray, shape (n_size_classes, n_timesteps)
         Particle number concentrations for each size class over
         the time series
-    c_diss : np.ndarray, shape (n_size_classes, n_timesteps)
-        Mass concentrations of dissolved organics
-    n_diss : np.ndarray, shape (n_size_classes, n_timesteps)
+    c_diss_from_sc : np.ndarray, shape (n_size_classes, n_timesteps)
+        Mass concentrations of dissolved organics lost from each
+        size class, not including initial dissolved concentrations
+        specified by `initial_concs_diss` parameter
+    c_diss : np.ndarray, shape (n_timesteps)
+        Total mass concentrations of dissolved organics, including
+        initial concentrations
+    n_diss_from_sc : np.ndarray, shape (n_size_classes, n_timesteps)
         Particle number concentrations lost from size classes due
-        to dissolution
+        to dissolution, not including initial dissolved
+        concentrations specified by `initial_concs_diss` parameter
     soln : Bunch object from scipy.integrate.solve_ivp return
         The solution to the model ODE, passed directly from the
         scipy.integrate.solve_ivp method
@@ -38,15 +44,16 @@ class FMNPOutput():
         each of the particle size classes
     """
 
-    __slots__ = ['t', 'c', 'n', 'c_diss', 'n_diss', 'n_timesteps',
-                 'n_size_classes', 'soln', 'psd', 'id']
+    __slots__ = ['t', 'c', 'n', 'c_diss_from_sc', 'c_diss', 'n_diss_from_sc',
+                 'n_timesteps', 'n_size_classes', 'soln', 'psd', 'id']
 
     def __init__(self,
                  t: npt.NDArray,
                  c: npt.NDArray,
                  n: npt.NDArray,
+                 c_diss_from_sc: npt.NDArray,
                  c_diss: npt.NDArray,
-                 n_diss: npt.NDArray,
+                 n_diss_from_sc: npt.NDArray,
                  soln, psd,
                  id=None) -> None:
         """
@@ -56,8 +63,9 @@ class FMNPOutput():
         self.t = t
         self.c = c
         self.n = n
+        self.c_diss_from_sc = c_diss_from_sc
         self.c_diss = c_diss
-        self.n_diss = n_diss
+        self.n_diss_from_sc = n_diss_from_sc
         self.soln = soln
         self.psd = psd
         # Save the number of timesteps and size classes
@@ -196,7 +204,7 @@ class FMNPOutput():
             if unit_labels is not None:
                 ylabel_diss += f' [{unit_labels["mass_conc"]}]'
             ax2.set_ylabel(ylabel_diss)
-            ax2.plot(self.t, np.sum(self.c_diss, axis=0), '--')
+            ax2.plot(self.t, self.c_diss, '--')
             # Always show the dissolution legend to make it clear
             # which line is dissolution
             ax2.legend(['Dissolution'])

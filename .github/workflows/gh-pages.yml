@@ -1,17 +1,10 @@
 name: deploy-book
 
-# Only run this when the master branch changes
+# Only run this when a new tag is released
 on:
   push:
-    branches:
-    - develop
-    - main
-    # If your git repository has the Jupyter Book within some-subfolder next to
-    # unrelated files, you can make this run only if a file within that specific
-    # folder has been modified.
-    #
-    # paths:
-    # - some-subfolder/**
+    tags:
+    - '*'
 
 # This job installs dependencies, builds the book, and pushes it to `gh-pages`
 jobs:

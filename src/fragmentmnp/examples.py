@@ -52,6 +52,7 @@ for x in ['t', 's']:
 # Example model data
 full_data = {
     'initial_concs': [42.0] * 7,
+    'initial_concs_diss': 0.0,
     'density': 1380,              # PET density [kg/m3]
     'k_frag': {'k_f': 0.01,
                'k_0': 0.0,

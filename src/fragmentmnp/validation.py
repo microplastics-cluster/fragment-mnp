@@ -5,7 +5,8 @@ Validation of config and data (:mod:`fragmentmnp.validation`)
 Provides config and input data validation for the FRAGMENT-MNP model
 """
 import numpy as np
-from schema import Schema, Or, And, Optional
+from schema import And, Optional, Or, Schema
+
 from ._errors import FMNPIncorrectDistributionLength
 
 
@@ -83,7 +84,7 @@ config_schema = Schema({
     # Size range should be a length-2 iterable of type int or float
     Optional('particle_size_range'): particle_size_range_schema,
     # Size classes should be a list of ints of floats
-    Optional('particle_size_classes'): And([Or(int, float)]),
+    Optional('particle_size_classes'): _is_positive_array,
     # Timesteps should be an integer
     'n_timesteps': int,
     # Length of timesteps should be an integer (unit of seconds)
@@ -107,6 +108,8 @@ config_schema = Schema({
 data_schema = Schema({
     # Initial concs must be a list and >= 0
     'initial_concs': _is_positive_array,
+    # Initial dissolved fraction concentration
+    Optional('initial_concs_diss', default=0.0): Or(float, int),
     # Density must either be a float/int and greater than 0
     'density': And(Or(int, float), lambda x: x >= 0.0),
     # k_frag must either be a float/int, or a dict containing
