@@ -27,6 +27,7 @@ ipykernel = "^6.13.0"
 ipywidgets = "^7.7.0"
 jupyter-book = "^0.12.3"
 notebook = ">=6.4.12"
+sphinxcontrib-applehelp = "<=1.0.4"  # Explicitly downgrading because >1.0.4 requires Sphinx v5, which Jupyter Book doesn't support
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
