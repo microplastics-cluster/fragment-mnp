@@ -36,7 +36,7 @@ The `minimal_config` contains only required variables, whilst `full_config` incl
 (config:solver_method)=
 `solver_method`
 : *Optional, str equal to a valid method, default: "RK45".*
-: The method that is used to numerically solve the model differential equation. This method is passed directly to [`scipy.intergrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and must be a valid method available in SciPy ("RK45", "RK23", "DOP853", "Radau", "BDF" or "LSODA"). By default, RK45 is used. See the [SciPy documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) for more details. If you are having numerical stability issues, try "Radau", "BDF" or "LSODA", and read [](./advanced-usage/numerical-instability.ipynb).
+: The method that is used to numerically solve the model differential equation. This method is passed directly to [`scipy.intergrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) and must be a valid method available in SciPy ("RK45", "RK23", "DOP853", "Radau", "BDF" or "LSODA"). By default, LSODA is used. See the [SciPy documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) for more details. If you are having numerical stability issues, try "Radau", "BDF" or "LSODA", and read [](./advanced-usage/numerical-instability.ipynb).
 
 (config:solver_rtol_atol)=
 `solver_rtol`, `solver_atol`

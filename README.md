@@ -6,6 +6,14 @@ FRAGMENT-MNP is a mechanistic model of Micro and NanoPlastic FRAGMentation in th
 
 ## Usage
 
+Install the model with `pip`:
+
+```bash
+$ pip install fragmentmnp
+```
+
+Then run the model with example data and plot the results:
+
 ```python
 from fragmentmnp import FragmentMNP
 from fragmentmnp.examples import minimal_config, minimal_data
