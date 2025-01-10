@@ -43,6 +43,7 @@ jobs:
     needs: ci
 
     # Only run if a new tag is pushed
+    if: startsWith(github.ref, 'refs/tags/')
 
     environment:
       name: pypi
