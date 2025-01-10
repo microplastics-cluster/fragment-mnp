@@ -54,8 +54,6 @@ jobs:
       id-token: write
 
     steps:
-    - name: Clean dist directory
-      run: rm -rf dist
     - name: Download all the dists
       uses: actions/download-artifact@v4
       with:
@@ -66,6 +64,7 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
+        attestations: false
     # If that succeeds, publish to real PyPI
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
