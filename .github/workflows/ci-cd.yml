@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 jobs:
   ci:
+    name: CI
     # Set up operating system
     runs-on: ubuntu-latest
 
@@ -36,7 +37,7 @@ jobs:
         path: dist/
 
   cd:
-    name: Publish to PyPI
+    name: CD
     runs-on: ubuntu-latest
     # Only run this job if `ci` passes
     needs: ci
@@ -53,6 +54,8 @@ jobs:
       id-token: write
 
     steps:
+    - name: Clean dist directory
+      run: rm -rf dist
     - name: Download all the dists
       uses: actions/download-artifact@v4
       with:
