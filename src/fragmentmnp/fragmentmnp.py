@@ -111,7 +111,7 @@ class FragmentMNP():
 
         Notes
         -----
-        Internally the model numerically solves the following differential
+        The model numerically solves the following differential
         equation for each size class, to give a time series of mass
         concentrations `c`. `k` is the current size class, `i` are the
         daughter size classes.
