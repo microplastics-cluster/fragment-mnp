@@ -1,0 +1,2 @@
+.. automodule:: fragmentmnp
+    :members:
