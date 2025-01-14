@@ -1,5 +1,5 @@
 """
-FRAGMENT-MNP Output
+FRAGMENT-MNP output
 ===================
 
 Provides functionality for processing and visulalising model output data.

@@ -112,7 +112,7 @@ class FragmentMNP():
 
         Notes
         -----
-        Internally the model numerically solves the following differential
+        The model numerically solves the following differential
         equation for each size class, to give a time series of mass
         concentrations `c`. `k` is the current size class, `i` are the
         daughter size classes.
@@ -164,7 +164,7 @@ class FragmentMNP():
                 dcdt[k] = (
                     - k_frag[k] * c_particles[k]
                    + np.sum(self.fsd[:, k] * k_frag * c_particles[:N])
-                   - k_diss[k] * c_particles[k]  
+                   - k_diss[k] * c_particles[k]
                 )
   
             # Dissolved mass ODE:
@@ -179,7 +179,7 @@ class FragmentMNP():
 
             return dcdt
 
-       # Build the new N+1 initial conditions
+        # Build the new N+1 initial conditions
         y0 = np.concatenate([
            self.initial_concs,          # microplastic mass per size class
            [self.initial_concs_diss]    # dissolved mass

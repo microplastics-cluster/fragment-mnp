@@ -4,19 +4,9 @@ Example config and data (:mod:`fragmentmnp.examples`)
 
 Provides example config and data dictionaries for use
 in the FRAGMENT-MNP model.
-
-Dictionaries
-------------
-- ``full_config``: Config with all variables complete
-- ``minimal_config``: Config with only variables that
-  don't have defaults
-- ``full_data``: Data with all variables complete
-- ``mininal_data``: Data with only variables that don't
-  have defaults
 """
 import numpy as np
 
-# Example model config specifying all options
 full_config = {
     'n_size_classes': 7,
     'particle_size_range': [-9, -3],
@@ -28,13 +18,15 @@ full_config = {
     'solver_max_step': np.inf,
     'solver_t_eval': 'timesteps'
 }
+"""Example model config with all available variables."""
 
-# Example model config specifying only required options
 minimal_config = {
     'n_size_classes': 7,
     'particle_size_range': [-9, -3],
     'n_timesteps': 100,
 }
+"""Example model config with only required variables.
+Other variables will take their default values."""
 
 # Example rate constant distribution parameters
 _k_dist_params = {}
@@ -49,7 +41,6 @@ for x in ['t', 's']:
     _k_dist_params[f'delta1_{x}'] = 1.0
     _k_dist_params[f'delta2_{x}'] = None
 
-# Example model data
 full_data = {
     'initial_concs': [42.0] * 7,
     'initial_concs_diss': 0.0,
@@ -68,11 +59,13 @@ full_data = {
               **_k_dist_params},
     'fsd_beta': 0.0
 }
+"""Example model data with all available variables."""
 
-# Example model data specifying only required data
 minimal_data = {
     'initial_concs': [42.0] * 7,
     'density': 1380,              # PET density [kg/m3]
     'k_frag': 0.01,
     'k_min': 0.0  # Added k_min to minimal data
 }
+"""Example model data with only required variables.
+Other variables will take their default values."""

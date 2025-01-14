@@ -19,4 +19,9 @@ parts:
     chapters:
     - file: developers/quickstart
     - file: developers/conda
-    - file: developers/api
+  - caption: API Reference
+    chapters:
+    - file: api/model
+    - file: api/examples
+    - file: api/output
+    - file: api/validation
