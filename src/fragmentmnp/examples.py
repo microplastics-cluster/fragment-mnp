@@ -49,11 +49,12 @@ full_data = {
                'k_0': 0.0,
                'is_compound': True,
                **_k_dist_params},
+    # No dissolution or mineralisation in example data
     'k_diss': {'k_f': 0.0,
                'k_0': 0.0,
                'is_compound': True,
                **_k_dist_params},
-    'k_min': {'k_f': 0.005,        # Example k_min parameter
+    'k_min': {'k_f': 0.0,
               'k_0': 0.0,
               'is_compound': True,
               **_k_dist_params},
