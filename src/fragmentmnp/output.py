@@ -1,5 +1,5 @@
 """
-FRAGMENT-MNP output
+FRAGMENT-MNP Output
 ===================
 
 Provides functionality for processing and visulalising model output data.
@@ -115,7 +115,7 @@ class FMNPOutput():
         cmap: str, default='viridis'
             The colormap to use for the plot. Must be one of the
             colormaps `available in matplotlib
-            <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`_.
+            <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`.
             Note that these are case-sensitive.
         show_legend: bool, default=True
             Should size classes be shown on a legend?

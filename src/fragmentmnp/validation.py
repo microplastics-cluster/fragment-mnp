@@ -44,7 +44,7 @@ particle_size_range_schema = And(Or((int, float), [int, float]),
 
 
 # The schema that rate constant 2D (time and surface area)
-# distributions, like k_frag and k_diss, should follow. Either
+# distributions, like k_frag and k_diss, k_min should follow. Either
 # a scalar is given (and it is treated as constant), or
 # a dict is given with the params required to calculate the 2D
 # distribution. Basic checks here ensure k values given are
@@ -117,6 +117,8 @@ data_schema = Schema({
     # Both default to zero
     'k_frag': k_dist_2d_schema,
     Optional('k_diss', default=0.0): k_dist_2d_schema,
+    # add k_min
+    Optional('k_min', default=0.0): k_dist_2d_schema,
     # fsd_beta is an empirical param that scales the depedence
     # of the fragment size distribution on particle diameter d
     # accordingly to d^beta. beta=0 means an equal split

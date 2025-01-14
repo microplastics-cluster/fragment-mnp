@@ -62,11 +62,12 @@ class FragmentMNP():
         # Stop Pylance complaining about k_frag and k_diss not being present
         self.k_frag = np.empty((self.n_size_classes, self.n_timesteps))
         self.k_diss = np.empty((self.n_size_classes, self.n_timesteps))
+        self.k_min = None  # We will treat k_min as either single-valued or size-dependent.
         # Calculate the rate constant distributions. If we've been given
         # a dict in data, use the contained params to create the distribution.
         # Else, presume that we've been given a scalar (validation will make
         # sure this is so) and use that as the average.
-        for k in ['k_frag', 'k_diss']:
+        for k in ['k_frag', 'k_diss', 'k_min']:
             if isinstance(data[k], dict):
                 k_f = data[k]['k_f']
                 k_0 = data[k]['k_0']
@@ -111,7 +112,7 @@ class FragmentMNP():
 
         Notes
         -----
-        The model numerically solves the following differential
+        Internally the model numerically solves the following differential
         equation for each size class, to give a time series of mass
         concentrations `c`. `k` is the current size class, `i` are the
         daughter size classes.
@@ -129,64 +130,97 @@ class FragmentMNP():
         Mass concentrations are converted to particle number concentrations by
         assuming spherical particles with the density given in the input data.
         """
-
+        # This section updated to add kmin - which represents the mineralization rate.
         # Define the initial value problem to pass to SciPy to solve.
         # This must satisfy c'(t) = f(t, c) with initial values given in data.
-        def f(t, c):
+        def f(t, c_big):
+            """
+            c_big has length N+1:
+              c_big[:N]   = mass in each of N size classes
+              c_big[N]    = total dissolved mass
+            """
             # Get the number of size classes and create results to be filled
             N = self.n_size_classes
-            dcdt = np.empty(N)
+            # Unpack
+            c_particles = c_big[:N]
+            c_dissolved = c_big[N]
             # Interpolate the time-dependent parameters to the specific
             # timestep given (which will be a float, rather than integer index)
             f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
                                           fill_value='extrapolate')
             f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
                                           fill_value='extrapolate')
+            f_min = interpolate.interp1d(self.t_grid, self.k_min, axis=1,
+                                          fill_value='extrapolate')
             k_frag = f_frag(t)
             k_diss = f_diss(t)
+            # k_min is the same shape as k_diss:
+            k_min = f_min(t).mean()  # for example, only  one value
+            # Build array of d/dt
+            dcdt = np.empty(N+1)
             # Loop over the size classes and perform the calculation
-            for k in np.arange(N):
+            for k in range(N):
                 # The differential equation that is being solved
-                dcdt[k] = - k_frag[k] * c[k] \
-                    + np.sum(self.fsd[:, k] * k_frag * c[:N]) \
-                    - k_diss[k] * c[k]
-            # Return the solution for all of the size classes
+                dcdt[k] = (
+                    - k_frag[k] * c_particles[k]
+                   + np.sum(self.fsd[:, k] * k_frag * c_particles[:N])
+                   - k_diss[k] * c_particles[k]  
+                )
+  
+            # Dissolved mass ODE:
+            # Gains: sum of kdiss[k] * c_particles[k]
+            # Loss:  k_min * c_dissolved
+            # (assuming k_min is a single number, or you pick a dimension if it’s 2D)
+            dcdt_dissolved = np.sum(k_diss * c_particles) - k_min * c_dissolved
+                
+
+            # Assign to last entry
+            dcdt[N] = dcdt_dissolved
+
             return dcdt
 
-        # Numerically solve this given the initial values for c
-        soln = solve_ivp(fun=f,
-                         method=self.config['solver_method'],
-                         t_span=(self.t_grid.min(), self.t_grid.max()),
-                         y0=self.initial_concs,
-                         t_eval=self.t_eval,
-                         rtol=self.config['solver_rtol'],
-                         atol=self.config['solver_atol'],
-                         max_step=self.config['solver_max_step'])
-        # If we didn't find a solution, raise an error
-        if not soln.success:
-            raise FMNPNumericalError('Model solution could not be ' +
-                                     f'found: {soln.message}')
-        # Calculate the timeseries of mass concentration lost to dissolution
-        # from the solution, first interpolating k_diss to the t values
-        # we evaluated the solution over (t_eval)
-        f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
-                                      fill_value='extrapolate')
-        k_diss_eval = f_diss(self.t_eval)
-        j_diss = k_diss_eval * soln.y
-        # Use this to calculate the cumulative mass concentration
-        # lost to dissolution
-        c_diss_from_sc = np.cumsum(j_diss, axis=1)
-        # Add initial concentration and sum across size classes
-        c_diss = np.sum(np.cumsum(j_diss, axis=1), axis=0) \
-            + self.initial_concs_diss
-        # Now we have the solutions as mass concentrations, we can
-        # convert to particle number concentrations
-        n = self.mass_to_particle_number(soln.y)
-        n_diss_from_sc = self.mass_to_particle_number(c_diss)
+       # Build the new N+1 initial conditions
+        y0 = np.concatenate([
+           self.initial_concs,          # microplastic mass per size class
+           [self.initial_concs_diss]    # dissolved mass
+        ])
 
-        # Return the solution in an FMNPOutput object
-        return FMNPOutput(soln.t, soln.y, n, c_diss_from_sc, c_diss,
-                          n_diss_from_sc, soln, self.psd)
+        # Solve ODE
+        soln = solve_ivp(
+            fun=f,
+            method=self.config['solver_method'],
+            t_span=(self.t_grid.min(), self.t_grid.max()),
+            y0=y0,
+            t_eval=self.t_eval,
+            rtol=self.config['solver_rtol'],
+            atol=self.config['solver_atol'],
+            max_step=self.config['solver_max_step']
+        )
+        if not soln.success:
+           raise FMNPNumericalError('Model solution could not be found: ' +
+                                 f'{soln.message}')
+
+        # Extract solution
+        c_particles_sol = soln.y[:self.n_size_classes, :]
+        c_dissolved_sol = soln.y[self.n_size_classes, :]
+
+        # Convert microparticle mass to particle number
+        n_particles_sol = self.mass_to_particle_number(c_particles_sol)
+
+
+        # Build your FMNPOutput object in whatever format is required
+        return FMNPOutput(
+           soln.t,
+           c_particles_sol,
+           n_particles_sol,
+           # we no longer build c_diss_from_sc here because it’s
+           # embedded in the ODE. 
+           np.zeros_like(c_particles_sol),  # placeholder if needed
+           c_dissolved_sol,
+           np.zeros_like(c_dissolved_sol),  # placeholder if needed
+           soln,
+           self.psd
+        )
 
     def mass_to_particle_number(self, mass):
         """
