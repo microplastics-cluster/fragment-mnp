@@ -112,7 +112,7 @@ class FragmentMNP():
 
         Notes
         -----
-        The model numerically solves the following differential
+        Internally the model numerically solves the following differential
         equation for each size class, to give a time series of mass
         concentrations `c`. `k` is the current size class, `i` are the
         daughter size classes.
@@ -144,6 +144,7 @@ class FragmentMNP():
             # Unpack
             c_particles = c_big[:N]
             c_dissolved = c_big[N]
+            c_min       = c_big[N + 1]  # Not used as a source in any ODE (only grows)
             # Interpolate the time-dependent parameters to the specific
             # timestep given (which will be a float, rather than integer index)
             f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
@@ -155,34 +156,43 @@ class FragmentMNP():
             k_frag = f_frag(t)
             k_diss = f_diss(t)
             # k_min is the same shape as k_diss:
-            k_min = f_min(t).mean()  # for example, only  one value
+            k_min_vals = f_min(t)  # For simplicity, let's assume a single, size-average mineralization rate:
+            k_min_avg = np.mean(k_min_vals)
             # Build array of d/dt
-            dcdt = np.empty(N+1)
+            dcdt = np.empty(N+2)
             # Loop over the size classes and perform the calculation
             for k in range(N):
                 # The differential equation that is being solved
                 dcdt[k] = (
                     - k_frag[k] * c_particles[k]
                    + np.sum(self.fsd[:, k] * k_frag * c_particles[:N])
-                   - k_diss[k] * c_particles[k]
+                   - k_diss[k] * c_particles[k]  
                 )
   
             # Dissolved mass ODE:
             # Gains: sum of kdiss[k] * c_particles[k]
             # Loss:  k_min * c_dissolved
-            # (assuming k_min is a single number, or you pick a dimension if it’s 2D)
-            dcdt_dissolved = np.sum(k_diss * c_particles) - k_min * c_dissolved
+            # (assuming k_min is a single number)
+            dcdt_dissolved = np.sum(k_diss * c_particles) - k_min_avg * c_dissolved
                 
 
             # Assign to last entry
             dcdt[N] = dcdt_dissolved
+            
+            # Mineralized ODE
+            #   Gains: k_min_avg * c_dissolved
+            #   No loss, so it's purely accumulative
+            dcdt_min = k_min_avg * c_dissolved
+            dcdt[N + 1] = dcdt_min
 
             return dcdt
 
-        # Build the new N+1 initial conditions
+       # Build the new N+12 initial conditions: N particulate states, +1 dissolved, +1 mineralized
+       
         y0 = np.concatenate([
            self.initial_concs,          # microplastic mass per size class
-           [self.initial_concs_diss]    # dissolved mass
+           [self.initial_concs_diss],   # dissolved mass
+           [0,0]                        # mineralized (initially zero)
         ])
 
         # Solve ODE
@@ -203,6 +213,7 @@ class FragmentMNP():
         # Extract solution
         c_particles_sol = soln.y[:self.n_size_classes, :]
         c_dissolved_sol = soln.y[self.n_size_classes, :]
+        c_min_sol       = soln.y[self.n_size_classes + 1, :]
 
         # Convert microparticle mass to particle number
         n_particles_sol = self.mass_to_particle_number(c_particles_sol)
@@ -213,13 +224,15 @@ class FragmentMNP():
            soln.t,
            c_particles_sol,
            n_particles_sol,
-           # we no longer build c_diss_from_sc here because it’s
-           # embedded in the ODE. 
-           np.zeros_like(c_particles_sol),  # placeholder if needed
+           # we no longer build c_diss_from_sc here because it’s embedded in the ODE. 
+           # the solver is already accumulating the total dissolved mass over time, 
+           # there is no longer a separate need to keep a cumulative running total (c_diss_from_sc).
+           #np.zeros_like(c_particles_sol),  # placeholder if needed
            c_dissolved_sol,
-           np.zeros_like(c_dissolved_sol),  # placeholder if needed
+           #np.zeros_like(c_dissolved_sol),  # placeholder if needed
            soln,
-           self.psd
+           self.psd,
+           c_min_sol 
         )
 
     def mass_to_particle_number(self, mass):
