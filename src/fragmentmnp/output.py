@@ -73,6 +73,7 @@ class FMNPOutput():
     def plot(self,
              type: str = 'mass_conc',
              plot_dissolution: bool = False,
+             plot_mineralisation: bool = False,
              log_yaxis=False,
              units=None,
              cmap='viridis',
@@ -89,6 +90,8 @@ class FMNPOutput():
             Either `particle_number_conc` or `mass_conc`.
         plot_dissolution : bool, default=False
             Should dissolution be plotted on a separate y-axis
+        plot_mineralisation : bool, default=False
+            Should mineralised CO2 be plotted on a separate y-axis
         log_yaxis: bool or str, default=False
             True and "log" plots the y axis on a log scale,
             "symlog" plots the y axis on a symlog scale (useful
@@ -189,17 +192,28 @@ class FMNPOutput():
             ax1.legend(legend)
 
         # Create and format the dissolution y axis
-        if plot_dissolution:
+        if plot_dissolution or plot_mineralisation:
             ax2 = ax1.twinx()
             # Construct the ylabel
-            ylabel_diss = 'Dissolution mass concentration'
+            if not plot_mineralisation:
+                ylabel_diss = 'Dissolved mass concentration'
+                legend = ['Dissolved']
+                ax2.plot(self.t, self.c_diss, c='0.4', ls='--')
+            elif not plot_dissolution:
+                ylabel_diss = 'Mineralised mass concentration'
+                legend = ['Mineralised']
+                ax2.plot(self.t, self.c_min, c='0.6', ls=':')
+            else:
+                ylabel_diss = 'Dissolved and mineralised mass concentration'
+                legend = ['Dissolved', 'Mineralised']
+                ax2.plot(self.t, self.c_diss, c='0.4', ls='--')
+                ax2.plot(self.t, self.c_min, c='0.6', ls=':')
             if unit_labels is not None:
                 ylabel_diss += f' [{unit_labels["mass_conc"]}]'
             ax2.set_ylabel(ylabel_diss)
-            ax2.plot(self.t, self.c_diss, '--')
             # Always show the dissolution legend to make it clear
             # which line is dissolution
-            ax2.legend(['Dissolution'])
+            ax2.legend(legend)
             # Should the y axis be logged?
             if log_yaxis in [True, 'log']:
                 ax2.set_yscale('log')
@@ -216,17 +230,17 @@ class FMNPOutput():
         method.
         """
         units_out = {}
-        if (type(units) == dict
+        if (isinstance(units, dict)
                 and {'mass', 'volume', 'time', 'length'} <= units.keys()):
             # If we've been provided a dict of units, use these
             units_out = units.copy()
-        elif type(units) == str and units.lower() == 'si':
+        elif isinstance(units, str) and units.lower() == 'si':
             # Use SI units
             units_out['mass'] = 'kg'
             units_out['volume'] = 'm3'
             units_out['time'] = 's'
             units_out['length'] = 'm'
-        elif type(units) == str and units.lower() == 'dim':
+        elif isinstance(units, str) and units.lower() == 'dim':
             # Use dimensional labels as the units
             units_out['mass'] = 'mass'
             units_out['volume'] = 'volume'
