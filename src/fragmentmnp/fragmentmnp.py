@@ -80,17 +80,24 @@ class FragmentMNP():
                 k_0 = 0.0
                 is_compound = True
                 params = {}
-            # Calculate the 2D (s, t) distribution
-            k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
-                                                   't': self.t_grid},
-                                             k_f=k_f, k_0=k_0,
-                                             params=params,
-                                             is_compound=is_compound)
-            # If the rate constant is k_frag, then no fragmentation is
-            # allowed from the smallest size class and therefore we
-            # manually set this to zero
-            if k == 'k_frag':
-                k_dist[0, :] = 0.0
+            # If k_frag or k_diss, we want to calculate a 2D (s, t) distribution,
+            # and if k_min, we just want a 1D (t) distribution
+            if k in ['k_frag', 'k_diss']:
+                k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
+                                                       't': self.t_grid},
+                                                 k_f=k_f, k_0=k_0,
+                                                 params=params,
+                                                 is_compound=is_compound)
+                # If the rate constant is k_frag, then no fragmentation is
+                # allowed from the smallest size class and therefore we
+                # manually set this to zero
+                if k == 'k_frag':
+                    k_dist[0, :] = 0.0
+            else:
+                k_dist = self.set_k_distribution(dims={'t': self.t_grid},
+                                                 k_f=k_f, k_0=k_0,
+                                                 params=params,
+                                                 is_compound=is_compound)
             # Check no values are less than zero
             if np.any(k_dist < 0.0):
                 msg = (f'Value for {k} distribution calculated from input '
@@ -150,13 +157,11 @@ class FragmentMNP():
                                           fill_value='extrapolate')
             f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
                                           fill_value='extrapolate')
-            f_min = interpolate.interp1d(self.t_grid, self.k_min, axis=1,
+            f_min = interpolate.interp1d(self.t_grid, self.k_min, axis=0,
                                          fill_value='extrapolate')
             k_frag = f_frag(t)
             k_diss = f_diss(t)
-            # k_min is the same shape as k_diss:
-            k_min_vals = f_min(t)  # For simplicity, let's assume a single, size-average mineralization rate:
-            k_min_avg = np.mean(k_min_vals)
+            k_min = f_min(t)
             # Build array of d/dt
             dcdt = np.empty(N+2)
             # Loop over the size classes and perform the calculation
@@ -169,18 +174,16 @@ class FragmentMNP():
                 )
 
             # Dissolved mass ODE:
-            # Gains: sum of kdiss[k] * c_particles[k]
-            # Loss:  k_min * c_dissolved
-            # (assuming k_min is a single number)
-            dcdt_dissolved = np.sum(k_diss * c_particles) - k_min_avg * c_dissolved
-
+            #   Gains: sum of kdiss[k] * c_particles[k]
+            #   Loss:  k_min * c_dissolved
+            dcdt_dissolved = np.sum(k_diss * c_particles) - k_min * c_dissolved
             # Assign to last entry
             dcdt[N] = dcdt_dissolved
 
-            # Mineralized ODE
+            # Mineralized ODE:
             #   Gains: k_min_avg * c_dissolved
             #   No loss, so it's purely accumulative
-            dcdt_min = k_min_avg * c_dissolved
+            dcdt_min = k_min * c_dissolved
             dcdt[N + 1] = dcdt_min
 
             return dcdt
@@ -259,13 +262,18 @@ class FragmentMNP():
         r"""
         Create a distribution based on the rate constant scaling factor ``k_f``
         and baseline adjustment factor ``k_0``. The distribution will be a
-        compound combination of power law / polynomial, exponential,
-        logarithmic and logistic regressions, encapsulated in the function
-        :math:`X(x)`, and have dimensions given by `dims`. For a distribution
-        with `D` dimensions:
+        compound or additive combination of power law / polynomial,
+        exponential, logarithmic and logistic regressions, encapsulated in the
+        function :math:`X(x)`, and have dimensions given by `dims`. For a
+        distribution with `D` dimensions:
 
         .. math::
             k(\mathbf{x}) = k_f \prod_{d=1}^D X(x_d) + k_0
+
+        or
+
+        .. math::
+            k(\mathbf{x}) = k_f \sum_{d=1}^D X(x_d) + k_0
 
         :math:`X(x)` is then given either by:
 
