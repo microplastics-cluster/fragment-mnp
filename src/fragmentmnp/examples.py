@@ -28,18 +28,22 @@ minimal_config = {
 """Example model config with only required variables.
 Other variables will take their default values."""
 
+
 # Example rate constant distribution parameters
-_k_dist_params = {}
-for x in ['t', 's']:
-    _k_dist_params[f'A_{x}'] = 1.0
-    _k_dist_params[f'alpha_{x}'] = 0.0
-    _k_dist_params[f'B_{x}'] = 1.0
-    _k_dist_params[f'beta_{x}'] = 0.0
-    _k_dist_params[f'C_{x}'] = None
-    _k_dist_params[f'gamma_{x}'] = 1.0
-    _k_dist_params[f'D_{x}'] = None
-    _k_dist_params[f'delta1_{x}'] = 1.0
-    _k_dist_params[f'delta2_{x}'] = None
+def _k_dist_params(dims):
+    k_dist_params = {}
+    for x in dims:
+        k_dist_params[f'A_{x}'] = 1.0
+        k_dist_params[f'alpha_{x}'] = 0.0
+        k_dist_params[f'B_{x}'] = 1.0
+        k_dist_params[f'beta_{x}'] = 0.0
+        k_dist_params[f'C_{x}'] = None
+        k_dist_params[f'gamma_{x}'] = 1.0
+        k_dist_params[f'D_{x}'] = None
+        k_dist_params[f'delta1_{x}'] = 1.0
+        k_dist_params[f'delta2_{x}'] = None
+    return k_dist_params
+
 
 full_data = {
     'initial_concs': [42.0] * 7,
@@ -48,16 +52,16 @@ full_data = {
     'k_frag': {'k_f': 0.01,
                'k_0': 0.0,
                'is_compound': True,
-               **_k_dist_params},
+               **_k_dist_params(['t', 's'])},
     # No dissolution or mineralisation in example data
     'k_diss': {'k_f': 0.0,
                'k_0': 0.0,
                'is_compound': True,
-               **_k_dist_params},
+               **_k_dist_params(['t', 's'])},
     'k_min': {'k_f': 0.0,
               'k_0': 0.0,
               'is_compound': True,
-              **_k_dist_params},
+              **_k_dist_params(['t'])},
     'fsd_beta': 0.0
 }
 """Example model data with all available variables."""
