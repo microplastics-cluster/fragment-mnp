@@ -54,6 +54,35 @@ def test_model_mass_balance_with_diss():
     assert check_mass_balance(fmnp, output)
 
 
+def test_model_mass_balance_with_min():
+    """
+    Test the model output mass balances when these is mineralisation
+    """
+    data = copy.deepcopy(minimal_data)
+    data['k_diss'] = 0.1
+    data['k_min'] = 0.1
+    fmnp = FragmentMNP(minimal_config, data)
+    output = fmnp.run()
+    assert check_mass_balance(fmnp, output)
+
+
+def test_min_with_no_diss():
+    """
+    Test that running the model with mineralisation but without
+    dissolution results in no mineralised mass
+    """
+    data = copy.deepcopy(minimal_data)
+    data['k_diss'] = 0.0
+    data['k_min'] = 0.1
+    fmnp = FragmentMNP(minimal_config, data)
+    output = fmnp.run()
+    print(output.c_min.max())
+    assert (
+        check_mass_balance(fmnp, output) and
+        np.all(output.c_min == 0.0)
+    )
+
+
 def test_model_init_timestep_t_eval():
     """
     Test that specifying an integer t_eval results in the correct
@@ -111,7 +140,7 @@ def test_f_surface_area():
 def test_k_dists_default_to_constant():
     """
     Test that not providing (t,s) distribution params results
-    in constant k_frag and k_diss values over time
+    in constant k_frag, k_diss and k_min values over time
     """
     fmnp = FragmentMNP(minimal_config, full_data)
     # Only check all but the smallest size class, as the smallest size
@@ -119,6 +148,7 @@ def test_k_dists_default_to_constant():
     np.testing.assert_array_equal(fmnp.k_frag[1:, :],
                                   full_data['k_frag']['k_f'])
     np.testing.assert_array_equal(fmnp.k_diss, full_data['k_diss']['k_f'])
+    np.testing.assert_array_equal(fmnp.k_min, full_data['k_min']['k_f'])
 
 
 def test_smallest_size_class_doesnt_fragment():
@@ -128,6 +158,18 @@ def test_smallest_size_class_doesnt_fragment():
     """
     fmnp = FragmentMNP(minimal_config, minimal_data)
     np.testing.assert_equal(fmnp.k_frag[0, :], 0.0)
+
+
+def test_k_dist_shapes():
+    """
+    Test that k_frag, k_diss and k_min are the correct shapes
+    """
+    fmnp = FragmentMNP(minimal_config, minimal_data)
+    assert (
+        fmnp.k_frag.shape == (fmnp.n_size_classes, fmnp.n_timesteps) and
+        fmnp.k_diss.shape == (fmnp.n_size_classes, fmnp.n_timesteps) and
+        fmnp.k_min.shape == (fmnp.n_timesteps,)
+    )
 
 
 def test_k_frag_linear():

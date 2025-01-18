@@ -29,7 +29,12 @@ class FMNPOutput():
         Total mass concentrations of dissolved organics, including
         initial concentrations
     c_min : np.ndarray, shape (n_timesteps)
-        Total mass concentration of mineralised CO2
+        Total mass concentration of mineralised CO2. `c_min` is
+        given as a concentration relative to the original medium
+        that the polymer was present in. For example, if the
+        original medium is soil, and the units are kg/m3, then
+        `c_min` is the mass of mineralised CO2 per m3 of the
+        soil, rather than the atmosphere surrounding the soil
     soln : Bunch object from scipy.integrate.solve_ivp return
         The solution to the model ODE, passed directly from the
         scipy.integrate.solve_ivp method

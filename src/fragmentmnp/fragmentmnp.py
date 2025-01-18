@@ -59,10 +59,11 @@ class FragmentMNP():
                                 self.psd,
                                 self.data['fsd_beta'])
         self.density = data['density']
-        # Stop Pylance complaining about k_frag and k_diss not being present
+        # Stop Pylance complaining about k_frag, k_diss and k_min not being
+        # present (or being the wrong type) by declaring them as NumPy arrays
         self.k_frag = np.empty((self.n_size_classes, self.n_timesteps))
         self.k_diss = np.empty((self.n_size_classes, self.n_timesteps))
-        self.k_min = None  # We will treat k_min as either single-valued or size-dependent.
+        self.k_min = np.empty((self.n_timesteps,))
         # Calculate the rate constant distributions. If we've been given
         # a dict in data, use the contained params to create the distribution.
         # Else, presume that we've been given a scalar (validation will make
