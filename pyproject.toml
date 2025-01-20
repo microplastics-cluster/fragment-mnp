@@ -18,6 +18,7 @@ pandas = "^1.4.2"
 Pillow = ">=9.1.1"
 ipykernel = "^6.16.2"
 jupyter-core = ">=4.11.2"
+sphinxcontrib-mermaid = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^4.0.1"
