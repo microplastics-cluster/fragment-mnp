@@ -9,8 +9,9 @@ parts:
     - file: example-usage
     - file: config
     - file: input-data
-    - file: fragmentation-dissolution-rates
     - file: plotting
+    - file: fragmentation-dissolution-rates
+    - file: dissolution-mineralisation
     - file: advanced-usage
       sections:
       - file: advanced-usage/fragment-size-distribution
@@ -19,6 +20,7 @@ parts:
     chapters:
     - file: developers/quickstart
     - file: developers/conda
+    - file: developers/docs
   - caption: API Reference
     chapters:
     - file: api/model

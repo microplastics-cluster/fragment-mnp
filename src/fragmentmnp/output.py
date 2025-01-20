@@ -25,17 +25,16 @@ class FMNPOutput():
     n : np.ndarray, shape (n_size_classes, n_timesteps)
         Particle number concentrations for each size class over
         the time series
-    c_diss_from_sc : np.ndarray, shape (n_size_classes, n_timesteps)
-        Mass concentrations of dissolved organics lost from each
-        size class, not including initial dissolved concentrations
-        specified by `initial_concs_diss` parameter
     c_diss : np.ndarray, shape (n_timesteps)
         Total mass concentrations of dissolved organics, including
         initial concentrations
-    n_diss_from_sc : np.ndarray, shape (n_size_classes, n_timesteps)
-        Particle number concentrations lost from size classes due
-        to dissolution, not including initial dissolved
-        concentrations specified by `initial_concs_diss` parameter
+    c_min : np.ndarray, shape (n_timesteps)
+        Total mass concentration of mineralised polymer. `c_min` is
+        given as a concentration relative to the original medium
+        that the polymer was present in. For example, if the
+        original medium is soil, and the units are kg/m3, then
+        `c_min` is the mass of mineralised polymer per m3 of the
+        soil, rather than the atmosphere surrounding the soil
     soln : Bunch object from scipy.integrate.solve_ivp return
         The solution to the model ODE, passed directly from the
         scipy.integrate.solve_ivp method
@@ -44,16 +43,15 @@ class FMNPOutput():
         each of the particle size classes
     """
 
-    __slots__ = ['t', 'c', 'n', 'c_diss_from_sc', 'c_diss', 'n_diss_from_sc',
+    __slots__ = ['t', 'c', 'n', 'c_diss', 'c_min',
                  'n_timesteps', 'n_size_classes', 'soln', 'psd', 'id']
 
     def __init__(self,
                  t: npt.NDArray,
                  c: npt.NDArray,
                  n: npt.NDArray,
-                 c_diss_from_sc: npt.NDArray,
                  c_diss: npt.NDArray,
-                 n_diss_from_sc: npt.NDArray,
+                 c_min: npt.NDArray,
                  soln, psd,
                  id=None) -> None:
         """
@@ -63,9 +61,8 @@ class FMNPOutput():
         self.t = t
         self.c = c
         self.n = n
-        self.c_diss_from_sc = c_diss_from_sc
         self.c_diss = c_diss
-        self.n_diss_from_sc = n_diss_from_sc
+        self.c_min = c_min
         self.soln = soln
         self.psd = psd
         # Save the number of timesteps and size classes
@@ -81,6 +78,7 @@ class FMNPOutput():
     def plot(self,
              type: str = 'mass_conc',
              plot_dissolution: bool = False,
+             plot_mineralisation: bool = False,
              log_yaxis=False,
              units=None,
              cmap='viridis',
@@ -97,6 +95,8 @@ class FMNPOutput():
             Either `particle_number_conc` or `mass_conc`.
         plot_dissolution : bool, default=False
             Should dissolution be plotted on a separate y-axis
+        plot_mineralisation : bool, default=False
+            Should mineralised polymer be plotted on a separate y-axis
         log_yaxis: bool or str, default=False
             True and "log" plots the y axis on a log scale,
             "symlog" plots the y axis on a symlog scale (useful
@@ -115,7 +115,7 @@ class FMNPOutput():
         cmap: str, default='viridis'
             The colormap to use for the plot. Must be one of the
             colormaps `available in matplotlib
-            <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`_.
+            <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`.
             Note that these are case-sensitive.
         show_legend: bool, default=True
             Should size classes be shown on a legend?
@@ -197,17 +197,28 @@ class FMNPOutput():
             ax1.legend(legend)
 
         # Create and format the dissolution y axis
-        if plot_dissolution:
+        if plot_dissolution or plot_mineralisation:
             ax2 = ax1.twinx()
             # Construct the ylabel
-            ylabel_diss = 'Dissolution mass concentration'
+            if not plot_mineralisation:
+                ylabel_diss = 'Dissolved mass concentration'
+                legend = ['Dissolved']
+                ax2.plot(self.t, self.c_diss, c='0.4', ls='--')
+            elif not plot_dissolution:
+                ylabel_diss = 'Mineralised mass concentration'
+                legend = ['Mineralised']
+                ax2.plot(self.t, self.c_min, c='0.6', ls=':')
+            else:
+                ylabel_diss = 'Dissolved and mineralised mass concentration'
+                legend = ['Dissolved', 'Mineralised']
+                ax2.plot(self.t, self.c_diss, c='0.4', ls='--')
+                ax2.plot(self.t, self.c_min, c='0.6', ls=':')
             if unit_labels is not None:
                 ylabel_diss += f' [{unit_labels["mass_conc"]}]'
             ax2.set_ylabel(ylabel_diss)
-            ax2.plot(self.t, self.c_diss, '--')
             # Always show the dissolution legend to make it clear
             # which line is dissolution
-            ax2.legend(['Dissolution'])
+            ax2.legend(legend)
             # Should the y axis be logged?
             if log_yaxis in [True, 'log']:
                 ax2.set_yscale('log')
@@ -224,17 +235,17 @@ class FMNPOutput():
         method.
         """
         units_out = {}
-        if (type(units) == dict
+        if (isinstance(units, dict)
                 and {'mass', 'volume', 'time', 'length'} <= units.keys()):
             # If we've been provided a dict of units, use these
             units_out = units.copy()
-        elif type(units) == str and units.lower() == 'si':
+        elif isinstance(units, str) and units.lower() == 'si':
             # Use SI units
             units_out['mass'] = 'kg'
             units_out['volume'] = 'm3'
             units_out['time'] = 's'
             units_out['length'] = 'm'
-        elif type(units) == str and units.lower() == 'dim':
+        elif isinstance(units, str) and units.lower() == 'dim':
             # Use dimensional labels as the units
             units_out['mass'] = 'mass'
             units_out['volume'] = 'volume'

@@ -13,11 +13,10 @@ c = np.array([
     np.linspace(0, 10, 100)
 ])
 n = c / (4.0 / 3.0) * np.pi * psd[:, np.newaxis] ** 3
-c_diss_from_sc = np.zeros((2, 100))
 c_diss = np.zeros((100,))
-n_diss_from_sc = np.zeros((2, 100))
+c_min = np.zeros((100,))
 # Create output based on this. `soln` shouldn't be none,
 # but we don't want to create a full ODE solution just for
 # the test
-mock_output = FMNPOutput(t, c, n, c_diss_from_sc, c_diss,
-                         n_diss_from_sc, None, psd)
+mock_output = FMNPOutput(t, c, n, c_diss, c_min,
+                         None, psd)

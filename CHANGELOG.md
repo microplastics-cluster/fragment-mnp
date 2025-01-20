@@ -4,11 +4,15 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
-*No changes yet.*
+* Added mineralisation as a process that transfers mass from the dissolved pool to a mineralised polymer pool. This is controlled by a separate `k_min` rate constant.
+* `c_diss_from_sc` and `n_diss_from_sc` are no longer stored in output data due to a change in the ODEs solved to incorporate mineralisation.
+* Updated dissolution yaxis label from "Dissolution" to "Dissolved"
+
 
 ## [1.0.1] - 2024-01-13
 
 * Improvements and bug fixes in documentation.
+
 
 ## [1.0.0] - 2024-01-10
 
