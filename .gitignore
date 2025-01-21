@@ -51,8 +51,10 @@ ENV/
 env.bak/
 venv.bak/
 
-# Docs
+# Docs and JOSS paper
 docs/_build/
+paper.pdf
+jats/
 
 # Misc
 scratch/
