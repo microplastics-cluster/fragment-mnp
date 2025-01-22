@@ -69,7 +69,43 @@ By modifying particle sizes and shapes, fragmentation influences the potential r
 
 # Overview of the model
 
-The model is fully documented at [https://microplastics-cluster.github.io/fragment-mnp](https://microplastics-cluster.github.io/fragment-mnp). Here, we provide a brief overview of its conceptualisation and main functionality...
+The model is fully documented at [https://microplastics-cluster.github.io/fragment-mnp](https://microplastics-cluster.github.io/fragment-mnp). Here, we provide a brief overview of its conceptualisation and main functionality.
+
+Particle concentrations $c_k$ are represented in binned size classes $k$, with the model allowing for the fragmentation of particles from larger to smaller size classes, and the dissolution of particles into a dissolved size class with concentration $c_\text{diss}$. The dissolved fraction, consisting of oligomers, monomers and volatile organic compounds, can further degrade into a mineralised pool with concentration $c_\text{min}$. The solutions are obtained by numerically solving the following set of differential equations:
+
+$$
+\frac{dc_k}{dt} = -k_{\text{frag},k} c_k + \sum_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
+$$
+
+$$
+\frac{dc_\text{diss}}{dt} = \sum_k k_{\text{diss},k} c_k - k_\text{min} c_\text{diss}
+$$
+
+$$
+\frac{dc_\text{min}}{dt} = k_\text{min} c_\text{diss}
+$$
+
+Here, $k_{\text{frag},k}$ is the fragmentation rate constant of size class $k$, $f_{i,k}$ is the fraction of daughter fragments produced from a fragmenting particle of size $i$ that are of size $k$, $k_{\text{diss},k}$ is the dissolution rate from size class $k$, and $k_\text{min}$ is the mineralisation rate from the dissolved pool. The rate constants $k_\text{frag}$ and $k_\text{diss}$ can be a function of time and particle surface area, and thus are represented internally as 2D arrays. $k_\text{min}$ can be a function of time and is therefore a 1D array. The shape of these dependencies can be controlled by model input parameters, which allows for constant, linear, polynomial, power law, exponential, logarithmic or logistic dependencies. This flexible parameterisation allows for rate constants to model a variety of physical phenomena, such as the modulation of fragmentation as polymer particles undergo weathering in the environment.
+
+FRAGMENT-MNP is released as a `pip` package (`pip install fragmentmnp`), and comes with example configuration and data, to enable users to get started using the model in as little time as possible. A bare minimum model run is shown below, which uses these examples to run an arbitrary fragmentation scenario (with no dissolution or mineralisation):
+
+```python
+from fragmentmnp import FragmentMNP
+from fragmentmnp.examples import minimal_config, minimal_data
+
+# Create the model and pass it the example config and data
+fmnp = FragmentMNP(minimal_config, minimal_data)
+# Run the model
+output = fmnp.run()
+# Plot the results
+output.plot()
+```
+
+![Example model output showing the time evolution of particle size distributions undergoing fragmentation](./fragmentmnp_example.png){height="900px"}
+
+# Related work
+
+The development of FRAGMENT-MNP is part of broader efforts to further our understanding of microplastics in the environment. This includes the development of other models covering emissions, additive release, long-range transport and exposure. Ongoing work is pursuing closer integration of these models and associated experimental data in order to provide holistic predictions of microplastic fate and exposure in the environment.
 
 
 # Acknowledgements
