@@ -107,7 +107,7 @@ class FragmentMNP():
                        'are positive.')
                 raise FMNPDistributionValueError(msg)
 
-            # Set self.k_[frag|diss] as this distribution
+            # Set self.k_[frag|diss|min] as this distribution
             setattr(self, k, k_dist)
 
     def run(self) -> FMNPOutput:
@@ -120,38 +120,47 @@ class FragmentMNP():
 
         Notes
         -----
-        Internally the model numerically solves the following differential
-        equation for each size class, to give a time series of mass
-        concentrations `c`. `k` is the current size class, `i` are the
-        daughter size classes.
+        The model numerically solves the following set of differential
+        equations to give a time series of mass concentrations of particles
+        `c`, dissolved polymer `c_diss` and mineralised polymer `c_min`.
+        `k` is the current size class, `i` are the daughter size classes.
 
         .. math::
             \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
             \sum_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
 
+        .. math::
+            \frac{dc_\text{diss}}{dt} = \sum_k k_{\text{diss},k} c_k -
+            k_\text{min} c_\text{diss}
+
+        .. math::
+            \frac{dc_\text{min}}{dt} = k_\text{min} c_\text{diss}
+
         Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size
         class `k`, :math:`f_{i,k}` is the fraction of daughter
         fragments produced from a fragmenting particle of size `i` that are of
-        size `k`, and :math:`k_{\text{diss},k}` is the dissolution rate from
-        size class `k`.
+        size `k`, :math:`k_{\text{diss},k}` is the dissolution rate from
+        size class `k` and :math:`k_\text{min}` is the mineralisation rate
+        from the dissolved pool.
 
         Mass concentrations are converted to particle number concentrations by
         assuming spherical particles with the density given in the input data.
         """
-        # Define the initial value problem to pass to SciPy to solve.
-        # This must satisfy c'(t) = f(t, c) with initial values given in data.
-        def f(t, c_big):
+        def f(t, c):
             """
-            c_big has length N+1:
-              c_big[:N]   = mass in each of N size classes
-              c_big[N]    = total dissolved mass
+            The initial value problem for SciPy to solve. This must satisfy
+            c'(t) = f(t, c) with initial values given in data, with N+2
+            solutions:
+              c[:N]   = mass concentration in each of the N size classes
+              c[N]    = total dissolved mass concentration
+              c[N+1]  = mineralised mass concentration
             """
-            # Get the number of size classes and create results to be filled
+            # Get the number of size classes
             N = self.n_size_classes
-            # Unpack
-            c_particles = c_big[:N]
-            c_dissolved = c_big[N]
-            c_min = c_big[N + 1]   # Not used as a source in any ODE (only grows)
+            # Unpack the solutions
+            c_particles = c[:N]
+            c_dissolved = c[N]
+            c_min = c[N + 1]   # Not used as a source in any ODE (only grows)
             # Interpolate the time-dependent parameters to the specific
             # timestep given (which will be a float, rather than integer index)
             f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
@@ -165,39 +174,37 @@ class FragmentMNP():
             k_min = f_min(t)
             # Build array of d/dt
             dcdt = np.empty(N+2)
-            # Loop over the size classes and perform the calculation
+            # Particle ODEs, for each size class:
+            #   Gains: fragmentation from bigger size classes
+            #   Loss:  dissolution and fragmentation to smaller size classes
             for k in range(N):
-                # The differential equation that is being solved
                 dcdt[k] = (
                     - k_frag[k] * c_particles[k]
                     + np.sum(self.fsd[:, k] * k_frag * c_particles[:N])
                     - k_diss[k] * c_particles[k]
                 )
-
             # Dissolved mass ODE:
             #   Gains: sum of kdiss[k] * c_particles[k]
             #   Loss:  k_min * c_dissolved
             dcdt_dissolved = np.sum(k_diss * c_particles) - k_min * c_dissolved
             # Assign to last entry
             dcdt[N] = dcdt_dissolved
-
             # Mineralized ODE:
             #   Gains: k_min_avg * c_dissolved
             #   No loss, so it's purely accumulative
             dcdt_min = k_min * c_dissolved
             dcdt[N + 1] = dcdt_min
-
+            # Final differential to return
             return dcdt
 
-        # Build the new N+12 initial conditions: N particulate states,
+        # Build the new N+2 initial conditions: N particulate states,
         # +1 dissolved, +1 mineralized
         y0 = np.concatenate([
            self.initial_concs,          # microplastic mass per size class
            [self.initial_concs_diss],   # dissolved mass
            [0.0]                        # mineralized (initially zero)
         ])
-
-        # Solve ODE
+        # Solve the ODE
         soln = solve_ivp(
             fun=f,
             method=self.config['solver_method'],
@@ -211,24 +218,21 @@ class FragmentMNP():
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be found: ' +
                                      f'{soln.message}')
-
         # Extract solution
         c_part_sol = soln.y[:self.n_size_classes, :]
         c_diss_sol = soln.y[self.n_size_classes, :]
         c_min_sol = soln.y[self.n_size_classes + 1, :]
-
         # Convert microparticle mass to particle number
         n_part_sol = self.mass_to_particle_number(c_part_sol)
-
-        # Build your FMNPOutput object in whatever format is required
+        # Build the FMNPOutput object from the solution
         return FMNPOutput(
-           soln.t,
-           c_part_sol,
-           n_part_sol,
-           c_diss_sol,
-           c_min_sol,
-           soln,
-           self.psd,
+           t=soln.t,
+           c=c_part_sol,
+           n=n_part_sol,
+           c_diss=c_diss_sol,
+           c_min=c_min_sol,
+           soln=soln,
+           psd=self.psd,
         )
 
     def mass_to_particle_number(self, mass):
