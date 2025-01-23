@@ -61,8 +61,8 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'plotting';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Advanced usage" href="advanced-usage.html" />
-    <link rel="prev" title="Fragmentation and dissolution rates" href="fragmentation-dissolution-rates.html" />
+    <link rel="next" title="Fragmentation, dissolution and mineralisation rates" href="fragmentation-dissolution-rates.html" />
+    <link rel="prev" title="Input data" href="input-data.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -185,8 +185,9 @@
 <li class="toctree-l1"><a class="reference internal" href="example-usage.html">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="input-data.html">Input data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fragmentation-dissolution-rates.html">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fragmentation-dissolution-rates.html">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="advanced-usage.html">Advanced usage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="advanced-usage/fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced-usage/numerical-instability.html">Dealing with numerical instability</a></li>
@@ -197,6 +198,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">
@@ -407,7 +409,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-types-dissolution-and-log-scales">Plot types, dissolution and log scales</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-types-dissolution-mineralisation-and-log-scales">Plot types, dissolution/mineralisation and log scales</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#units">Units</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#legends-and-colourmaps">Legends and colourmaps</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#selecting-which-size-classes-to-plot">Selecting which size classes to plot</a></li>
@@ -445,9 +447,9 @@ document.write(`
 <img alt="_images/d5065d1f3e987adbc0294a7ad97548652ca78e2c03f684968bf4f960cb8e4800.png" src="_images/d5065d1f3e987adbc0294a7ad97548652ca78e2c03f684968bf4f960cb8e4800.png" />
 </div>
 </div>
-<div class="section" id="plot-types-dissolution-and-log-scales">
-<h2>Plot types, dissolution and log scales<a class="headerlink" href="#plot-types-dissolution-and-log-scales" title="Permalink to this heading">#</a></h2>
-<p>You can either plot mass concentrations (<code class="docutils literal notranslate"><span class="pre">mass_conc</span></code>) or particle number concentrations (<code class="docutils literal notranslate"><span class="pre">particle_number_conc</span></code>) by using the <code class="docutils literal notranslate"><span class="pre">type</span></code> parameter. The default is to plot mass concentrations (as per above). Dissolution mass concentrations can be included on a secondary y axis by specifying <code class="docutils literal notranslate"><span class="pre">plot_dissolution=True</span></code>. In the following example, we specify an arbitrary dissolution rate to demonstrate this.</p>
+<div class="section" id="plot-types-dissolution-mineralisation-and-log-scales">
+<h2>Plot types, dissolution/mineralisation and log scales<a class="headerlink" href="#plot-types-dissolution-mineralisation-and-log-scales" title="Permalink to this heading">#</a></h2>
+<p>You can either plot mass concentrations (<code class="docutils literal notranslate"><span class="pre">mass_conc</span></code>) or particle number concentrations (<code class="docutils literal notranslate"><span class="pre">particle_number_conc</span></code>) by using the <code class="docutils literal notranslate"><span class="pre">type</span></code> parameter. The default is to plot mass concentrations (as per above). Dissolution and mineralisation mass concentrations can be included on a secondary y axis by specifying <code class="docutils literal notranslate"><span class="pre">plot_dissolution=True</span></code> and/or <code class="docutils literal notranslate"><span class="pre">plot_mineralisation=True</span></code>. In the following example, we specify an arbitrary dissolution rate to demonstrate this.</p>
 <p>By default, the y-axis scale is linear. A log scale can be used instead by specifying <code class="docutils literal notranslate"><span class="pre">log_yaxis=True</span></code> or <code class="docutils literal notranslate"><span class="pre">log_yaxis='log'</span></code>, or a <a class="reference external" href="https://matplotlib.org/stable/gallery/scales/symlog_demo.html">symlog</a> scale can be used by specifying <code class="docutils literal notranslate"><span class="pre">log_yaxis='symlog'</span></code>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -462,7 +464,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/94e92b9a95b71e8c8736c023ee59339dc43334a83354318734e90ee9e3c0810e.png" src="_images/94e92b9a95b71e8c8736c023ee59339dc43334a83354318734e90ee9e3c0810e.png" />
+<img alt="_images/b80bb22cf05934d796ab6ca40f3e7b228be63129f618296e8d243114dacf0b82.png" src="_images/b80bb22cf05934d796ab6ca40f3e7b228be63129f618296e8d243114dacf0b82.png" />
 </div>
 </div>
 </div>
@@ -483,7 +485,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/07dbb028870ebcd86ff08b9848696407621418dea0ae165e8bde2431de2a80bf.png" src="_images/07dbb028870ebcd86ff08b9848696407621418dea0ae165e8bde2431de2a80bf.png" />
+<img alt="_images/33df8ed7b9c39572d84e264fb5f91ef6a4da56c5f61a30101bb82c49fef9400d.png" src="_images/33df8ed7b9c39572d84e264fb5f91ef6a4da56c5f61a30101bb82c49fef9400d.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -500,7 +502,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/e076aaaf0c65aef554bb4f0b25df47f57bc6f02347e06df5f441c92b730785fa.png" src="_images/e076aaaf0c65aef554bb4f0b25df47f57bc6f02347e06df5f441c92b730785fa.png" />
+<img alt="_images/2db43dd79dcdd6e526d9e805429bba8a8ab678102877c7ea9decd14de1737828.png" src="_images/2db43dd79dcdd6e526d9e805429bba8a8ab678102877c7ea9decd14de1737828.png" />
 </div>
 </div>
 </div>
@@ -516,7 +518,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/7e81083f6530f46053ed80d74f617624b866a5935e2a0630ecd8c384fc4708d5.png" src="_images/7e81083f6530f46053ed80d74f617624b866a5935e2a0630ecd8c384fc4708d5.png" />
+<img alt="_images/0183a73aa8e3cc5706d9c6f59aabefda2c6882b24c138c4e0d1628706b884560.png" src="_images/0183a73aa8e3cc5706d9c6f59aabefda2c6882b24c138c4e0d1628706b884560.png" />
 </div>
 </div>
 </div>
@@ -531,7 +533,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/ad460cad90393ff06df68c30ad7fdcb8e33e3c64cd72d765222c70f20823a492.png" src="_images/ad460cad90393ff06df68c30ad7fdcb8e33e3c64cd72d765222c70f20823a492.png" />
+<img alt="_images/b8e9194a6225f8f24f2ae4bbcaafdd85e2f890ca4614e6753efe00719fd90611.png" src="_images/b8e9194a6225f8f24f2ae4bbcaafdd85e2f890ca4614e6753efe00719fd90611.png" />
 </div>
 </div>
 </div>
@@ -546,7 +548,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/dafe3d02bf1a143897338f03a4719c98cac553f0bdb5f3784d57e2c1047ea969.png" src="_images/dafe3d02bf1a143897338f03a4719c98cac553f0bdb5f3784d57e2c1047ea969.png" />
+<img alt="_images/968eecc3765e4eb2260f172ec92de15551e06f5fad66827d644a17b231ac9dcd.png" src="_images/968eecc3765e4eb2260f172ec92de15551e06f5fad66827d644a17b231ac9dcd.png" />
 </div>
 </div>
 <p>Note that, if <code class="docutils literal notranslate"><span class="pre">plot_dissolution=False</span></code> (default), then only one axis is created and returned by the function. If <code class="docutils literal notranslate"><span class="pre">plot_dissolution=True</span></code>, two axes are created and these are returned in a list:</p>
@@ -564,7 +566,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/3e1e5785b44b77f2261cf5b90bd119d71fc3d3a0bd07c0ecd1f7d64fcda6f05a.png" src="_images/3e1e5785b44b77f2261cf5b90bd119d71fc3d3a0bd07c0ecd1f7d64fcda6f05a.png" />
+<img alt="_images/c0438c6816e15eff704c5b5b6b8dae6e10ce32b7a94a9fe6d1d30695efead6f1.png" src="_images/c0438c6816e15eff704c5b5b6b8dae6e10ce32b7a94a9fe6d1d30695efead6f1.png" />
 </div>
 </div>
 </div>
@@ -601,20 +603,20 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="fragmentation-dissolution-rates.html"
+       href="input-data.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Fragmentation and dissolution rates</p>
+        <p class="prev-next-title">Input data</p>
       </div>
     </a>
     <a class="right-next"
-       href="advanced-usage.html"
+       href="fragmentation-dissolution-rates.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Advanced usage</p>
+        <p class="prev-next-title">Fragmentation, dissolution and mineralisation rates</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -634,7 +636,7 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-types-dissolution-and-log-scales">Plot types, dissolution and log scales</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-types-dissolution-mineralisation-and-log-scales">Plot types, dissolution/mineralisation and log scales</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#units">Units</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#legends-and-colourmaps">Legends and colourmaps</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#selecting-which-size-classes-to-plot">Selecting which size classes to plot</a></li>

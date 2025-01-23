@@ -58,6 +58,14 @@
     <script src="../../_static/design-tabs.js"></script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/fragmentmnp/validation';</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -185,8 +193,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../../example-usage.html">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../input-data.html">Input data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../fragmentation-dissolution-rates.html">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fragmentation-dissolution-rates.html">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../advanced-usage.html">Advanced usage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../advanced-usage/fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../advanced-usage/numerical-instability.html">Dealing with numerical instability</a></li>
@@ -197,6 +206,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">
@@ -407,38 +417,43 @@ document.write(`
                                            <span class="s1">&#39;be a length-2 iterable&#39;</span><span class="p">))</span>
 
 
-<span class="c1"># The schema that rate constant 2D (time and surface area)</span>
-<span class="c1"># distributions, like k_frag and k_diss, should follow. Either</span>
-<span class="c1"># a scalar is given (and it is treated as constant), or</span>
-<span class="c1"># a dict is given with the params required to calculate the 2D</span>
-<span class="c1"># distribution. Basic checks here ensure k values given are</span>
-<span class="c1"># greater than zero, and auditing during the distribution</span>
-<span class="c1"># calculate makes sure no values in the calculated distribution</span>
+<span class="c1"># The schema that rate constants distributions, like k_frag, k_diss</span>
+<span class="c1"># and k_min should follow. Either a scalar is given (and it is</span>
+<span class="c1"># treated as constant), or # a dict is given with the params required</span>
+<span class="c1"># to calculate the 1D or 2D distribution. Basic checks here ensure k</span>
+<span class="c1"># values given are greater than zero, and auditing during the distribution</span>
+<span class="c1"># calculation makes sure no values in the calculated distribution</span>
 <span class="c1"># are less than zero</span>
-<span class="n">k_dist_2d_schema</span> <span class="o">=</span> <span class="n">Or</span><span class="p">(</span>
-    <span class="n">Or</span><span class="p">(</span><span class="n">And</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span>
-       <span class="n">And</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)),</span>
-    <span class="p">{</span>
-        <span class="s1">&#39;k_f&#39;</span><span class="p">:</span> <span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span>
-        <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_0&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
-        <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;is_compound&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span> <span class="nb">bool</span><span class="p">,</span>
-        <span class="o">**</span><span class="p">{</span>
-            <span class="n">Optional</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;beta&#39;</span><span class="p">,</span> <span class="s1">&#39;gamma&#39;</span><span class="p">,</span>
-                         <span class="s1">&#39;delta1&#39;</span><span class="p">]</span>
-        <span class="p">},</span>
-        <span class="o">**</span><span class="p">{</span>
-            <span class="n">Optional</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;delta2&#39;</span><span class="p">]</span>
-        <span class="p">},</span>
-        <span class="o">**</span><span class="p">{</span>
-            <span class="n">Optional</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;A_</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">_is_array</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">]</span>
-        <span class="p">},</span>
-    <span class="p">}</span>
-<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">k_dist_schema</span><span class="p">(</span><span class="n">dims</span><span class="p">):</span>
+    <span class="n">k_dist_schema_</span> <span class="o">=</span> <span class="n">Or</span><span class="p">(</span>
+        <span class="n">Or</span><span class="p">(</span><span class="n">And</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span>
+        <span class="n">And</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)),</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;k_f&#39;</span><span class="p">:</span> <span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_0&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+            <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;is_compound&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span> <span class="nb">bool</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">{</span>
+                <span class="n">Optional</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dims</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;beta&#39;</span><span class="p">,</span> <span class="s1">&#39;gamma&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;delta1&#39;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="o">**</span><span class="p">{</span>
+                <span class="n">Optional</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dims</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;delta2&#39;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="o">**</span><span class="p">{</span>
+                <span class="n">Optional</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;A_</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">_is_array</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dims</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">k_dist_schema_</span>
+
+
+<span class="n">k_dist_2d_schema</span> <span class="o">=</span> <span class="n">k_dist_schema</span><span class="p">([</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">])</span>
+<span class="n">k_dist_t_schema</span> <span class="o">=</span> <span class="n">k_dist_schema</span><span class="p">([</span><span class="s1">&#39;t&#39;</span><span class="p">])</span>
 
 
 <span class="c1"># The schema that the config dict should follow</span>
@@ -476,11 +491,12 @@ document.write(`
     <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;initial_concs_diss&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span> <span class="n">Or</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span>
     <span class="c1"># Density must either be a float/int and greater than 0</span>
     <span class="s1">&#39;density&#39;</span><span class="p">:</span> <span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">),</span>
-    <span class="c1"># k_frag must either be a float/int, or a dict containing</span>
-    <span class="c1"># and average value and parameters to create distribution from.</span>
-    <span class="c1"># Both default to zero</span>
+    <span class="c1"># k_frag, k_diss and k_min must either be a float/int, or a</span>
+    <span class="c1"># dict containing an average value and parameters to create</span>
+    <span class="c1"># distribution from. Defaults to zero</span>
     <span class="s1">&#39;k_frag&#39;</span><span class="p">:</span> <span class="n">k_dist_2d_schema</span><span class="p">,</span>
     <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_diss&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span> <span class="n">k_dist_2d_schema</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">(</span><span class="s1">&#39;k_min&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span> <span class="n">k_dist_t_schema</span><span class="p">,</span>
     <span class="c1"># fsd_beta is an empirical param that scales the depedence</span>
     <span class="c1"># of the fragment size distribution on particle diameter d</span>
     <span class="c1"># accordingly to d^beta. beta=0 means an equal split</span>

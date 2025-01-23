@@ -185,8 +185,9 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="input-data.html">Input data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fragmentation-dissolution-rates.html">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fragmentation-dissolution-rates.html">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="advanced-usage.html">Advanced usage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="advanced-usage/fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced-usage/numerical-instability.html">Dealing with numerical instability</a></li>
@@ -197,6 +198,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">
@@ -439,7 +441,7 @@ document.write(`
 </div>
 </div>
 </div>
-<p>The returned <code class="docutils literal notranslate"><span class="pre">FMNPOutput</span></code> object contains a timeseries <code class="docutils literal notranslate"><span class="pre">t</span></code>, particle mass and number concentrations for each size class, <code class="docutils literal notranslate"><span class="pre">c</span></code> and <code class="docutils literal notranslate"><span class="pre">n</span></code>, total concentration of dissolved organics <code class="docutils literal notranslate"><span class="pre">c_diss</span></code>, and the mass and particle number concentration of dissolved organics lost from each size class, <code class="docutils literal notranslate"><span class="pre">c_diss_from_sc</span></code> and <code class="docutils literal notranslate"><span class="pre">n_diss_from_sc</span></code> (not including initial dissolved concentrations from input parameter <code class="docutils literal notranslate"><span class="pre">initial_concs_diss</span></code>). See the <a class="reference internal" href="api/output.html#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><code class="xref py py-mod docutils literal notranslate"><span class="pre">FMNPOutput</span></code></a> API reference for more details. A convenient plotting function can be used to quickly plot model output (see <a class="reference internal" href="plotting.html"><span class="std std-doc">Plotting</span></a>):</p>
+<p>The returned <a class="reference internal" href="api/output.html#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><code class="xref py py-mod docutils literal notranslate"><span class="pre">FMNPOutput</span></code></a> object contains a timeseries <code class="docutils literal notranslate"><span class="pre">t</span></code>, particle mass and number concentrations for each size class, <code class="docutils literal notranslate"><span class="pre">c</span></code> and <code class="docutils literal notranslate"><span class="pre">n</span></code>, total concentration of dissolved organics <code class="docutils literal notranslate"><span class="pre">c_diss</span></code> and concentration of mineralised polymer <code class="docutils literal notranslate"><span class="pre">c_min</span></code>. See the <a class="reference internal" href="api/output.html#fragmentmnp.output.FMNPOutput" title="fragmentmnp.output.FMNPOutput"><code class="xref py py-mod docutils literal notranslate"><span class="pre">FMNPOutput</span></code></a> API reference for more details. A convenient plotting function can be used to quickly plot model output (see <a class="reference internal" href="plotting.html"><span class="std std-doc">Plotting</span></a>):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the time evolution of mass concentrations</span>
@@ -464,7 +466,7 @@ document.write(`
 </div>
 <div class="section" id="dissolution">
 <h2>Dissolution<a class="headerlink" href="#dissolution" title="Permalink to this heading">#</a></h2>
-<p>The example data has a dissolution rate <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> of 0. Let’s simulate dissolution by setting this to a constant value of 0.001. For more <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> (and <code class="docutils literal notranslate"><span class="pre">k_frag</span></code>) values that are more complex dependencies on time and surface area, see <a class="reference internal" href="fragmentation-dissolution-rates.html"><span class="std std-doc">Fragmentation and dissolution rates</span></a>.</p>
+<p>The example data has a dissolution rate <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> of 0. Let’s simulate dissolution by setting this to a constant value of 0.001. For more <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> (and <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_min</span></code>) values that are more complex dependencies on time and surface area, see <a class="reference internal" href="fragmentation-dissolution-rates.html"><span class="std std-doc">Fragmentation, dissolution and mineralisation rates</span></a>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fragmentmnp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FragmentMNP</span>
@@ -489,9 +491,10 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/3e6bd472d5e953dfc45368b3cbc3bd78189effbd415123a859c9e9a51ed77269.png" src="_images/3e6bd472d5e953dfc45368b3cbc3bd78189effbd415123a859c9e9a51ed77269.png" />
+<img alt="_images/a45a60a34dc3e1dd5cd2a7a754bd4fc372d0cc28cc5b7e6019c21d0134ccb5e5.png" src="_images/a45a60a34dc3e1dd5cd2a7a754bd4fc372d0cc28cc5b7e6019c21d0134ccb5e5.png" />
 </div>
 </div>
+<p>If we were interested in mineralisation (see <a class="reference internal" href="dissolution-mineralisation.html"><span class="std std-doc">Dissolution and mineralisation</span></a>) then we can plot this be specifying <code class="docutils literal notranslate"><span class="pre">plot_mineralisation=True</span></code>.</p>
 </div>
 </div>
 

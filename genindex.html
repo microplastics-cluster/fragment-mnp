@@ -58,6 +58,14 @@
     <script src="_static/design-tabs.js"></script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script async="async" src="_static/sphinx-thebe.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
@@ -185,8 +193,9 @@
 <li class="toctree-l1"><a class="reference internal" href="example-usage.html">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="input-data.html">Input data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fragmentation-dissolution-rates.html">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fragmentation-dissolution-rates.html">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="advanced-usage.html">Advanced usage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="advanced-usage/fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced-usage/numerical-instability.html">Dealing with numerical instability</a></li>
@@ -197,6 +206,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">

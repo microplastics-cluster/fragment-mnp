@@ -8,7 +8,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fragmentation and dissolution rates &#8212; FRAGMENT-MNP</title>
+    <title>Fragmentation, dissolution and mineralisation rates &#8212; FRAGMENT-MNP</title>
   
   
   
@@ -63,8 +63,8 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'fragmentation-dissolution-rates';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Plotting" href="plotting.html" />
-    <link rel="prev" title="Input data" href="input-data.html" />
+    <link rel="next" title="Dissolution and mineralisation" href="dissolution-mineralisation.html" />
+    <link rel="prev" title="Plotting" href="plotting.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -187,8 +187,9 @@
 <li class="toctree-l1"><a class="reference internal" href="example-usage.html">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="input-data.html">Input data</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="advanced-usage.html">Advanced usage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="advanced-usage/fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced-usage/numerical-instability.html">Dealing with numerical instability</a></li>
@@ -199,6 +200,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">
@@ -399,7 +401,7 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>Fragmentation and dissolution rates</h1>
+    <h1>Fragmentation, dissolution and mineralisation rates</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -411,7 +413,7 @@ document.write(`
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#regression-parameters">Regression parameters</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-your-own-k-text-frag-array">Setting your own <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> array</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-your-own-rate-constant-regressions">Setting your own rate constant regressions</a></li>
 </ul>
             </nav>
         </div>
@@ -423,10 +425,10 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <div class="tex2jax_ignore mathjax_ignore section" id="fragmentation-and-dissolution-rates">
-<h1>Fragmentation and dissolution rates<a class="headerlink" href="#fragmentation-and-dissolution-rates" title="Permalink to this heading">#</a></h1>
-<p>Fragmentation rate <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> and dissolution rate <span class="math notranslate nohighlight">\(k_\text{diss}\)</span> control the rate at which polymer mass is lost from particle size classes, either to smaller size classes (fragmentation) or dissolved organics (dissolution). They have units of inverse time (s<sup>-1</sup> in SI units) and thus, for a given period of time <span class="math notranslate nohighlight">\(t + \Delta t\)</span>, a mass <span class="math notranslate nohighlight">\(m = \Delta t k_{i,t}\)</span> of polymer fragments or dissolves from size class <span class="math notranslate nohighlight">\(i\)</span>. The <a class="reference internal" href="advanced-usage/fragment-size-distribution.html"><span class="std std-doc">Fragment size distribution</span></a> controls how this mass is split amongst daughter size classes.</p>
-<p>Both rate constants can vary in time and across particle surface areas, and thus they are 2D arrays with dimensions <code class="docutils literal notranslate"><span class="pre">(n_timesteps,</span> <span class="pre">n_size_classes)</span></code>. This dependence is controlled by the parameters provided in <a class="reference internal" href="input-data.html"><span class="doc std std-doc">model input data</span></a>, specifically to the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> variables. If scalars are provided to these, the rates are constant in time and surface area, and if a dict of regression parameters is provided, the rate constants vary in time and surface area according to these parameters, as detailed here.</p>
+  <div class="tex2jax_ignore mathjax_ignore section" id="fragmentation-dissolution-and-mineralisation-rates">
+<h1>Fragmentation, dissolution and mineralisation rates<a class="headerlink" href="#fragmentation-dissolution-and-mineralisation-rates" title="Permalink to this heading">#</a></h1>
+<p>Fragmentation rate <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> and dissolution rate <span class="math notranslate nohighlight">\(k_\text{diss}\)</span> constants control the rate at which polymer mass is lost from particle size classes, either to smaller size classes (fragmentation) or dissolved organics (dissolution). The mineralisation rate constant <span class="math notranslate nohighlight">\(k_\text{min}\)</span> controls the rate at which dissolved organics are completely broken down into their mineral components, such as CO<sub>2</sub>. These rate constants have units of inverse time (s<sup>-1</sup> in SI units) and thus, for a given period of time <span class="math notranslate nohighlight">\(t + \Delta t\)</span>, a mass <span class="math notranslate nohighlight">\(m = \Delta t k_{t}\)</span> of polymer fragments, dissolves or mineralises from a given pool. For fragmentation, the <a class="reference internal" href="advanced-usage/fragment-size-distribution.html"><span class="std std-doc">Fragment size distribution</span></a> controls how this mass is split amongst daughter size classes. <a class="reference internal" href="dissolution-mineralisation.html"><span class="std std-doc">Dissolution and mineralisation</span></a> describes in more detail the relationship between dissolution and mineralisation.</p>
+<p>Fragmentation and dissolution rate constants can vary in time and across particle surface areas, and thus they are 2D arrays with dimensions <code class="docutils literal notranslate"><span class="pre">(n_timesteps,</span> <span class="pre">n_size_classes)</span></code>. The mineralisation rate constant can vary in time, and is therefore a 1D array with dimensions <code class="docutils literal notranslate"><span class="pre">(n_timesteps)</span></code>. These dependencies are controlled by the parameters provided in <a class="reference internal" href="input-data.html"><span class="doc std std-doc">model input data</span></a>, specifically to the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> and <code class="docutils literal notranslate"><span class="pre">k_min</span></code> variables. If scalars are provided to these, the rates are constant in time and surface area, and if a dict of regression parameters is provided, the rate constants vary in time and surface area (<code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>), or just in time (<code class="docutils literal notranslate"><span class="pre">k_min</span></code>), according to these parameters, as detailed here.</p>
 <p>The rate constant distributions are built using either a compound relationship:</p>
 <div class="math notranslate nohighlight">
 \[
@@ -437,7 +439,7 @@ k(t,s) = k_f T(t) S(s) + k_0
 \[
 k(t,s) = k_f (T(t) + S(s)) + k_0
 \]</div>
-<p>You can specify which is used by specifying the boolean <code class="docutils literal notranslate"><span class="pre">is_compound</span></code> in the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> or <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> input data dict. Here, <code class="docutils literal notranslate"><span class="pre">t</span></code> is the time dimension, <code class="docutils literal notranslate"><span class="pre">s</span></code> is the particle surface area dimension, <code class="docutils literal notranslate"><span class="pre">k_f</span></code> is the rate constant scaling factor, <code class="docutils literal notranslate"><span class="pre">k_0</span></code> is the rate constant baseline adjustment factor and <code class="docutils literal notranslate"><span class="pre">k</span></code> could be <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> or <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>. <code class="docutils literal notranslate"><span class="pre">T(t)</span></code> is the expression used to create the time-dependence distribution, and <code class="docutils literal notranslate"><span class="pre">S(s)</span></code> the surface area distribution. Both of these take the same form, which allows for power law, exponential, logarithmic and logistic regressions:</p>
+<p>You can specify which is used by specifying the boolean <code class="docutils literal notranslate"><span class="pre">is_compound</span></code> in the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> or <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> input data dict. Here, <code class="docutils literal notranslate"><span class="pre">t</span></code> is the time dimension, <code class="docutils literal notranslate"><span class="pre">s</span></code> is the particle surface area dimension, <code class="docutils literal notranslate"><span class="pre">k_f</span></code> is the rate constant scaling factor, <code class="docutils literal notranslate"><span class="pre">k_0</span></code> is the rate constant baseline adjustment factor and <code class="docutils literal notranslate"><span class="pre">k</span></code> could be <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> or <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>. <code class="docutils literal notranslate"><span class="pre">T(t)</span></code> is the expression used to create the time-dependence distribution, and <code class="docutils literal notranslate"><span class="pre">S(s)</span></code> the surface area distribution. In the case of mineralisation, only <code class="docutils literal notranslate"><span class="pre">T(t)</span></code> is used. Both of these take the same form, which allows for power law, exponential, logarithmic and logistic regressions:</p>
 <div class="math notranslate nohighlight">
 \[
 X(x) = A_x \hat{x}^{\alpha_x} \cdot B_x e^{-\beta_x \hat{x}}
@@ -451,7 +453,7 @@ X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot B_x e^{-\beta_x \hat{x}} \cdot
        C_x \ln (\gamma_x \hat{x}) \cdot \frac{D_x}{1 + e^{-\delta_{x,1}(\hat{x}
        - \delta_{x,2})}}
 \]</div>
-<p>Here, <code class="docutils literal notranslate"><span class="pre">X(x)</span></code> is either <code class="docutils literal notranslate"><span class="pre">T(t)</span></code> or <code class="docutils literal notranslate"><span class="pre">S(s)</span></code>. The parameters <code class="docutils literal notranslate"><span class="pre">A_t</span></code>, <code class="docutils literal notranslate"><span class="pre">A_s</span></code>, <code class="docutils literal notranslate"><span class="pre">alpha_t</span></code> etc are the parameters provided to the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> dicts in the input data. The dimension value <span class="math notranslate nohighlight">\(\hat{x}\)</span> is normalised such that the median value is equal to 1: <span class="math notranslate nohighlight">\(\hat{x} = x/\tilde{x}\)</span>, where <span class="math notranslate nohighlight">\(\tilde{x}\)</span> is the median of <span class="math notranslate nohighlight">\(x\)</span>. This ensures regressions are not skewed by <code class="docutils literal notranslate"><span class="pre">t</span></code> and <code class="docutils literal notranslate"><span class="pre">s</span></code> values that are many orders of magnitude apart.</p>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">X(x)</span></code> is either <code class="docutils literal notranslate"><span class="pre">T(t)</span></code> or <code class="docutils literal notranslate"><span class="pre">S(s)</span></code>. The parameters <code class="docutils literal notranslate"><span class="pre">A_t</span></code>, <code class="docutils literal notranslate"><span class="pre">A_s</span></code>, <code class="docutils literal notranslate"><span class="pre">alpha_t</span></code> etc are the parameters provided to the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> and <code class="docutils literal notranslate"><span class="pre">k_min</span></code> dicts in the input data. The dimension value <span class="math notranslate nohighlight">\(\hat{x}\)</span> is normalised such that the median value is equal to 1: <span class="math notranslate nohighlight">\(\hat{x} = x/\tilde{x}\)</span>, where <span class="math notranslate nohighlight">\(\tilde{x}\)</span> is the median of <span class="math notranslate nohighlight">\(x\)</span>. This ensures regressions are not skewed by <code class="docutils literal notranslate"><span class="pre">t</span></code> and <code class="docutils literal notranslate"><span class="pre">s</span></code> values that are many orders of magnitude apart.</p>
 <div class="note admonition">
 <p class="admonition-title">Smallest size class</p>
 <p>The model presumes that <em>no</em> fragmentation happens from the smallest size class, and so <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> is always set to 0 for this size class. This is in constast to dissolution, which can happen from this size class.</p>
@@ -550,14 +552,11 @@ X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot B_x e^{-\beta_x \hat{x}} \cdot
 <span class="c1"># has k_frag=0)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fmnp</span><span class="o">.</span><span class="n">t_grid</span><span class="p">,</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;k_frag&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;k_frag&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0, 0.5, &#39;k_frag&#39;)
-</pre></div>
-</div>
 <img alt="_images/9b42843ef7f039daf6e1c809d85e7f7065387b83a73f017c61a17768a58f2e44.png" src="_images/9b42843ef7f039daf6e1c809d85e7f7065387b83a73f017c61a17768a58f2e44.png" />
 </div>
 </div>
@@ -580,7 +579,7 @@ X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot B_x e^{-\beta_x \hat{x}} \cdot
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">c</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s1">&lt;1g</span><span class="si">}</span><span class="s1"> µm&#39;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">psd</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;k_frag&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -593,14 +592,11 @@ X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot B_x e^{-\beta_x \hat{x}} \cdot
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fmnp</span><span class="o">.</span><span class="n">surface_areas</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">0</span><span class="p">])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;particle surface area&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;k_frag&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;k_frag&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0, 0.5, &#39;k_frag&#39;)
-</pre></div>
-</div>
 <img alt="_images/4d2cd6d7e3fad326694fff39920affbd5076920ec0349c66562c2a3808a64ef9.png" src="_images/4d2cd6d7e3fad326694fff39920affbd5076920ec0349c66562c2a3808a64ef9.png" />
 </div>
 </div>
@@ -618,21 +614,18 @@ X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot B_x e^{-\beta_x \hat{x}} \cdot
 <span class="n">fmnp</span> <span class="o">=</span> <span class="n">FragmentMNP</span><span class="p">(</span><span class="n">minimal_config</span><span class="p">,</span> <span class="n">minimal_data</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fmnp</span><span class="o">.</span><span class="n">t_grid</span><span class="p">,</span> <span class="n">fmnp</span><span class="o">.</span><span class="n">k_frag</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;k_frag&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;k_frag&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0, 0.5, &#39;k_frag&#39;)
-</pre></div>
-</div>
 <img alt="_images/672d077563e23bbefa64ccb8b441127b69093c36d20271408da94dec653718c8.png" src="_images/672d077563e23bbefa64ccb8b441127b69093c36d20271408da94dec653718c8.png" />
 </div>
 </div>
 </div>
-<div class="section" id="setting-your-own-k-text-frag-array">
-<h2>Setting your own <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> array<a class="headerlink" href="#setting-your-own-k-text-frag-array" title="Permalink to this heading">#</a></h2>
-<p>If the time and size dependencies that can be achieved using the regression parammeters above are not flexible enough for your scenario, you can of course set your own <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> or <span class="math notranslate nohighlight">\(k_\text{diss}\)</span> arrays by modifying the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> or <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> attributes directly after initialising the model:</p>
+<div class="section" id="setting-your-own-rate-constant-regressions">
+<h2>Setting your own rate constant regressions<a class="headerlink" href="#setting-your-own-rate-constant-regressions" title="Permalink to this heading">#</a></h2>
+<p>If the time and size dependencies that can be achieved using the regression parammeters above are not flexible enough for your scenario, you can of course set your own <span class="math notranslate nohighlight">\(k_\text{frag}\)</span>, <span class="math notranslate nohighlight">\(k_\text{diss}\)</span> or <span class="math notranslate nohighlight">\(k_\text{min}\)</span> arrays by modifying the <code class="docutils literal notranslate"><span class="pre">k_frag</span></code>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code> or <code class="docutils literal notranslate"><span class="pre">k_min</span></code> attributes directly after initialising the model:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set a random k_frag array (really?!)</span>
@@ -675,20 +668,20 @@ X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot B_x e^{-\beta_x \hat{x}} \cdot
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="input-data.html"
+       href="plotting.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Input data</p>
+        <p class="prev-next-title">Plotting</p>
       </div>
     </a>
     <a class="right-next"
-       href="plotting.html"
+       href="dissolution-mineralisation.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Plotting</p>
+        <p class="prev-next-title">Dissolution and mineralisation</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -710,7 +703,7 @@ X(x) = \sum_{n=1}^N A_{x,n} \hat{x}^n \cdot B_x e^{-\beta_x \hat{x}} \cdot
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#regression-parameters">Regression parameters</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-your-own-k-text-frag-array">Setting your own <span class="math notranslate nohighlight">\(k_\text{frag}\)</span> array</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-your-own-rate-constant-regressions">Setting your own rate constant regressions</a></li>
 </ul>
   </nav></div>
 

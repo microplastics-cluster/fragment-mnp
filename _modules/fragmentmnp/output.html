@@ -58,6 +58,14 @@
     <script src="../../_static/design-tabs.js"></script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/fragmentmnp/output';</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -185,8 +193,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../../example-usage.html">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../input-data.html">Input data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../fragmentation-dissolution-rates.html">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fragmentation-dissolution-rates.html">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../advanced-usage.html">Advanced usage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../advanced-usage/fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../advanced-usage/numerical-instability.html">Dealing with numerical instability</a></li>
@@ -197,6 +206,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">
@@ -389,17 +399,16 @@ document.write(`
 <span class="sd">    n : np.ndarray, shape (n_size_classes, n_timesteps)</span>
 <span class="sd">        Particle number concentrations for each size class over</span>
 <span class="sd">        the time series</span>
-<span class="sd">    c_diss_from_sc : np.ndarray, shape (n_size_classes, n_timesteps)</span>
-<span class="sd">        Mass concentrations of dissolved organics lost from each</span>
-<span class="sd">        size class, not including initial dissolved concentrations</span>
-<span class="sd">        specified by `initial_concs_diss` parameter</span>
 <span class="sd">    c_diss : np.ndarray, shape (n_timesteps)</span>
 <span class="sd">        Total mass concentrations of dissolved organics, including</span>
 <span class="sd">        initial concentrations</span>
-<span class="sd">    n_diss_from_sc : np.ndarray, shape (n_size_classes, n_timesteps)</span>
-<span class="sd">        Particle number concentrations lost from size classes due</span>
-<span class="sd">        to dissolution, not including initial dissolved</span>
-<span class="sd">        concentrations specified by `initial_concs_diss` parameter</span>
+<span class="sd">    c_min : np.ndarray, shape (n_timesteps)</span>
+<span class="sd">        Total mass concentration of mineralised polymer. `c_min` is</span>
+<span class="sd">        given as a concentration relative to the original medium</span>
+<span class="sd">        that the polymer was present in. For example, if the</span>
+<span class="sd">        original medium is soil, and the units are kg/m3, then</span>
+<span class="sd">        `c_min` is the mass of mineralised polymer per m3 of the</span>
+<span class="sd">        soil, rather than the atmosphere surrounding the soil</span>
 <span class="sd">    soln : Bunch object from scipy.integrate.solve_ivp return</span>
 <span class="sd">        The solution to the model ODE, passed directly from the</span>
 <span class="sd">        scipy.integrate.solve_ivp method</span>
@@ -408,16 +417,15 @@ document.write(`
 <span class="sd">        each of the particle size classes</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="s1">&#39;c_diss_from_sc&#39;</span><span class="p">,</span> <span class="s1">&#39;c_diss&#39;</span><span class="p">,</span> <span class="s1">&#39;n_diss_from_sc&#39;</span><span class="p">,</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="s1">&#39;c_diss&#39;</span><span class="p">,</span> <span class="s1">&#39;c_min&#39;</span><span class="p">,</span>
                  <span class="s1">&#39;n_timesteps&#39;</span><span class="p">,</span> <span class="s1">&#39;n_size_classes&#39;</span><span class="p">,</span> <span class="s1">&#39;soln&#39;</span><span class="p">,</span> <span class="s1">&#39;psd&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">t</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
                  <span class="n">c</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
                  <span class="n">n</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-                 <span class="n">c_diss_from_sc</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
                  <span class="n">c_diss</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
-                 <span class="n">n_diss_from_sc</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+                 <span class="n">c_min</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
                  <span class="n">soln</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span>
                  <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -427,9 +435,8 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">c</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">c_diss_from_sc</span> <span class="o">=</span> <span class="n">c_diss_from_sc</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">c_diss</span> <span class="o">=</span> <span class="n">c_diss</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_diss_from_sc</span> <span class="o">=</span> <span class="n">n_diss_from_sc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c_min</span> <span class="o">=</span> <span class="n">c_min</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">soln</span> <span class="o">=</span> <span class="n">soln</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">psd</span> <span class="o">=</span> <span class="n">psd</span>
         <span class="c1"># Save the number of timesteps and size classes</span>
@@ -445,6 +452,7 @@ document.write(`
 <div class="viewcode-block" id="FMNPOutput.plot"><a class="viewcode-back" href="../../api/output.html#fragmentmnp.output.FMNPOutput.plot">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
              <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;mass_conc&#39;</span><span class="p">,</span>
              <span class="n">plot_dissolution</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+             <span class="n">plot_mineralisation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
              <span class="n">log_yaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
              <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span>
@@ -461,6 +469,8 @@ document.write(`
 <span class="sd">            Either `particle_number_conc` or `mass_conc`.</span>
 <span class="sd">        plot_dissolution : bool, default=False</span>
 <span class="sd">            Should dissolution be plotted on a separate y-axis</span>
+<span class="sd">        plot_mineralisation : bool, default=False</span>
+<span class="sd">            Should mineralised polymer be plotted on a separate y-axis</span>
 <span class="sd">        log_yaxis: bool or str, default=False</span>
 <span class="sd">            True and &quot;log&quot; plots the y axis on a log scale,</span>
 <span class="sd">            &quot;symlog&quot; plots the y axis on a symlog scale (useful</span>
@@ -479,7 +489,7 @@ document.write(`
 <span class="sd">        cmap: str, default=&#39;viridis&#39;</span>
 <span class="sd">            The colormap to use for the plot. Must be one of the</span>
 <span class="sd">            colormaps `available in matplotlib</span>
-<span class="sd">            &lt;https://matplotlib.org/stable/gallery/color/colormap_reference.html&gt;`_.</span>
+<span class="sd">            &lt;https://matplotlib.org/stable/gallery/color/colormap_reference.html&gt;`.</span>
 <span class="sd">            Note that these are case-sensitive.</span>
 <span class="sd">        show_legend: bool, default=True</span>
 <span class="sd">            Should size classes be shown on a legend?</span>
@@ -561,17 +571,28 @@ document.write(`
             <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">legend</span><span class="p">)</span>
 
         <span class="c1"># Create and format the dissolution y axis</span>
-        <span class="k">if</span> <span class="n">plot_dissolution</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">plot_dissolution</span> <span class="ow">or</span> <span class="n">plot_mineralisation</span><span class="p">:</span>
             <span class="n">ax2</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
             <span class="c1"># Construct the ylabel</span>
-            <span class="n">ylabel_diss</span> <span class="o">=</span> <span class="s1">&#39;Dissolution mass concentration&#39;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">plot_mineralisation</span><span class="p">:</span>
+                <span class="n">ylabel_diss</span> <span class="o">=</span> <span class="s1">&#39;Dissolved mass concentration&#39;</span>
+                <span class="n">legend</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Dissolved&#39;</span><span class="p">]</span>
+                <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_diss</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">plot_dissolution</span><span class="p">:</span>
+                <span class="n">ylabel_diss</span> <span class="o">=</span> <span class="s1">&#39;Mineralised mass concentration&#39;</span>
+                <span class="n">legend</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Mineralised&#39;</span><span class="p">]</span>
+                <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_min</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;0.6&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ylabel_diss</span> <span class="o">=</span> <span class="s1">&#39;Dissolved and mineralised mass concentration&#39;</span>
+                <span class="n">legend</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Dissolved&#39;</span><span class="p">,</span> <span class="s1">&#39;Mineralised&#39;</span><span class="p">]</span>
+                <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_diss</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;0.4&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+                <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_min</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;0.6&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">unit_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">ylabel_diss</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; [</span><span class="si">{</span><span class="n">unit_labels</span><span class="p">[</span><span class="s2">&quot;mass_conc&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">]&#39;</span>
             <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel_diss</span><span class="p">)</span>
-            <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_diss</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">)</span>
             <span class="c1"># Always show the dissolution legend to make it clear</span>
             <span class="c1"># which line is dissolution</span>
-            <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;Dissolution&#39;</span><span class="p">])</span>
+            <span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">legend</span><span class="p">)</span>
             <span class="c1"># Should the y axis be logged?</span>
             <span class="k">if</span> <span class="n">log_yaxis</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">]:</span>
                 <span class="n">ax2</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
@@ -588,17 +609,17 @@ document.write(`
 <span class="sd">        method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">units_out</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">units</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="p">{</span><span class="s1">&#39;mass&#39;</span><span class="p">,</span> <span class="s1">&#39;volume&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">}</span> <span class="o">&lt;=</span> <span class="n">units</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
             <span class="c1"># If we&#39;ve been provided a dict of units, use these</span>
             <span class="n">units_out</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">units</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">and</span> <span class="n">units</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;si&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">units</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;si&#39;</span><span class="p">:</span>
             <span class="c1"># Use SI units</span>
             <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;kg&#39;</span>
             <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;m3&#39;</span>
             <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span>
             <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;m&#39;</span>
-        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">units</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">and</span> <span class="n">units</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dim&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">units</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dim&#39;</span><span class="p">:</span>
             <span class="c1"># Use dimensional labels as the units</span>
             <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;mass&#39;</span>
             <span class="n">units_out</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;volume&#39;</span>

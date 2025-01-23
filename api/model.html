@@ -64,7 +64,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Example config and data (fragmentmnp.examples)" href="examples.html" />
-    <link rel="prev" title="Developing with Conda/Mamba" href="../developers/conda.html" />
+    <link rel="prev" title="Writing documentation" href="../developers/docs.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -187,8 +187,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../example-usage.html">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../input-data.html">Input data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../fragmentation-dissolution-rates.html">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fragmentation-dissolution-rates.html">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../advanced-usage.html">Advanced usage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../advanced-usage/fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../advanced-usage/numerical-instability.html">Dealing with numerical instability</a></li>
@@ -199,6 +200,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="current nav bd-sidenav">
@@ -466,18 +468,24 @@ config and data are correct and wish to speed up model initialisation</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>The model numerically solves the following differential
-equation for each size class, to give a time series of mass
-concentrations <cite>c</cite>. <cite>k</cite> is the current size class, <cite>i</cite> are the
-daughter size classes.</p>
+<p>The model numerically solves the following set of differential
+equations to give a time series of mass concentrations of particles
+<cite>c</cite>, dissolved polymer <cite>c_diss</cite> and mineralised polymer <cite>c_min</cite>.
+<cite>k</cite> is the current size class, <cite>i</cite> are the daughter size classes.</p>
 <div class="math notranslate nohighlight">
 \[\frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
 \sum_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k\]</div>
+<div class="math notranslate nohighlight">
+\[\frac{dc_\text{diss}}{dt} = \sum_k k_{\text{diss},k} c_k -
+k_\text{min} c_\text{diss}\]</div>
+<div class="math notranslate nohighlight">
+\[\frac{dc_\text{min}}{dt} = k_\text{min} c_\text{diss}\]</div>
 <p>Here, <span class="math notranslate nohighlight">\(k_{\text{frag},k}\)</span> is the fragmentation rate of size
 class <cite>k</cite>, <span class="math notranslate nohighlight">\(f_{i,k}\)</span> is the fraction of daughter
 fragments produced from a fragmenting particle of size <cite>i</cite> that are of
-size <cite>k</cite>, and <span class="math notranslate nohighlight">\(k_{\text{diss},k}\)</span> is the dissolution rate from
-size class <cite>k</cite>.</p>
+size <cite>k</cite>, <span class="math notranslate nohighlight">\(k_{\text{diss},k}\)</span> is the dissolution rate from
+size class <cite>k</cite> and <span class="math notranslate nohighlight">\(k_\text{min}\)</span> is the mineralisation rate
+from the dissolved pool.</p>
 <p>Mass concentrations are converted to particle number concentrations by
 assuming spherical particles with the density given in the input data.</p>
 </dd></dl>
@@ -517,12 +525,15 @@ classes than larger.</p>
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">set_k_distribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_compound</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.set_k_distribution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.set_k_distribution" title="Permalink to this definition">#</a></dt>
 <dd><p>Create a distribution based on the rate constant scaling factor <code class="docutils literal notranslate"><span class="pre">k_f</span></code>
 and baseline adjustment factor <code class="docutils literal notranslate"><span class="pre">k_0</span></code>. The distribution will be a
-compound combination of power law / polynomial, exponential,
-logarithmic and logistic regressions, encapsulated in the function
-<span class="math notranslate nohighlight">\(X(x)\)</span>, and have dimensions given by <cite>dims</cite>. For a distribution
-with <cite>D</cite> dimensions:</p>
+compound or additive combination of power law / polynomial,
+exponential, logarithmic and logistic regressions, encapsulated in the
+function <span class="math notranslate nohighlight">\(X(x)\)</span>, and have dimensions given by <cite>dims</cite>. For a
+distribution with <cite>D</cite> dimensions:</p>
 <div class="math notranslate nohighlight">
 \[k(\mathbf{x}) = k_f \prod_{d=1}^D X(x_d) + k_0\]</div>
+<p>or</p>
+<div class="math notranslate nohighlight">
+\[k(\mathbf{x}) = k_f \sum_{d=1}^D X(x_d) + k_0\]</div>
 <p><span class="math notranslate nohighlight">\(X(x)\)</span> is then given either by:</p>
 <div class="math notranslate nohighlight">
 \[X(x) = A_x \hat{x}^{\alpha_x} \cdot B_x e^{-\beta_x \hat{x}}
@@ -676,12 +687,12 @@ particles.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../developers/conda.html"
+       href="../developers/docs.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Developing with Conda/Mamba</p>
+        <p class="prev-next-title">Writing documentation</p>
       </div>
     </a>
     <a class="right-next"

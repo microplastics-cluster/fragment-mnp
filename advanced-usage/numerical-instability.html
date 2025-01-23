@@ -187,8 +187,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../example-usage.html">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../input-data.html">Input data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../fragmentation-dissolution-rates.html">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fragmentation-dissolution-rates.html">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="../advanced-usage.html">Advanced usage</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">Dealing with numerical instability</a></li>
@@ -199,6 +200,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">
@@ -457,7 +459,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/3e8aab024c68e405c6e131450946de646551864e0ef71d9b90dee4b2cd1d4489.png" src="../_images/3e8aab024c68e405c6e131450946de646551864e0ef71d9b90dee4b2cd1d4489.png" />
+<img alt="../_images/d1349c86e5e5c179d3262c69d4d69b25b640b7bf081166b4211845092a9f403a.png" src="../_images/d1349c86e5e5c179d3262c69d4d69b25b640b7bf081166b4211845092a9f403a.png" />
 </div>
 </div>
 <p>Something is clearly going wrong here! Let’s try <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.LSODA.html">LSODA</a> instead, which is better at dealing with stiffness:</p>
@@ -474,7 +476,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/3e8aab024c68e405c6e131450946de646551864e0ef71d9b90dee4b2cd1d4489.png" src="../_images/3e8aab024c68e405c6e131450946de646551864e0ef71d9b90dee4b2cd1d4489.png" />
+<img alt="../_images/d1349c86e5e5c179d3262c69d4d69b25b640b7bf081166b4211845092a9f403a.png" src="../_images/d1349c86e5e5c179d3262c69d4d69b25b640b7bf081166b4211845092a9f403a.png" />
 </div>
 </div>
 <p>Better, but not quite there yet. If we look at the SciPy solution object, accessed via <code class="docutils literal notranslate"><span class="pre">output.soln</span></code>, we can see the number of evaluations made (<code class="docutils literal notranslate"><span class="pre">nfev</span></code>):</p>
@@ -485,7 +487,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>133
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>135
 </pre></div>
 </div>
 </div>
@@ -504,10 +506,10 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>568
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>593
 </pre></div>
 </div>
-<img alt="../_images/613a2d76e9b2accb38fee48824944cbb5742c24c36b395fa24d16c1d62e9da12.png" src="../_images/613a2d76e9b2accb38fee48824944cbb5742c24c36b395fa24d16c1d62e9da12.png" />
+<img alt="../_images/4b182f628a0457b31ccc1588d44832a64b25eb90bfc2e0fe9a43812a7cb367f0.png" src="../_images/4b182f628a0457b31ccc1588d44832a64b25eb90bfc2e0fe9a43812a7cb367f0.png" />
 </div>
 </div>
 <p>This seems to have done the trick! Alternatively, we could have set smaller <code class="docutils literal notranslate"><span class="pre">atol</span></code> and <code class="docutils literal notranslate"><span class="pre">rtol</span></code> than the defaults (10e-6 and 10e-3, respectively):</p>
@@ -526,10 +528,10 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>543
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>545
 </pre></div>
 </div>
-<img alt="../_images/070024629fb011f6073fed7804d55196f3b269afcac5807ee55f5a90e1c41cc0.png" src="../_images/070024629fb011f6073fed7804d55196f3b269afcac5807ee55f5a90e1c41cc0.png" />
+<img alt="../_images/2746b6d9a54e382c3b80f9a302c8c1cd06443daa39b663dcc35a029ce09421be.png" src="../_images/2746b6d9a54e382c3b80f9a302c8c1cd06443daa39b663dcc35a029ce09421be.png" />
 </div>
 </div>
 <p>Note that we have to set considerably smaller tolerances than the defaults to solve the instability.</p>

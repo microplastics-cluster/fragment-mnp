@@ -58,6 +58,14 @@
     <script src="../../_static/design-tabs.js"></script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/fragmentmnp/fragmentmnp';</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -185,8 +193,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../../example-usage.html">Example usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../config.html">Model configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../input-data.html">Input data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../fragmentation-dissolution-rates.html">Fragmentation and dissolution rates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fragmentation-dissolution-rates.html">Fragmentation, dissolution and mineralisation rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dissolution-mineralisation.html">Dissolution and mineralisation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../advanced-usage.html">Advanced usage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../advanced-usage/fragment-size-distribution.html">Fragment size distribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../advanced-usage/numerical-instability.html">Dealing with numerical instability</a></li>
@@ -197,6 +206,7 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../../developers/quickstart.html">Developers quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../developers/conda.html">Developing with Conda/Mamba</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developers/docs.html">Writing documentation</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">
@@ -423,14 +433,16 @@ document.write(`
                                 <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;fsd_beta&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">]</span>
-        <span class="c1"># Stop Pylance complaining about k_frag and k_diss not being present</span>
+        <span class="c1"># Stop Pylance complaining about k_frag, k_diss and k_min not being</span>
+        <span class="c1"># present (or being the wrong type) by declaring them as NumPy arrays</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">,))</span>
         <span class="c1"># Calculate the rate constant distributions. If we&#39;ve been given</span>
         <span class="c1"># a dict in data, use the contained params to create the distribution.</span>
         <span class="c1"># Else, presume that we&#39;ve been given a scalar (validation will make</span>
         <span class="c1"># sure this is so) and use that as the average.</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">,</span> <span class="s1">&#39;k_min&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="n">k_f</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;k_f&#39;</span><span class="p">]</span>
                 <span class="n">k_0</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;k_0&#39;</span><span class="p">]</span>
@@ -443,17 +455,24 @@ document.write(`
                 <span class="n">k_0</span> <span class="o">=</span> <span class="mf">0.0</span>
                 <span class="n">is_compound</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="c1"># Calculate the 2D (s, t) distribution</span>
-            <span class="n">k_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_k_distribution</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;s&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_areas</span><span class="p">,</span>
-                                                   <span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">},</span>
-                                             <span class="n">k_f</span><span class="o">=</span><span class="n">k_f</span><span class="p">,</span> <span class="n">k_0</span><span class="o">=</span><span class="n">k_0</span><span class="p">,</span>
-                                             <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
-                                             <span class="n">is_compound</span><span class="o">=</span><span class="n">is_compound</span><span class="p">)</span>
-            <span class="c1"># If the rate constant is k_frag, then no fragmentation is</span>
-            <span class="c1"># allowed from the smallest size class and therefore we</span>
-            <span class="c1"># manually set this to zero</span>
-            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">:</span>
-                <span class="n">k_dist</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="c1"># If k_frag or k_diss, we want to calculate a 2D (s, t) distribution,</span>
+            <span class="c1"># and if k_min, we just want a 1D (t) distribution</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">]:</span>
+                <span class="n">k_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_k_distribution</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;s&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_areas</span><span class="p">,</span>
+                                                       <span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">},</span>
+                                                 <span class="n">k_f</span><span class="o">=</span><span class="n">k_f</span><span class="p">,</span> <span class="n">k_0</span><span class="o">=</span><span class="n">k_0</span><span class="p">,</span>
+                                                 <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                                 <span class="n">is_compound</span><span class="o">=</span><span class="n">is_compound</span><span class="p">)</span>
+                <span class="c1"># If the rate constant is k_frag, then no fragmentation is</span>
+                <span class="c1"># allowed from the smallest size class and therefore we</span>
+                <span class="c1"># manually set this to zero</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">:</span>
+                    <span class="n">k_dist</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">k_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_k_distribution</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">},</span>
+                                                 <span class="n">k_f</span><span class="o">=</span><span class="n">k_f</span><span class="p">,</span> <span class="n">k_0</span><span class="o">=</span><span class="n">k_0</span><span class="p">,</span>
+                                                 <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                                 <span class="n">is_compound</span><span class="o">=</span><span class="n">is_compound</span><span class="p">)</span>
             <span class="c1"># Check no values are less than zero</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">k_dist</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Value for </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1"> distribution calculated from input &#39;</span>
@@ -462,7 +481,7 @@ document.write(`
                        <span class="s1">&#39;are positive.&#39;</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">FMNPDistributionValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-            <span class="c1"># Set self.k_[frag|diss] as this distribution</span>
+            <span class="c1"># Set self.k_[frag|diss|min] as this distribution</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">k_dist</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../api/model.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FMNPOutput</span><span class="p">:</span>
@@ -475,82 +494,120 @@ document.write(`
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-<span class="sd">        The model numerically solves the following differential</span>
-<span class="sd">        equation for each size class, to give a time series of mass</span>
-<span class="sd">        concentrations `c`. `k` is the current size class, `i` are the</span>
-<span class="sd">        daughter size classes.</span>
+<span class="sd">        The model numerically solves the following set of differential</span>
+<span class="sd">        equations to give a time series of mass concentrations of particles</span>
+<span class="sd">        `c`, dissolved polymer `c_diss` and mineralised polymer `c_min`.</span>
+<span class="sd">        `k` is the current size class, `i` are the daughter size classes.</span>
 
 <span class="sd">        .. math::</span>
 <span class="sd">            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +</span>
 <span class="sd">            \sum_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k</span>
 
+<span class="sd">        .. math::</span>
+<span class="sd">            \frac{dc_\text{diss}}{dt} = \sum_k k_{\text{diss},k} c_k -</span>
+<span class="sd">            k_\text{min} c_\text{diss}</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \frac{dc_\text{min}}{dt} = k_\text{min} c_\text{diss}</span>
+
 <span class="sd">        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size</span>
 <span class="sd">        class `k`, :math:`f_{i,k}` is the fraction of daughter</span>
 <span class="sd">        fragments produced from a fragmenting particle of size `i` that are of</span>
-<span class="sd">        size `k`, and :math:`k_{\text{diss},k}` is the dissolution rate from</span>
-<span class="sd">        size class `k`.</span>
+<span class="sd">        size `k`, :math:`k_{\text{diss},k}` is the dissolution rate from</span>
+<span class="sd">        size class `k` and :math:`k_\text{min}` is the mineralisation rate</span>
+<span class="sd">        from the dissolved pool.</span>
 
 <span class="sd">        Mass concentrations are converted to particle number concentrations by</span>
 <span class="sd">        assuming spherical particles with the density given in the input data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># Define the initial value problem to pass to SciPy to solve.</span>
-        <span class="c1"># This must satisfy c&#39;(t) = f(t, c) with initial values given in data.</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
-            <span class="c1"># Get the number of size classes and create results to be filled</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            The initial value problem for SciPy to solve. This must satisfy</span>
+<span class="sd">            c&#39;(t) = f(t, c) with initial values given in data, with N+2</span>
+<span class="sd">            solutions:</span>
+<span class="sd">              c[:N]   = mass concentration in each of the N size classes</span>
+<span class="sd">              c[N]    = total dissolved mass concentration</span>
+<span class="sd">              c[N+1]  = mineralised mass concentration</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="c1"># Get the number of size classes</span>
             <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span>
-            <span class="n">dcdt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="c1"># Unpack the solutions</span>
+            <span class="n">c_particles</span> <span class="o">=</span> <span class="n">c</span><span class="p">[:</span><span class="n">N</span><span class="p">]</span>
+            <span class="n">c_dissolved</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="n">N</span><span class="p">]</span>
+            <span class="n">c_min</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>   <span class="c1"># Not used as a source in any ODE (only grows)</span>
             <span class="c1"># Interpolate the time-dependent parameters to the specific</span>
             <span class="c1"># timestep given (which will be a float, rather than integer index)</span>
             <span class="n">f_frag</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                                           <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
             <span class="n">f_diss</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                                           <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
+            <span class="n">f_min</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_min</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                         <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
             <span class="n">k_frag</span> <span class="o">=</span> <span class="n">f_frag</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
             <span class="n">k_diss</span> <span class="o">=</span> <span class="n">f_diss</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-            <span class="c1"># Loop over the size classes and perform the calculation</span>
-            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
-                <span class="c1"># The differential equation that is being solved</span>
-                <span class="n">dcdt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> \
-                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">k_frag</span> <span class="o">*</span> <span class="n">c</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span> \
-                    <span class="o">-</span> <span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-            <span class="c1"># Return the solution for all of the size classes</span>
+            <span class="n">k_min</span> <span class="o">=</span> <span class="n">f_min</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="c1"># Build array of d/dt</span>
+            <span class="n">dcdt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">N</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+            <span class="c1"># Particle ODEs, for each size class:</span>
+            <span class="c1">#   Gains: fragmentation from bigger size classes</span>
+            <span class="c1">#   Loss:  dissolution and fragmentation to smaller size classes</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+                <span class="n">dcdt</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="o">-</span> <span class="n">k_frag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c_particles</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                    <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsd</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">k_frag</span> <span class="o">*</span> <span class="n">c_particles</span><span class="p">[:</span><span class="n">N</span><span class="p">])</span>
+                    <span class="o">-</span> <span class="n">k_diss</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">c_particles</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="c1"># Dissolved mass ODE:</span>
+            <span class="c1">#   Gains: sum of kdiss[k] * c_particles[k]</span>
+            <span class="c1">#   Loss:  k_min * c_dissolved</span>
+            <span class="n">dcdt_dissolved</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">k_diss</span> <span class="o">*</span> <span class="n">c_particles</span><span class="p">)</span> <span class="o">-</span> <span class="n">k_min</span> <span class="o">*</span> <span class="n">c_dissolved</span>
+            <span class="c1"># Assign to last entry</span>
+            <span class="n">dcdt</span><span class="p">[</span><span class="n">N</span><span class="p">]</span> <span class="o">=</span> <span class="n">dcdt_dissolved</span>
+            <span class="c1"># Mineralized ODE:</span>
+            <span class="c1">#   Gains: k_min_avg * c_dissolved</span>
+            <span class="c1">#   No loss, so it&#39;s purely accumulative</span>
+            <span class="n">dcdt_min</span> <span class="o">=</span> <span class="n">k_min</span> <span class="o">*</span> <span class="n">c_dissolved</span>
+            <span class="n">dcdt</span><span class="p">[</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dcdt_min</span>
+            <span class="c1"># Final differential to return</span>
             <span class="k">return</span> <span class="n">dcdt</span>
 
-        <span class="c1"># Numerically solve this given the initial values for c</span>
-        <span class="n">soln</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">fun</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
-                         <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_method&#39;</span><span class="p">],</span>
-                         <span class="n">t_span</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>
-                         <span class="n">y0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span><span class="p">,</span>
-                         <span class="n">t_eval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t_eval</span><span class="p">,</span>
-                         <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_rtol&#39;</span><span class="p">],</span>
-                         <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_atol&#39;</span><span class="p">],</span>
-                         <span class="n">max_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_max_step&#39;</span><span class="p">])</span>
-        <span class="c1"># If we didn&#39;t find a solution, raise an error</span>
+        <span class="c1"># Build the new N+2 initial conditions: N particulate states,</span>
+        <span class="c1"># +1 dissolved, +1 mineralized</span>
+        <span class="n">y0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">initial_concs</span><span class="p">,</span>          <span class="c1"># microplastic mass per size class</span>
+           <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_concs_diss</span><span class="p">],</span>   <span class="c1"># dissolved mass</span>
+           <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>                        <span class="c1"># mineralized (initially zero)</span>
+        <span class="p">])</span>
+        <span class="c1"># Solve the ODE</span>
+        <span class="n">soln</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span>
+            <span class="n">fun</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_method&#39;</span><span class="p">],</span>
+            <span class="n">t_span</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>
+            <span class="n">y0</span><span class="o">=</span><span class="n">y0</span><span class="p">,</span>
+            <span class="n">t_eval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t_eval</span><span class="p">,</span>
+            <span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_rtol&#39;</span><span class="p">],</span>
+            <span class="n">atol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_atol&#39;</span><span class="p">],</span>
+            <span class="n">max_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;solver_max_step&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">soln</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">FMNPNumericalError</span><span class="p">(</span><span class="s1">&#39;Model solution could not be &#39;</span> <span class="o">+</span>
-                                     <span class="sa">f</span><span class="s1">&#39;found: </span><span class="si">{</span><span class="n">soln</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="c1"># Calculate the timeseries of mass concentration lost to dissolution</span>
-        <span class="c1"># from the solution, first interpolating k_diss to the t values</span>
-        <span class="c1"># we evaluated the solution over (t_eval)</span>
-        <span class="n">f_diss</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                      <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
-        <span class="n">k_diss_eval</span> <span class="o">=</span> <span class="n">f_diss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_eval</span><span class="p">)</span>
-        <span class="n">j_diss</span> <span class="o">=</span> <span class="n">k_diss_eval</span> <span class="o">*</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span>
-        <span class="c1"># Use this to calculate the cumulative mass concentration</span>
-        <span class="c1"># lost to dissolution</span>
-        <span class="n">c_diss_from_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">j_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># Add initial concentration and sum across size classes</span>
-        <span class="n">c_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">j_diss</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> \
-            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_concs_diss</span>
-        <span class="c1"># Now we have the solutions as mass concentrations, we can</span>
-        <span class="c1"># convert to particle number concentrations</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_to_particle_number</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-        <span class="n">n_diss_from_sc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_to_particle_number</span><span class="p">(</span><span class="n">c_diss</span><span class="p">)</span>
-
-        <span class="c1"># Return the solution in an FMNPOutput object</span>
-        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">c_diss_from_sc</span><span class="p">,</span> <span class="n">c_diss</span><span class="p">,</span>
-                          <span class="n">n_diss_from_sc</span><span class="p">,</span> <span class="n">soln</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="n">FMNPNumericalError</span><span class="p">(</span><span class="s1">&#39;Model solution could not be found: &#39;</span> <span class="o">+</span>
+                                     <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">soln</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Extract solution</span>
+        <span class="n">c_part_sol</span> <span class="o">=</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">c_diss_sol</span> <span class="o">=</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">c_min_sol</span> <span class="o">=</span> <span class="n">soln</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="c1"># Convert microparticle mass to particle number</span>
+        <span class="n">n_part_sol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_to_particle_number</span><span class="p">(</span><span class="n">c_part_sol</span><span class="p">)</span>
+        <span class="c1"># Build the FMNPOutput object from the solution</span>
+        <span class="k">return</span> <span class="n">FMNPOutput</span><span class="p">(</span>
+           <span class="n">t</span><span class="o">=</span><span class="n">soln</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+           <span class="n">c</span><span class="o">=</span><span class="n">c_part_sol</span><span class="p">,</span>
+           <span class="n">n</span><span class="o">=</span><span class="n">n_part_sol</span><span class="p">,</span>
+           <span class="n">c_diss</span><span class="o">=</span><span class="n">c_diss_sol</span><span class="p">,</span>
+           <span class="n">c_min</span><span class="o">=</span><span class="n">c_min_sol</span><span class="p">,</span>
+           <span class="n">soln</span><span class="o">=</span><span class="n">soln</span><span class="p">,</span>
+           <span class="n">psd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psd</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="FragmentMNP.mass_to_particle_number"><a class="viewcode-back" href="../../api/model.html#fragmentmnp.FragmentMNP.mass_to_particle_number">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">mass_to_particle_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -584,13 +641,18 @@ document.write(`
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a distribution based on the rate constant scaling factor ``k_f``</span>
 <span class="sd">        and baseline adjustment factor ``k_0``. The distribution will be a</span>
-<span class="sd">        compound combination of power law / polynomial, exponential,</span>
-<span class="sd">        logarithmic and logistic regressions, encapsulated in the function</span>
-<span class="sd">        :math:`X(x)`, and have dimensions given by `dims`. For a distribution</span>
-<span class="sd">        with `D` dimensions:</span>
+<span class="sd">        compound or additive combination of power law / polynomial,</span>
+<span class="sd">        exponential, logarithmic and logistic regressions, encapsulated in the</span>
+<span class="sd">        function :math:`X(x)`, and have dimensions given by `dims`. For a</span>
+<span class="sd">        distribution with `D` dimensions:</span>
 
 <span class="sd">        .. math::</span>
 <span class="sd">            k(\mathbf{x}) = k_f \prod_{d=1}^D X(x_d) + k_0</span>
+
+<span class="sd">        or</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            k(\mathbf{x}) = k_f \sum_{d=1}^D X(x_d) + k_0</span>
 
 <span class="sd">        :math:`X(x)` is then given either by:</span>
 
