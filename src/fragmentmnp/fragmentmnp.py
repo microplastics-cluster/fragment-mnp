@@ -59,14 +59,16 @@ class FragmentMNP():
                                 self.psd,
                                 self.data['fsd_beta'])
         self.density = data['density']
-        # Stop Pylance complaining about k_frag and k_diss not being present
+        # Stop Pylance complaining about k_frag, k_diss and k_min not being
+        # present (or being the wrong type) by declaring them as NumPy arrays
         self.k_frag = np.empty((self.n_size_classes, self.n_timesteps))
         self.k_diss = np.empty((self.n_size_classes, self.n_timesteps))
+        self.k_min = np.empty((self.n_timesteps,))
         # Calculate the rate constant distributions. If we've been given
         # a dict in data, use the contained params to create the distribution.
         # Else, presume that we've been given a scalar (validation will make
         # sure this is so) and use that as the average.
-        for k in ['k_frag', 'k_diss']:
+        for k in ['k_frag', 'k_diss', 'k_min']:
             if isinstance(data[k], dict):
                 k_f = data[k]['k_f']
                 k_0 = data[k]['k_0']
@@ -79,17 +81,24 @@ class FragmentMNP():
                 k_0 = 0.0
                 is_compound = True
                 params = {}
-            # Calculate the 2D (s, t) distribution
-            k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
-                                                   't': self.t_grid},
-                                             k_f=k_f, k_0=k_0,
-                                             params=params,
-                                             is_compound=is_compound)
-            # If the rate constant is k_frag, then no fragmentation is
-            # allowed from the smallest size class and therefore we
-            # manually set this to zero
-            if k == 'k_frag':
-                k_dist[0, :] = 0.0
+            # If k_frag or k_diss, we want to calculate a 2D (s, t) distribution,
+            # and if k_min, we just want a 1D (t) distribution
+            if k in ['k_frag', 'k_diss']:
+                k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
+                                                       't': self.t_grid},
+                                                 k_f=k_f, k_0=k_0,
+                                                 params=params,
+                                                 is_compound=is_compound)
+                # If the rate constant is k_frag, then no fragmentation is
+                # allowed from the smallest size class and therefore we
+                # manually set this to zero
+                if k == 'k_frag':
+                    k_dist[0, :] = 0.0
+            else:
+                k_dist = self.set_k_distribution(dims={'t': self.t_grid},
+                                                 k_f=k_f, k_0=k_0,
+                                                 params=params,
+                                                 is_compound=is_compound)
             # Check no values are less than zero
             if np.any(k_dist < 0.0):
                 msg = (f'Value for {k} distribution calculated from input '
@@ -98,7 +107,7 @@ class FragmentMNP():
                        'are positive.')
                 raise FMNPDistributionValueError(msg)
 
-            # Set self.k_[frag|diss] as this distribution
+            # Set self.k_[frag|diss|min] as this distribution
             setattr(self, k, k_dist)
 
     def run(self) -> FMNPOutput:
@@ -111,82 +120,120 @@ class FragmentMNP():
 
         Notes
         -----
-        The model numerically solves the following differential
-        equation for each size class, to give a time series of mass
-        concentrations `c`. `k` is the current size class, `i` are the
-        daughter size classes.
+        The model numerically solves the following set of differential
+        equations to give a time series of mass concentrations of particles
+        `c`, dissolved polymer `c_diss` and mineralised polymer `c_min`.
+        `k` is the current size class, `i` are the daughter size classes.
 
         .. math::
             \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
             \sum_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
 
+        .. math::
+            \frac{dc_\text{diss}}{dt} = \sum_k k_{\text{diss},k} c_k -
+            k_\text{min} c_\text{diss}
+
+        .. math::
+            \frac{dc_\text{min}}{dt} = k_\text{min} c_\text{diss}
+
         Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size
         class `k`, :math:`f_{i,k}` is the fraction of daughter
         fragments produced from a fragmenting particle of size `i` that are of
-        size `k`, and :math:`k_{\text{diss},k}` is the dissolution rate from
-        size class `k`.
+        size `k`, :math:`k_{\text{diss},k}` is the dissolution rate from
+        size class `k` and :math:`k_\text{min}` is the mineralisation rate
+        from the dissolved pool.
 
         Mass concentrations are converted to particle number concentrations by
         assuming spherical particles with the density given in the input data.
         """
-
-        # Define the initial value problem to pass to SciPy to solve.
-        # This must satisfy c'(t) = f(t, c) with initial values given in data.
         def f(t, c):
-            # Get the number of size classes and create results to be filled
+            """
+            The initial value problem for SciPy to solve. This must satisfy
+            c'(t) = f(t, c) with initial values given in data, with N+2
+            solutions:
+              c[:N]   = mass concentration in each of the N size classes
+              c[N]    = total dissolved mass concentration
+              c[N+1]  = mineralised mass concentration
+            """
+            # Get the number of size classes
             N = self.n_size_classes
-            dcdt = np.empty(N)
+            # Unpack the solutions
+            c_particles = c[:N]
+            c_dissolved = c[N]
+            c_min = c[N + 1]   # Not used as a source in any ODE (only grows)
             # Interpolate the time-dependent parameters to the specific
             # timestep given (which will be a float, rather than integer index)
             f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
                                           fill_value='extrapolate')
             f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
                                           fill_value='extrapolate')
+            f_min = interpolate.interp1d(self.t_grid, self.k_min, axis=0,
+                                         fill_value='extrapolate')
             k_frag = f_frag(t)
             k_diss = f_diss(t)
-            # Loop over the size classes and perform the calculation
-            for k in np.arange(N):
-                # The differential equation that is being solved
-                dcdt[k] = - k_frag[k] * c[k] \
-                    + np.sum(self.fsd[:, k] * k_frag * c[:N]) \
-                    - k_diss[k] * c[k]
-            # Return the solution for all of the size classes
+            k_min = f_min(t)
+            # Build array of d/dt
+            dcdt = np.empty(N+2)
+            # Particle ODEs, for each size class:
+            #   Gains: fragmentation from bigger size classes
+            #   Loss:  dissolution and fragmentation to smaller size classes
+            for k in range(N):
+                dcdt[k] = (
+                    - k_frag[k] * c_particles[k]
+                    + np.sum(self.fsd[:, k] * k_frag * c_particles[:N])
+                    - k_diss[k] * c_particles[k]
+                )
+            # Dissolved mass ODE:
+            #   Gains: sum of kdiss[k] * c_particles[k]
+            #   Loss:  k_min * c_dissolved
+            dcdt_dissolved = np.sum(k_diss * c_particles) - k_min * c_dissolved
+            # Assign to last entry
+            dcdt[N] = dcdt_dissolved
+            # Mineralized ODE:
+            #   Gains: k_min_avg * c_dissolved
+            #   No loss, so it's purely accumulative
+            dcdt_min = k_min * c_dissolved
+            dcdt[N + 1] = dcdt_min
+            # Final differential to return
             return dcdt
 
-        # Numerically solve this given the initial values for c
-        soln = solve_ivp(fun=f,
-                         method=self.config['solver_method'],
-                         t_span=(self.t_grid.min(), self.t_grid.max()),
-                         y0=self.initial_concs,
-                         t_eval=self.t_eval,
-                         rtol=self.config['solver_rtol'],
-                         atol=self.config['solver_atol'],
-                         max_step=self.config['solver_max_step'])
-        # If we didn't find a solution, raise an error
+        # Build the new N+2 initial conditions: N particulate states,
+        # +1 dissolved, +1 mineralized
+        y0 = np.concatenate([
+           self.initial_concs,          # microplastic mass per size class
+           [self.initial_concs_diss],   # dissolved mass
+           [0.0]                        # mineralized (initially zero)
+        ])
+        # Solve the ODE
+        soln = solve_ivp(
+            fun=f,
+            method=self.config['solver_method'],
+            t_span=(self.t_grid.min(), self.t_grid.max()),
+            y0=y0,
+            t_eval=self.t_eval,
+            rtol=self.config['solver_rtol'],
+            atol=self.config['solver_atol'],
+            max_step=self.config['solver_max_step']
+        )
         if not soln.success:
-            raise FMNPNumericalError('Model solution could not be ' +
-                                     f'found: {soln.message}')
-        # Calculate the timeseries of mass concentration lost to dissolution
-        # from the solution, first interpolating k_diss to the t values
-        # we evaluated the solution over (t_eval)
-        f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
-                                      fill_value='extrapolate')
-        k_diss_eval = f_diss(self.t_eval)
-        j_diss = k_diss_eval * soln.y
-        # Use this to calculate the cumulative mass concentration
-        # lost to dissolution
-        c_diss_from_sc = np.cumsum(j_diss, axis=1)
-        # Add initial concentration and sum across size classes
-        c_diss = np.sum(np.cumsum(j_diss, axis=1), axis=0) \
-            + self.initial_concs_diss
-        # Now we have the solutions as mass concentrations, we can
-        # convert to particle number concentrations
-        n = self.mass_to_particle_number(soln.y)
-        n_diss_from_sc = self.mass_to_particle_number(c_diss)
-
-        # Return the solution in an FMNPOutput object
-        return FMNPOutput(soln.t, soln.y, n, c_diss_from_sc, c_diss,
-                          n_diss_from_sc, soln, self.psd)
+            raise FMNPNumericalError('Model solution could not be found: ' +
+                                     f'{soln.message}')
+        # Extract solution
+        c_part_sol = soln.y[:self.n_size_classes, :]
+        c_diss_sol = soln.y[self.n_size_classes, :]
+        c_min_sol = soln.y[self.n_size_classes + 1, :]
+        # Convert microparticle mass to particle number
+        n_part_sol = self.mass_to_particle_number(c_part_sol)
+        # Build the FMNPOutput object from the solution
+        return FMNPOutput(
+           t=soln.t,
+           c=c_part_sol,
+           n=n_part_sol,
+           c_diss=c_diss_sol,
+           c_min=c_min_sol,
+           soln=soln,
+           psd=self.psd,
+        )
 
     def mass_to_particle_number(self, mass):
         """
@@ -220,13 +267,18 @@ class FragmentMNP():
         r"""
         Create a distribution based on the rate constant scaling factor ``k_f``
         and baseline adjustment factor ``k_0``. The distribution will be a
-        compound combination of power law / polynomial, exponential,
-        logarithmic and logistic regressions, encapsulated in the function
-        :math:`X(x)`, and have dimensions given by `dims`. For a distribution
-        with `D` dimensions:
+        compound or additive combination of power law / polynomial,
+        exponential, logarithmic and logistic regressions, encapsulated in the
+        function :math:`X(x)`, and have dimensions given by `dims`. For a
+        distribution with `D` dimensions:
 
         .. math::
             k(\mathbf{x}) = k_f \prod_{d=1}^D X(x_d) + k_0
+
+        or
+
+        .. math::
+            k(\mathbf{x}) = k_f \sum_{d=1}^D X(x_d) + k_0
 
         :math:`X(x)` is then given either by:
 

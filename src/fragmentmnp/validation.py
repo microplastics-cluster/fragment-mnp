@@ -43,38 +43,43 @@ particle_size_range_schema = And(Or((int, float), [int, float]),
                                            'be a length-2 iterable'))
 
 
-# The schema that rate constant 2D (time and surface area)
-# distributions, like k_frag and k_diss, should follow. Either
-# a scalar is given (and it is treated as constant), or
-# a dict is given with the params required to calculate the 2D
-# distribution. Basic checks here ensure k values given are
-# greater than zero, and auditing during the distribution
-# calculate makes sure no values in the calculated distribution
+# The schema that rate constants distributions, like k_frag, k_diss
+# and k_min should follow. Either a scalar is given (and it is
+# treated as constant), or # a dict is given with the params required
+# to calculate the 1D or 2D distribution. Basic checks here ensure k
+# values given are greater than zero, and auditing during the distribution
+# calculation makes sure no values in the calculated distribution
 # are less than zero
-k_dist_2d_schema = Or(
-    Or(And(int, lambda x: x >= 0.0),
-       And(float, lambda x: x >= 0.0)),
-    {
-        'k_f': And(Or(int, float), lambda x: x >= 0.0),
-        Optional('k_0', default=0.0): Or(int, float),
-        Optional('is_compound', default=True): bool,
-        **{
-            Optional(f'{name}_{x}'): Or(int, float)
-            for x in ['t', 's']
-            for name in ['alpha', 'B', 'beta', 'gamma',
-                         'delta1']
-        },
-        **{
-            Optional(f'{name}_{x}'): Or(int, float, None)
-            for x in ['t', 's']
-            for name in ['C', 'D', 'delta2']
-        },
-        **{
-            Optional(f'A_{x}'): Or(int, float, _is_array)
-            for x in ['t', 's']
-        },
-    }
-)
+def k_dist_schema(dims):
+    k_dist_schema_ = Or(
+        Or(And(int, lambda x: x >= 0.0),
+        And(float, lambda x: x >= 0.0)),
+        {
+            'k_f': And(Or(int, float), lambda x: x >= 0.0),
+            Optional('k_0', default=0.0): Or(int, float),
+            Optional('is_compound', default=True): bool,
+            **{
+                Optional(f'{name}_{x}'): Or(int, float)
+                for x in dims
+                for name in ['alpha', 'B', 'beta', 'gamma',
+                            'delta1']
+            },
+            **{
+                Optional(f'{name}_{x}'): Or(int, float, None)
+                for x in dims
+                for name in ['C', 'D', 'delta2']
+            },
+            **{
+                Optional(f'A_{x}'): Or(int, float, _is_array)
+                for x in dims
+            },
+        }
+    )
+    return k_dist_schema_
+
+
+k_dist_2d_schema = k_dist_schema(['t', 's'])
+k_dist_t_schema = k_dist_schema(['t'])
 
 
 # The schema that the config dict should follow
@@ -112,11 +117,12 @@ data_schema = Schema({
     Optional('initial_concs_diss', default=0.0): Or(float, int),
     # Density must either be a float/int and greater than 0
     'density': And(Or(int, float), lambda x: x >= 0.0),
-    # k_frag must either be a float/int, or a dict containing
-    # and average value and parameters to create distribution from.
-    # Both default to zero
+    # k_frag, k_diss and k_min must either be a float/int, or a
+    # dict containing an average value and parameters to create
+    # distribution from. Defaults to zero
     'k_frag': k_dist_2d_schema,
     Optional('k_diss', default=0.0): k_dist_2d_schema,
+    Optional('k_min', default=0.0): k_dist_t_schema,
     # fsd_beta is an empirical param that scales the depedence
     # of the fragment size distribution on particle diameter d
     # accordingly to d^beta. beta=0 means an equal split

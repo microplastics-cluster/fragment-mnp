@@ -18,6 +18,7 @@ pandas = "^1.4.2"
 Pillow = ">=9.1.1"
 ipykernel = "^6.16.2"
 jupyter-core = ">=4.11.2"
+sphinxcontrib-mermaid = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^4.0.1"
@@ -25,15 +26,8 @@ pytest = "^7.1.1"
 pytest-cov = "^3.0.0"
 ipykernel = "^6.13.0"
 ipywidgets = "^7.7.0"
-jupyter-book = "1.0.3"
+jupyter-book = "^1.0.3"
 notebook = ">=6.4.12"
-# Explicitly downgrading Sphinx deps because later version require Sphinx v5,
-# which Jupyter Book doesn't support
-# sphinxcontrib-applehelp = "<=1.0.4"
-# sphinxcontrib-devhelp = "<=1.0.2"
-# sphinxcontrib-htmlhelp = "<=2.0.1"
-# sphinxcontrib-qthelp = "<=1.0.3"
-# sphinxcontrib-serializinghtml = "<=1.1.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
