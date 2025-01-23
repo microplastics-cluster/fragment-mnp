@@ -4,12 +4,15 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+
+## [1.1.0] - 2025-01-23
+
 * Added mineralisation as a process that transfers mass from the dissolved pool to a mineralised polymer pool. This is controlled by a separate `k_min` rate constant.
 * `c_diss_from_sc` and `n_diss_from_sc` are no longer stored in output data due to a change in the ODEs solved to incorporate mineralisation.
 * Updated dissolution yaxis label from "Dissolution" to "Dissolved"
 
 
-## [1.0.1] - 2024-01-13
+## [1.0.1] - 2025-01-13
 
 * Improvements and bug fixes in documentation.
 
@@ -27,7 +30,8 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 * Initial model version.
 
 
-[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.0.1...HEAD
+[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.0
 [1.0.1]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.0.1
 [1.0.0]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.0.0
 [0.1.0]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/0.1.0
