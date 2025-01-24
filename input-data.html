@@ -317,7 +317,7 @@
       
       
       
-      <li><a href="_sources/input-data.md" target="_blank"
+      <li><a href="_sources/input-data.ipynb" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -327,7 +327,7 @@
 <span class="btn__icon-container">
   <i class="fas fa-file"></i>
   </span>
-<span class="btn__text-container">.md</span>
+<span class="btn__text-container">.ipynb</span>
 </a>
 </li>
       
@@ -416,15 +416,23 @@ document.write(`
   <div class="tex2jax_ignore mathjax_ignore section" id="input-data">
 <h1>Input data<a class="headerlink" href="#input-data" title="Permalink to this heading">#</a></h1>
 <p>Input data must be passed to the <a class="reference internal" href="api/model.html#fragmentmnp.FragmentMNP" title="fragmentmnp.FragmentMNP"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.FragmentMNP</span></code></a> model class. Examples are given in the <a class="reference internal" href="api/examples.html#module-fragmentmnp.examples" title="fragmentmnp.examples"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fragmentmnp.examples</span></code></a> module:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">fragmentmnp.examples</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimal_data</span><span class="p">,</span> <span class="n">full_data</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">minimal_data</span>
-<span class="go">{&#39;initial_concs&#39;: [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0], &#39;density&#39;: 1380, &#39;k_frag&#39;: 0.01}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">full_data</span>
-<span class="go">{&#39;initial_concs&#39;: [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0], &#39;density&#39;: 1380, &#39;k_frag&#39;: 0.01,</span>
-<span class="go">&#39;theta_1&#39;: 0.0, &#39;k_diss&#39;: 0.0, &#39;k_diss_gamma&#39;: 1.0}</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fragmentmnp.examples</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimal_data</span>
+<span class="n">minimal_data</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">minimal_data</span></code> contains only required variables, whilst <code class="docutils literal notranslate"><span class="pre">full_data</span></code> includes variables that have defaults. Here we take a look at the schema for this data dict.</p>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;initial_concs&#39;: [42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0],
+ &#39;density&#39;: 1380,
+ &#39;k_frag&#39;: 0.01,
+ &#39;k_min&#39;: 0.0}
+</pre></div>
+</div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">minimal_data</span></code> contains only required variables, whilst <code class="docutils literal notranslate"><span class="pre">full_data</span></code> includes variables that have defaults (not shown above due to its length). Here we take a look at the schema for this data dict.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>In previous versions of the model, the variables <code class="docutils literal notranslate"><span class="pre">theta_1</span></code>, <code class="docutils literal notranslate"><span class="pre">k_frag_tau</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss_gamma</span></code> were used to scale the size and time dependence of the fragmentation and dissolution rate constants <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>. These have been replaced with a more flexible regressions and new parameters, as detailed belowed.</p>
@@ -444,9 +452,9 @@ document.write(`
 </dd>
 </dl>
 <dl class="simple myst" id="input-data-k">
-<dt><code class="docutils literal notranslate"><span class="pre">k_frag</span></code>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code></dt><dd><p><em>Required, float or dict, units: s<sup>-1</sup>.</em></p>
+<dt><code class="docutils literal notranslate"><span class="pre">k_frag</span></code>, <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>, <code class="docutils literal notranslate"><span class="pre">k_min</span></code></dt><dd><p><em>Required, float or dict, units: s<sup>-1</sup>.</em></p>
 </dd>
-<dd><p>Either a scalar or dictionary of regression parameters. If a scalar is provided, the fragmentation (<code class="docutils literal notranslate"><span class="pre">k_frag</span></code>) or dissolution (<code class="docutils literal notranslate"><span class="pre">k_diss</span></code>) rate will be constant in time and across particle surface areas. If a dictionary is provided, the rate will follow the time and surface area dependence according to the parameters provided. See <a class="reference internal" href="fragmentation-dissolution-rates.html"><span class="std std-doc">Fragmentation, dissolution and mineralisation rates</span></a> for more details.</p>
+<dd><p>Either a scalar or dictionary of regression parameters for the rate constants. If a scalar is provided, the fragmentation (<code class="docutils literal notranslate"><span class="pre">k_frag</span></code>), dissolution (<code class="docutils literal notranslate"><span class="pre">k_diss</span></code>) and mineralisation (<code class="docutils literal notranslate"><span class="pre">k_min</span></code>) rate constants will be constant in time and across particle surface areas. If a dictionary is provided, the rate will follow the time and surface area (only <code class="docutils literal notranslate"><span class="pre">k_frag</span></code> and <code class="docutils literal notranslate"><span class="pre">k_diss</span></code>) dependence according to the parameters provided. See <a class="reference internal" href="fragmentation-dissolution-rates.html"><span class="std std-doc">Fragmentation, dissolution and mineralisation rates</span></a> for more details.</p>
 </dd>
 </dl>
 <div class="admonition warning">

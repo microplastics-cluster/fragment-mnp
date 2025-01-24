@@ -315,7 +315,7 @@
       
       
       
-      <li><a href="_sources/config.md" target="_blank"
+      <li><a href="_sources/config.ipynb" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -325,7 +325,7 @@
 <span class="btn__icon-container">
   <i class="fas fa-file"></i>
   </span>
-<span class="btn__text-container">.md</span>
+<span class="btn__text-container">.ipynb</span>
 </a>
 </li>
       
@@ -414,13 +414,38 @@ document.write(`
   <div class="tex2jax_ignore mathjax_ignore section" id="model-configuration">
 <h1>Model configuration<a class="headerlink" href="#model-configuration" title="Permalink to this heading">#</a></h1>
 <p>When initialising the <a class="reference internal" href="api/model.html#fragmentmnp.FragmentMNP" title="fragmentmnp.FragmentMNP"><code class="xref py py-class docutils literal notranslate"><span class="pre">fragmentmnp.FragmentMNP</span></code></a> model class, a config dict must be provided. Examples are given in the <a class="reference internal" href="api/examples.html#module-fragmentmnp.examples" title="fragmentmnp.examples"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fragmentmnp.examples</span></code></a> module:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">fragmentmnp.examples</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimal_config</span><span class="p">,</span> <span class="n">full_config</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">minimal_config</span>
-<span class="go">{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">full_config</span>
-<span class="go">{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100, &#39;dt&#39;: 1,</span>
-<span class="go">&#39;k_diss_scaling_method&#39;: &#39;constant&#39;}</span>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fragmentmnp.examples</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimal_config</span><span class="p">,</span> <span class="n">full_config</span>
+<span class="n">minimal_config</span>
 </pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;n_size_classes&#39;: 7, &#39;particle_size_range&#39;: [-9, -3], &#39;n_timesteps&#39;: 100}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">full_config</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;n_size_classes&#39;: 7,
+ &#39;particle_size_range&#39;: [-9, -3],
+ &#39;n_timesteps&#39;: 100,
+ &#39;dt&#39;: 1,
+ &#39;solver_method&#39;: &#39;RK45&#39;,
+ &#39;solver_rtol&#39;: 0.001,
+ &#39;solver_atol&#39;: 1e-06,
+ &#39;solver_max_step&#39;: inf,
+ &#39;solver_t_eval&#39;: &#39;timesteps&#39;}
+</pre></div>
+</div>
+</div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">minimal_config</span></code> contains only required variables, whilst <code class="docutils literal notranslate"><span class="pre">full_config</span></code> includes variables that have defaults. Here we take a look at the schema for this config dict.</p>
 <dl class="simple myst">
