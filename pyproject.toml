@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fragmentmnp"
-version = "1.1.0"
+version = "1.1.1"
 description = "Model of microplastic degradation and fragmentation in the environment"
 authors = ["Sam Harrison <samharrison.xg@gmail.com>"]
 license = "BSD-3-Clause"
