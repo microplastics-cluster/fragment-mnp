@@ -4,6 +4,10 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+## [1.1.3] - 2025-02-04
+
+* No changes to code, only adding link to GitHub repo issues to docs.
+
 ## [1.1.2] - 2025-02-04
 
 * No changes to code, only updating docs to include UKCEH logo and privacy notice.
@@ -38,8 +42,9 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 * Initial model version.
 
 
-[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.1.2...HEAD
-[1.1.1]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.2
+[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.1.3...HEAD
+[1.1.3]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.3
+[1.1.2]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.2
 [1.1.1]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.1
 [1.1.0]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.0
 [1.0.1]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.0.1

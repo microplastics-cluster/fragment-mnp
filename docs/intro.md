@@ -23,6 +23,10 @@ output = fmnp.run()
 output.plot()
 ```
 
+## Issues
+
+Issues, comments or questions? Head over to our [GitHub repository](https://github.com/microplastics-cluster/fragment-mnp) and [post an issue](https://github.com/microplastics-cluster/fragment-mnp/issues).
+
 ## Developing FRAGMENT-MNP
 
 Check out the [](developers/quickstart.md) to get started developing the model.
