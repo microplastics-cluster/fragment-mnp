@@ -2,8 +2,8 @@
 # Learn more at https://jupyterbook.org/customize/config.html
 
 title: FRAGMENT-MNP
-author: Sam Harrison
-copyright: "2022"
+author: UKCEH
+copyright: "2025"
 logo: logo.svg
 
 # Force re-execution of notebooks on each build.
@@ -29,8 +29,14 @@ repository:
 # Add GitHub buttons to your book
 # See https://jupyterbook.org/customize/config.html#add-a-link-to-your-repository
 html:
+  favicon: 'favicon.ico'
   use_issues_button: true
   use_repository_button: true
+  extra_footer: |
+    <div style="position: relative">
+      <a href="https://www.ceh.ac.uk/privacy-notice" target="_blank">Privacy notice</a>
+      <img src="_static/ukceh.png" width=200 style="position: absolute; right: 0; bottom: 0;">
+    </div>
 
 parse:
   myst_enable_extensions:
@@ -43,6 +49,7 @@ parse:
 sphinx:
   config:
     mathjax_path: https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+    html_show_copyright: false
   extra_extensions:
   - 'sphinx.ext.autodoc'
   - 'sphinx.ext.napoleon'
