@@ -25,12 +25,12 @@ authors:
   - name: Antonia Praetorius
     orcid: 0000-0003-0197-0116
     affiliation: 5
-  - name: Richard Cross
+  - name: Richard K. Cross
     orcid: 0000-0001-5409-6552
     affiliation: 6
-  - name: Gbotemi Adediran
+  - name: Gbotemi A. Adediran
     orcid: 0000-0001-6657-3336
-    affiliation: 6
+    affiliation: "6, 8"
   - name: Claus Svendsen
     orcid: 0000-0001-7281-647X
     affiliation: 6
@@ -53,15 +53,17 @@ affiliations:
     index: 5
   - name: UK Centre for Ecology & Hydrology, Benson Lane, Crowmarsh Gifford, Wallingford, OX10 8BB, UK
     index: 6
-  - name: Arizona State University, 1151 S Forest Ave, Tempe, AZ, United States
+  - name: Ira A. Fulton Schools of Engineering, Arizona State University, 1151 S Forest Ave, Tempe, AZ, United States
     index: 7
-date: 31 January 2025
+  - name: School of Earth and Environment, University of Leeds, Leeds, LS2 9JT, UK
+    index: 8
+date: 17 February 2025
 bibliography: paper.bib
 ---
 
 # Summary
 
-The degradation and fragmentation of plastics in the environment is an important but relatively poorly characterised process. Fragmentation leads to the formation of micro- and nanoplastics, and research has shown that particle size and shape, and thereby fragmentation, impacts a variety of processes, such as the ability of organisms to uptake plastics, and the movement of plastics around the environment [@Bucci:2022; @Thompson:2024]. In this paper, we present the FRAGMENT-MNP model as an open-source mechanistic model of micro- and nanoplastic degradation and fragmentation. FRAGMENT-MNP predicts the time evolution of particle size distributions, providing invaluable insights into fragmentation dynamics to help develop our understanding of plastic degradation and fragmentation, and offering predictive capabilities to enable better prediction of the fate and exposure of plastics in the environment.
+The degradation and fragmentation of plastics in the environment is an important but relatively poorly characterised process. Fragmentation leads to the formation of micro- and nanoplastics, and research has shown that particle size and shape, and thereby fragmentation, impacts a variety of processes, such as the ability of organisms to uptake plastics, and the movement of plastics around the environment [@ThorntonHampton:2022; @Thompson:2024]. In this paper, we present the FRAGMENT-MNP model as an open-source mechanistic model of micro- and nanoplastic degradation and fragmentation. FRAGMENT-MNP predicts the time evolution of particle size distributions, providing invaluable insights into fragmentation dynamics to help develop our understanding of plastic degradation and fragmentation, and offering predictive capabilities to enable better prediction of the fate and exposure of plastics in the environment.
 
 # Statement of need
 
