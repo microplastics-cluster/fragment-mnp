@@ -8,6 +8,8 @@ Whilst bug reports are very welcome, we encourage pull requests to accompany the
 ## New and updated features
 We welcome new and updated features via pull requests. Only completed features that do not require any further coding to become functional will be accepted. If you have an idea for a feature but don't have the time to code it, then consider raising a feature request issue. If you have some code towards a feature but won't have time to finish it, then raise an issue highlighting this, and if we think the feature is valuable enough, we may open a new feature branch for you to submit your code to.
 
+Pull requests with new or updated features should, alongside the updated code, include relevant tests (in the `tests/` directory) and documentation (in the `docs/` directory).
+
 ## Which branch?
 Please send pull requests for all contributions (bug reports and features) to the develop branch.
 
