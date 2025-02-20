@@ -8,10 +8,10 @@ tags:
 authors:
   - name: Sam Harrison
     orcid: 0000-0001-8491-4720
-    affilitation: 1
+    affiliation: 1
   - name: Cansu Uluseker
     orcid: 0000-0001-9828-0458
-    affilitation: 1
+    affiliation: 1
   - name: Patrizia Pfohl
     orcid: 0000-0002-1580-8833
     affiliation: 2
