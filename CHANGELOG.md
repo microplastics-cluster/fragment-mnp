@@ -4,6 +4,10 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+## [1.1.4] - 2025-03-07
+
+* No changes to code, only moving Poetry dependencies to test environment.
+
 ## [1.1.3] - 2025-02-04
 
 * No changes to code, only adding link to GitHub repo issues to docs.
@@ -42,7 +46,8 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 * Initial model version.
 
 
-[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.1.3...HEAD
+[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.1.4...HEAD
+[1.1.4]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.4
 [1.1.3]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.3
 [1.1.2]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.2
 [1.1.1]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.1
