@@ -6,7 +6,7 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [1.1.4] - 2025-03-07
 
-* No changes to code, only moving Poetry dependencies to test environment.
+* No changes to code, only moving Poetry dependencies to development environment.
 
 ## [1.1.3] - 2025-02-04
 
