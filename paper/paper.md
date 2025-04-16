@@ -58,7 +58,7 @@ affiliations:
   - name: School of Earth and Environment, University of Leeds, Leeds, LS2 9JT, UK
     index: 8
 date: 17 February 2025
-bibliography: paper/paper.bib
+bibliography: paper.bib
 ---
 
 # Summary
