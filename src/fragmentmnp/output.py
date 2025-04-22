@@ -83,7 +83,8 @@ class FMNPOutput():
              units=None,
              cmap='viridis',
              show_legend=True,
-             size_classes_to_plot=None):
+             size_classes_to_plot=None,
+             show: bool = False):
         """
         Plot the output data by choosing from a number of
         pre-defined plot types.
@@ -97,12 +98,12 @@ class FMNPOutput():
             Should dissolution be plotted on a separate y-axis
         plot_mineralisation : bool, default=False
             Should mineralised polymer be plotted on a separate y-axis
-        log_yaxis: bool or str, default=False
+        log_yaxis : bool or str, default=False
             True and "log" plots the y axis on a log scale,
             "symlog" plots the y axis on a symlog scale (useful
             if the data contain zeros), and False plots the y
             axis on a linear scale
-        units: dict or str, default=None
+        units : dict or str, default=None
             Units to be used in axis labels. Must either be "SI" to
             use SI units, "dim" to use dimensional labels ("mass",
             "volume", etc), or a dictionary containing elements for
@@ -112,18 +113,24 @@ class FMNPOutput():
             not used to modify the model output data (which is unit
             agnostic). If `None` (the default), no units are added to
             labels.
-        cmap: str, default='viridis'
+        cmap : str, default='viridis'
             The colormap to use for the plot. Must be one of the
             colormaps `available in matplotlib
-            <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`.
+            <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`_.
             Note that these are case-sensitive.
-        show_legend: bool, default=True
+        show_legend : bool, default=True
             Should size classes be shown on a legend?
-        size_classes_to_plot: list of ints, default=None
+        size_classes_to_plot : list of ints, default=None
             Only plot specific size classes by providing a list of
             size class indices to plot, where 0 is the index of the
             smallest size class. By default, all size classes are
             plotted.
+        show : bool, default=False
+            Should ``plt.show()`` be called in order to trigger the
+            plot to show in non-interactive environments (e.g.
+            running the code as a script)? If `False`, the plot will
+            not be shown automatically unless you are using an
+            interactive environment, such as a Jupyter notebook.
 
         Returns
         -------
@@ -224,9 +231,15 @@ class FMNPOutput():
                 ax2.set_yscale('log')
             elif log_yaxis == 'symlog':
                 ax2.set_yscale('symlog')
-            return fig, (ax1, ax2)
+            ax_ = (ax1, ax2)
         else:
-            return fig, ax1
+            ax_ = ax1
+
+        # Call `plt.show()` if we've been asked to
+        if show:
+            plt.show()
+        # Return the figure and the axis/axes
+        return fig, ax_
 
     def _construct_units(self, units):
         """

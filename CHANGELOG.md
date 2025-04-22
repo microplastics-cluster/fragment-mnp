@@ -4,6 +4,10 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+## [1.1.5] - 2025-04-22
+
+* Adding `show` parameter to `FMNPOutput.plot()`. If `show=True`, `plt.show()` is called by the model, triggering the plot to be displayed in non-interactive environments. The default is `show=False`.
+
 ## [1.1.4] - 2025-03-07
 
 * No changes to code, only moving Poetry dependencies to development environment.
@@ -46,7 +50,8 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 * Initial model version.
 
 
-[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.1.4...HEAD
+[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.1.5...HEAD
+[1.1.5]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.5
 [1.1.4]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.4
 [1.1.3]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.3
 [1.1.2]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.2
