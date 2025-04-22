@@ -448,6 +448,10 @@ document.write(`
 <img alt="_images/d5065d1f3e987adbc0294a7ad97548652ca78e2c03f684968bf4f960cb8e4800.png" src="_images/d5065d1f3e987adbc0294a7ad97548652ca78e2c03f684968bf4f960cb8e4800.png" />
 </div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are running the model via a script, rather than an interactive environment (e.g. Jupyter), you can pass <code class="docutils literal notranslate"><span class="pre">show=True</span></code> to the <code class="docutils literal notranslate"><span class="pre">plot</span></code> function in order to automatically display the plot, i.e. <code class="docutils literal notranslate"><span class="pre">output.plot(show=True)</span></code>. <code class="docutils literal notranslate"><span class="pre">show</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code> by default so as not to inhibit users from <a class="reference internal" href="#plotting-fig-ax"><span class="std std-ref">building more complex plots</span></a> by returning <code class="docutils literal notranslate"><span class="pre">fig,</span> <span class="pre">ax</span></code> and using these.</p>
+</div>
 <div class="section" id="plot-types-dissolution-mineralisation-and-log-scales">
 <h2>Plot types, dissolution/mineralisation and log scales<a class="headerlink" href="#plot-types-dissolution-mineralisation-and-log-scales" title="Permalink to this heading">#</a></h2>
 <p>You can either plot mass concentrations (<code class="docutils literal notranslate"><span class="pre">mass_conc</span></code>) or particle number concentrations (<code class="docutils literal notranslate"><span class="pre">particle_number_conc</span></code>) by using the <code class="docutils literal notranslate"><span class="pre">type</span></code> parameter. The default is to plot mass concentrations (as per above). Dissolution and mineralisation mass concentrations can be included on a secondary y axis by specifying <code class="docutils literal notranslate"><span class="pre">plot_dissolution=True</span></code> and/or <code class="docutils literal notranslate"><span class="pre">plot_mineralisation=True</span></code>. In the following example, we specify an arbitrary dissolution rate to demonstrate this.</p>
@@ -570,6 +574,7 @@ document.write(`
 <img alt="_images/c0438c6816e15eff704c5b5b6b8dae6e10ce32b7a94a9fe6d1d30695efead6f1.png" src="_images/c0438c6816e15eff704c5b5b6b8dae6e10ce32b7a94a9fe6d1d30695efead6f1.png" />
 </div>
 </div>
+<p>If you set the <code class="docutils literal notranslate"><span class="pre">plot()</span></code> parameter <code class="docutils literal notranslate"><span class="pre">show=True</span></code>, <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code> will be called by the model and subsequent modifications to the fig and/or axes will not be displayed on the plotted figure.</p>
 </div>
 </div>
 

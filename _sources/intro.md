@@ -23,6 +23,10 @@ output = fmnp.run()
 output.plot()
 ```
 
+:::{note}
+If you are running the model via a script, rather than an interactive environment (e.g. Jupyter), you can pass `show=True` to the `plot` function in order to automatically display the plot, i.e. `output.plot(show=True)`.
+:::
+
 ## Issues
 
 Issues, comments or questions? Head over to our [GitHub repository](https://github.com/microplastics-cluster/fragment-mnp) and [post an issue](https://github.com/microplastics-cluster/fragment-mnp/issues).
