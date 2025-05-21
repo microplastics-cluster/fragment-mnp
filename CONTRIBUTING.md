@@ -2,7 +2,7 @@
 
 Thanks for considering contributing to FRAGMENT-MNP. We very much welcome your input.
 
-## Contibuting to the model
+## Contributing to the model
 We welcome new and updated features via pull requests. Only completed features that do not require any further coding to become functional will be accepted. If you have an idea for a feature but don't have the time to code it, then consider raising a feature request issue. If you have some code towards a feature but won't have time to finish it, then raise an issue highlighting this, and if we think the feature is valuable enough, we may open a new feature branch for you to submit your code to. If you are unsure of the suitability of your feature, raise an issue to discuss it first.
 
 Pull requests with new or updated features should, alongside the updated code, include relevant tests (in the `tests/` directory) and documentation (in the `docs/` directory).
