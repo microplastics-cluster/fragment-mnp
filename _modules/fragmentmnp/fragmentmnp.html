@@ -224,6 +224,10 @@ window.addEventListener("load", () => mermaid.run());
 
 
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../references.html">References</a></li>
+</ul>
 
     </div>
 </nav></div>
@@ -373,7 +377,7 @@ document.write(`
                 <article class="bd-article">
                   
   <h1>Source code for fragmentmnp.fragmentmnp</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">solve_ivp</span>
@@ -439,50 +443,9 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">k_frag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_diss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_size_classes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_timesteps</span><span class="p">,))</span>
-        <span class="c1"># Calculate the rate constant distributions. If we&#39;ve been given</span>
-        <span class="c1"># a dict in data, use the contained params to create the distribution.</span>
-        <span class="c1"># Else, presume that we&#39;ve been given a scalar (validation will make</span>
-        <span class="c1"># sure this is so) and use that as the average.</span>
+        <span class="c1"># Calculate the rate constant distributions</span>
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">,</span> <span class="s1">&#39;k_min&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="n">k_f</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;k_f&#39;</span><span class="p">]</span>
-                <span class="n">k_0</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;k_0&#39;</span><span class="p">]</span>
-                <span class="n">is_compound</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;is_compound&#39;</span><span class="p">]</span>
-                <span class="c1"># Get the params from the dict, excluding the average</span>
-                <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                          <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k_f&#39;</span><span class="p">,</span> <span class="s1">&#39;k_0&#39;</span><span class="p">]}</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">k_f</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-                <span class="n">k_0</span> <span class="o">=</span> <span class="mf">0.0</span>
-                <span class="n">is_compound</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="c1"># If k_frag or k_diss, we want to calculate a 2D (s, t) distribution,</span>
-            <span class="c1"># and if k_min, we just want a 1D (t) distribution</span>
-            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">]:</span>
-                <span class="n">k_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_k_distribution</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;s&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_areas</span><span class="p">,</span>
-                                                       <span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">},</span>
-                                                 <span class="n">k_f</span><span class="o">=</span><span class="n">k_f</span><span class="p">,</span> <span class="n">k_0</span><span class="o">=</span><span class="n">k_0</span><span class="p">,</span>
-                                                 <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
-                                                 <span class="n">is_compound</span><span class="o">=</span><span class="n">is_compound</span><span class="p">)</span>
-                <span class="c1"># If the rate constant is k_frag, then no fragmentation is</span>
-                <span class="c1"># allowed from the smallest size class and therefore we</span>
-                <span class="c1"># manually set this to zero</span>
-                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">:</span>
-                    <span class="n">k_dist</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">k_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_k_distribution</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">},</span>
-                                                 <span class="n">k_f</span><span class="o">=</span><span class="n">k_f</span><span class="p">,</span> <span class="n">k_0</span><span class="o">=</span><span class="n">k_0</span><span class="p">,</span>
-                                                 <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
-                                                 <span class="n">is_compound</span><span class="o">=</span><span class="n">is_compound</span><span class="p">)</span>
-            <span class="c1"># Check no values are less than zero</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">k_dist</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Value for </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1"> distribution calculated from input &#39;</span>
-                       <span class="s1">&#39;data resulted in negative values. Ensure &#39;</span>
-                       <span class="sa">f</span><span class="s1">&#39;distribution params are such that all </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1"> values &#39;</span>
-                       <span class="s1">&#39;are positive.&#39;</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="n">FMNPDistributionValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-
-            <span class="c1"># Set self.k_[frag|diss|min] as this distribution</span>
+            <span class="n">k_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_rate_constant</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">k</span><span class="p">)</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">k_dist</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FragmentMNP.run"><a class="viewcode-back" href="../../api/model.html#fragmentmnp.FragmentMNP.run">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FMNPOutput</span><span class="p">:</span>
@@ -635,6 +598,74 @@ document.write(`
                              <span class="s1">&#39;neither were found.&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">psd</span>
 
+<div class="viewcode-block" id="FragmentMNP.set_rate_constant"><a class="viewcode-back" href="../../api/model.html#fragmentmnp.FragmentMNP.set_rate_constant">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_rate_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a rate constant either for fragmentation, dissolution or</span>
+<span class="sd">        mineralisation. The function largely parses input data and</span>
+<span class="sd">        deals with defaults etc, before calling `set_k_distribution`</span>
+<span class="sd">        to create the rate constant distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : dict</span>
+<span class="sd">            The param dict from the model input data, from which the rate</span>
+<span class="sd">            constant parameters are extracted. See the notes in</span>
+<span class="sd">            `set_k_distribution` for more details on the expected format</span>
+<span class="sd">        name : str</span>
+<span class="sd">            The name of the rate constant to set. This should be one of</span>
+<span class="sd">            `k_frag`, `k_diss` or `k_min`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            The rate constant distribution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If we&#39;ve been given a dict in data, use the contained params to</span>
+        <span class="c1"># create the distribution. Else, presume that we&#39;ve been given a</span>
+        <span class="c1"># scalar (validation will make sure this is so) and use that as</span>
+        <span class="c1"># the average.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">k_f</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;k_f&#39;</span><span class="p">]</span>
+            <span class="n">k_0</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;k_0&#39;</span><span class="p">]</span>
+            <span class="n">is_compound</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;is_compound&#39;</span><span class="p">]</span>
+            <span class="c1"># Get the params from the dict, excluding the average</span>
+            <span class="n">reg_params</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k_f&#39;</span><span class="p">,</span> <span class="s1">&#39;k_0&#39;</span><span class="p">]}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k_f</span> <span class="o">=</span> <span class="n">params</span>
+            <span class="n">k_0</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">is_compound</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">reg_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># If k_frag or k_diss, we want to calculate a 2D (s, t) distribution,</span>
+        <span class="c1"># and if k_min, we just want a 1D (t) distribution</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k_frag&#39;</span><span class="p">,</span> <span class="s1">&#39;k_diss&#39;</span><span class="p">]:</span>
+            <span class="n">k_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_k_distribution</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;s&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_areas</span><span class="p">,</span>
+                                                   <span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">},</span>
+                                             <span class="n">k_f</span><span class="o">=</span><span class="n">k_f</span><span class="p">,</span> <span class="n">k_0</span><span class="o">=</span><span class="n">k_0</span><span class="p">,</span>
+                                             <span class="n">params</span><span class="o">=</span><span class="n">reg_params</span><span class="p">,</span>
+                                             <span class="n">is_compound</span><span class="o">=</span><span class="n">is_compound</span><span class="p">)</span>
+            <span class="c1"># If the rate constant is k_frag, then no fragmentation is</span>
+            <span class="c1"># allowed from the smallest size class and therefore we</span>
+            <span class="c1"># manually set this to zero</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;k_frag&#39;</span><span class="p">:</span>
+                <span class="n">k_dist</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_k_distribution</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_grid</span><span class="p">},</span>
+                                             <span class="n">k_f</span><span class="o">=</span><span class="n">k_f</span><span class="p">,</span> <span class="n">k_0</span><span class="o">=</span><span class="n">k_0</span><span class="p">,</span>
+                                             <span class="n">params</span><span class="o">=</span><span class="n">reg_params</span><span class="p">,</span>
+                                             <span class="n">is_compound</span><span class="o">=</span><span class="n">is_compound</span><span class="p">)</span>
+        <span class="c1"># Check no values are less than zero</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">k_dist</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Value for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> distribution calculated from input &#39;</span>
+                   <span class="s1">&#39;data resulted in negative values. Ensure &#39;</span>
+                   <span class="sa">f</span><span class="s1">&#39;distribution params are such that all </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> values &#39;</span>
+                   <span class="s1">&#39;are positive.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">FMNPDistributionValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="c1"># Return this distribution</span>
+        <span class="k">return</span> <span class="n">k_dist</span></div>
+
 <div class="viewcode-block" id="FragmentMNP.set_k_distribution"><a class="viewcode-back" href="../../api/model.html#fragmentmnp.FragmentMNP.set_k_distribution">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_k_distribution</span><span class="p">(</span><span class="n">dims</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">k_f</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">k_0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
                            <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
@@ -773,61 +804,13 @@ document.write(`
             <span class="c1"># indexing order with &#39;ij&#39;)</span>
             <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dims</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span>
                                <span class="n">indexing</span><span class="o">=</span><span class="s1">&#39;ij&#39;</span><span class="p">)</span>
-            <span class="c1"># List of the regressions for each dimension, which will be</span>
-            <span class="c1"># populated when we loop over the dimensions</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="c1"># Loop over the dimensions</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">grid</span><span class="p">):</span>
-                <span class="c1"># Normalise the values</span>
-                <span class="n">x_norm</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-                <span class="c1"># Get the name of this dim</span>
-                <span class="n">name</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dims</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">i</span><span class="p">]</span>
-                <span class="c1"># Pull out the params for convenience</span>
-                <span class="n">A</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;A_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-                <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;alpha_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
-                <span class="n">B</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;B_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-                <span class="n">beta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;beta_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
-                <span class="n">C</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;C_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="n">gamma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;gamma_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-                <span class="n">D</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;D_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="n">delta_1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;delta1_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
-                <span class="n">delta_2</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;delta2_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="c1"># Let users specify a polynomial by listing A coefficients,</span>
-                <span class="c1"># presuming the exponents (alpha) will be 1, 2, 3 etc</span>
-                <span class="c1"># corresponding to the list elements in A. Otherwise, use</span>
-                <span class="c1"># A and alpha as a power law A*x**alpha</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
-                    <span class="n">powers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-                    <span class="n">power_x</span> <span class="o">=</span> <span class="mf">0.0</span>
-                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">power</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">powers</span><span class="p">):</span>
-                        <span class="n">power_x</span> <span class="o">=</span> <span class="n">power_x</span> <span class="o">+</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">x_norm</span><span class="o">**</span><span class="n">power</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">power_x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_norm</span><span class="o">**</span><span class="n">alpha</span>
-                <span class="c1"># Exponential term</span>
-                <span class="n">exp_x</span> <span class="o">=</span> <span class="n">B</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">beta</span><span class="o">*</span><span class="n">x_norm</span><span class="p">)</span>
-                <span class="c1"># Only calculate the ln term if C is not None, and if x=0,</span>
-                <span class="c1"># then set ln(x) to 0</span>
-                <span class="k">if</span> <span class="n">C</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">arg</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">x_norm</span>
-                    <span class="n">ln_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span>
-                                     <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-                                     <span class="n">where</span><span class="o">=</span><span class="p">(</span><span class="n">arg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span>
-                    <span class="n">ln_x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">C</span><span class="p">)</span> <span class="o">*</span> <span class="n">ln_term</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">ln_x</span> <span class="o">=</span> <span class="mf">1.0</span>
-                <span class="c1"># If the logistic delta_2 term (the x value at the midpoint</span>
-                <span class="c1"># along the k axis) isn&#39;t specified, # then calculate it as</span>
-                <span class="c1"># halfway along the x axis</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">delta_2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">D</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
-                    <span class="n">delta_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_norm</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">x_norm</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="mi">2</span>
-                <span class="c1"># Calculate the logistic contribution, only if D is not None</span>
-                <span class="n">logit_x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">D</span><span class="p">)</span> <span class="o">/</span> \
-                    <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">delta_1</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_norm</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">delta_2</span><span class="p">))))</span> \
-                    <span class="k">if</span> <span class="n">D</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">1.0</span>
-                <span class="c1"># Multiply all the expressions together for this dimension</span>
-                <span class="n">X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">power_x</span> <span class="o">*</span> <span class="n">exp_x</span> <span class="o">*</span> <span class="n">ln_x</span> <span class="o">*</span> <span class="n">logit_x</span><span class="p">)</span>
-            <span class="c1"># Calculate the final distribution by multiplying X across the</span>
-            <span class="c1"># dimensions</span>
+            <span class="c1"># Assign the relevant params to each dimension and get a</span>
+            <span class="c1"># list of regressions across the dimensions, X</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">FragmentMNP</span><span class="o">.</span><span class="n">_assign_regression_params</span><span class="p">(</span><span class="n">params</span><span class="p">,</span>
+                                                      <span class="n">grid</span><span class="p">,</span>
+                                                      <span class="nb">list</span><span class="p">(</span><span class="n">dims</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="c1"># Calculate the final distribution by multiplying or summing</span>
+            <span class="c1"># X across the dimensions</span>
             <span class="k">if</span> <span class="n">is_compound</span><span class="p">:</span>
                 <span class="n">k</span> <span class="o">=</span> <span class="n">k_f</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">k_0</span>
             <span class="k">else</span><span class="p">:</span>
@@ -893,6 +876,86 @@ document.write(`
 <span class="sd">        particles.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">psd</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_assign_regression_params</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+                                  <span class="n">grid</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">],</span>
+                                  <span class="n">dim_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a list of regression parameters, a grid and dimension names,</span>
+<span class="sd">        return a list of the regressions for each dimensions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : dict</span>
+<span class="sd">            The dict of parameters provided as input data</span>
+<span class="sd">        grid : list(np.ndarray)</span>
+<span class="sd">            The grid of values for each dimension, broadcast to the</span>
+<span class="sd">            correct number of dimensions</span>
+<span class="sd">        dim_names : list</span>
+<span class="sd">            The names of the dimensions</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        X : list(np.ndarray)</span>
+<span class="sd">            List of regressions for each dimension</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># List of the regressions for each dimension, which will be</span>
+        <span class="c1"># populated when we loop over the dimensions</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Loop over the dimensions</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">grid</span><span class="p">):</span>
+            <span class="c1"># Normalise the values</span>
+            <span class="n">x_norm</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="c1"># Get the name of this dim</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">dim_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># Pull out the params for convenience</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;A_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;alpha_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;B_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+            <span class="n">beta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;beta_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;C_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">gamma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;gamma_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;D_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">delta_1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;delta1_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+            <span class="n">delta_2</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;delta2_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># Let users specify a polynomial by listing A coefficients,</span>
+            <span class="c1"># presuming the exponents (alpha) will be 1, 2, 3 etc</span>
+            <span class="c1"># corresponding to the list elements in A. Otherwise, use</span>
+            <span class="c1"># A and alpha as a power law A*x**alpha</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+                <span class="n">powers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">power_x</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">power</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">powers</span><span class="p">):</span>
+                    <span class="n">power_x</span> <span class="o">=</span> <span class="n">power_x</span> <span class="o">+</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">x_norm</span><span class="o">**</span><span class="n">power</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">power_x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_norm</span><span class="o">**</span><span class="n">alpha</span>
+            <span class="c1"># Exponential term</span>
+            <span class="n">exp_x</span> <span class="o">=</span> <span class="n">B</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">beta</span><span class="o">*</span><span class="n">x_norm</span><span class="p">)</span>
+            <span class="c1"># Only calculate the ln term if C is not None, and if x=0,</span>
+            <span class="c1"># then set ln(x) to 0</span>
+            <span class="k">if</span> <span class="n">C</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">arg</span> <span class="o">=</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">x_norm</span>
+                <span class="n">ln_term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span>
+                                 <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+                                 <span class="n">where</span><span class="o">=</span><span class="p">(</span><span class="n">arg</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="n">ln_x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">C</span><span class="p">)</span> <span class="o">*</span> <span class="n">ln_term</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ln_x</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="c1"># If the logistic delta_2 term (the x value at the midpoint</span>
+            <span class="c1"># along the k axis) isn&#39;t specified, # then calculate it as</span>
+            <span class="c1"># halfway along the x axis</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">delta_2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">D</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">delta_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_norm</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">x_norm</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="c1"># Calculate the logistic contribution, only if D is not None</span>
+            <span class="n">logit_x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">D</span><span class="p">)</span> <span class="o">/</span> \
+                <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">delta_1</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_norm</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">delta_2</span><span class="p">))))</span> \
+                <span class="k">if</span> <span class="n">D</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">1.0</span>
+            <span class="c1"># Multiply all the expressions together for this dimension</span>
+            <span class="n">X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">power_x</span> <span class="o">*</span> <span class="n">exp_x</span> <span class="o">*</span> <span class="n">ln_x</span> <span class="o">*</span> <span class="n">logit_x</span><span class="p">)</span>
+        <span class="c1"># Return the list of regressions for each dimension</span>
+        <span class="k">return</span> <span class="n">X</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_f_surface_area</span><span class="p">(</span><span class="n">psd</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>

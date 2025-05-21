@@ -218,6 +218,10 @@
 
 
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../references.html">References</a></li>
+</ul>
 
     </div>
 </nav></div>
@@ -418,6 +422,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.run"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.run()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.set_fsd"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.set_fsd()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.set_k_distribution"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.set_k_distribution()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.set_rate_constant"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.set_rate_constant()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.surface_area"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.surface_area()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.volume"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.volume()</span></code></a></li>
 </ul>
@@ -639,6 +644,32 @@ changes after v0.1.0.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.set_rate_constant">
+<span class="sig-name descname"><span class="pre">set_rate_constant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.set_rate_constant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.set_rate_constant" title="Permalink to this definition">#</a></dt>
+<dd><p>Set a rate constant either for fragmentation, dissolution or
+mineralisation. The function largely parses input data and
+deals with defaults etc, before calling <cite>set_k_distribution</cite>
+to create the rate constant distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>dict</em>) – The param dict from the model input data, from which the rate
+constant parameters are extracted. See the notes in
+<cite>set_k_distribution</cite> for more details on the expected format</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name of the rate constant to set. This should be one of
+<cite>k_frag</cite>, <cite>k_diss</cite> or <cite>k_min</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The rate constant distribution</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="fragmentmnp.FragmentMNP.surface_area">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">surface_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/fragmentmnp/fragmentmnp.html#FragmentMNP.surface_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fragmentmnp.FragmentMNP.surface_area" title="Permalink to this definition">#</a></dt>
 <dd><p>Return the surface area of the particles, presuming they are
@@ -727,6 +758,7 @@ particles.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.run"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.run()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.set_fsd"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.set_fsd()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.set_k_distribution"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.set_k_distribution()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.set_rate_constant"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.set_rate_constant()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.surface_area"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.surface_area()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragmentmnp.FragmentMNP.volume"><code class="docutils literal notranslate"><span class="pre">FragmentMNP.volume()</span></code></a></li>
 </ul>
