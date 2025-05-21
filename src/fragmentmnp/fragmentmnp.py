@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Sequence
 import numpy as np
 import numpy.typing as npt
 from scipy.integrate import solve_ivp
@@ -64,50 +64,9 @@ class FragmentMNP():
         self.k_frag = np.empty((self.n_size_classes, self.n_timesteps))
         self.k_diss = np.empty((self.n_size_classes, self.n_timesteps))
         self.k_min = np.empty((self.n_timesteps,))
-        # Calculate the rate constant distributions. If we've been given
-        # a dict in data, use the contained params to create the distribution.
-        # Else, presume that we've been given a scalar (validation will make
-        # sure this is so) and use that as the average.
+        # Calculate the rate constant distributions
         for k in ['k_frag', 'k_diss', 'k_min']:
-            if isinstance(data[k], dict):
-                k_f = data[k]['k_f']
-                k_0 = data[k]['k_0']
-                is_compound = data[k]['is_compound']
-                # Get the params from the dict, excluding the average
-                params = {n: p for n, p in data[k].items()
-                          if n not in ['k_f', 'k_0']}
-            else:
-                k_f = data[k]
-                k_0 = 0.0
-                is_compound = True
-                params = {}
-            # If k_frag or k_diss, we want to calculate a 2D (s, t) distribution,
-            # and if k_min, we just want a 1D (t) distribution
-            if k in ['k_frag', 'k_diss']:
-                k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
-                                                       't': self.t_grid},
-                                                 k_f=k_f, k_0=k_0,
-                                                 params=params,
-                                                 is_compound=is_compound)
-                # If the rate constant is k_frag, then no fragmentation is
-                # allowed from the smallest size class and therefore we
-                # manually set this to zero
-                if k == 'k_frag':
-                    k_dist[0, :] = 0.0
-            else:
-                k_dist = self.set_k_distribution(dims={'t': self.t_grid},
-                                                 k_f=k_f, k_0=k_0,
-                                                 params=params,
-                                                 is_compound=is_compound)
-            # Check no values are less than zero
-            if np.any(k_dist < 0.0):
-                msg = (f'Value for {k} distribution calculated from input '
-                       'data resulted in negative values. Ensure '
-                       f'distribution params are such that all {k} values '
-                       'are positive.')
-                raise FMNPDistributionValueError(msg)
-
-            # Set self.k_[frag|diss|min] as this distribution
+            k_dist = self.set_rate_constant(data[k], k)
             setattr(self, k, k_dist)
 
     def run(self) -> FMNPOutput:
@@ -260,6 +219,74 @@ class FragmentMNP():
                              'neither were found.')
         return psd
 
+    def set_rate_constant(self, params: dict, name: str) \
+            -> npt.NDArray[np.float64]:
+        """
+        Set a rate constant either for fragmentation, dissolution or
+        mineralisation. The function largely parses input data and
+        deals with defaults etc, before calling `set_k_distribution`
+        to create the rate constant distribution.
+
+        Parameters
+        ----------
+        params : dict
+            The param dict from the model input data, from which the rate
+            constant parameters are extracted. See the notes in
+            `set_k_distribution` for more details on the expected format
+        name : str
+            The name of the rate constant to set. This should be one of
+            `k_frag`, `k_diss` or `k_min`
+
+        Returns
+        -------
+        np.ndarray
+            The rate constant distribution
+        """
+        # If we've been given a dict in data, use the contained params to
+        # create the distribution. Else, presume that we've been given a
+        # scalar (validation will make sure this is so) and use that as
+        # the average.
+        if isinstance(params, dict):
+            k_f = params['k_f']
+            k_0 = params['k_0']
+            is_compound = params['is_compound']
+            # Get the params from the dict, excluding the average
+            reg_params = {n: p for n, p in params.items()
+                            if n not in ['k_f', 'k_0']}
+        else:
+            k_f = params
+            k_0 = 0.0
+            is_compound = True
+            reg_params = {}
+        # If k_frag or k_diss, we want to calculate a 2D (s, t) distribution,
+        # and if k_min, we just want a 1D (t) distribution
+        if name in ['k_frag', 'k_diss']:
+            k_dist = self.set_k_distribution(dims={'s': self.surface_areas,
+                                                   't': self.t_grid},
+                                             k_f=k_f, k_0=k_0,
+                                             params=reg_params,
+                                             is_compound=is_compound)
+            # If the rate constant is k_frag, then no fragmentation is
+            # allowed from the smallest size class and therefore we
+            # manually set this to zero
+            if name == 'k_frag':
+                k_dist[0, :] = 0.0
+        else:
+            k_dist = self.set_k_distribution(dims={'t': self.t_grid},
+                                             k_f=k_f, k_0=k_0,
+                                             params=reg_params,
+                                             is_compound=is_compound)
+        # Check no values are less than zero
+        if np.any(k_dist < 0.0):
+            msg = (f'Value for {name} distribution calculated from input '
+                   'data resulted in negative values. Ensure '
+                   f'distribution params are such that all {name} values '
+                   'are positive.')
+            raise FMNPDistributionValueError(msg)
+
+        # Return this distribution
+        return k_dist
+
     @staticmethod
     def set_k_distribution(dims: dict, k_f: float, k_0: float = 0.0,
                            params: dict = {},
@@ -398,61 +425,13 @@ class FragmentMNP():
             # indexing order with 'ij')
             grid = np.meshgrid(*[x for x in dims.values()],
                                indexing='ij')
-            # List of the regressions for each dimension, which will be
-            # populated when we loop over the dimensions
-            X = []
-            # Loop over the dimensions
-            for i, x in enumerate(grid):
-                # Normalise the values
-                x_norm = x / np.median(x)
-                # Get the name of this dim
-                name = list(dims.keys())[i]
-                # Pull out the params for convenience
-                A = params.get(f'A_{name}', 1.0)
-                alpha = float(params.get(f'alpha_{name}', 0.0))
-                B = float(params.get(f'B_{name}', 1.0))
-                beta = float(params.get(f'beta_{name}', 0.0))
-                C = params.get(f'C_{name}', None)
-                gamma = float(params.get(f'gamma_{name}', 1.0))
-                D = params.get(f'D_{name}', None)
-                delta_1 = float(params.get(f'delta1_{name}', 1.0))
-                delta_2 = params.get(f'delta2_{name}', None)
-                # Let users specify a polynomial by listing A coefficients,
-                # presuming the exponents (alpha) will be 1, 2, 3 etc
-                # corresponding to the list elements in A. Otherwise, use
-                # A and alpha as a power law A*x**alpha
-                if isinstance(A, (list, tuple, np.ndarray)):
-                    powers = np.arange(1, len(A) + 1)
-                    power_x = 0.0
-                    for i, power in enumerate(powers):
-                        power_x = power_x + A[i] * x_norm**power
-                else:
-                    power_x = float(A) * x_norm**alpha
-                # Exponential term
-                exp_x = B * np.exp(-beta*x_norm)
-                # Only calculate the ln term if C is not None, and if x=0,
-                # then set ln(x) to 0
-                if C is not None:
-                    arg = gamma * x_norm
-                    ln_term = np.log(arg,
-                                     out=np.zeros_like(arg, dtype=np.float64),
-                                     where=(arg != 0))
-                    ln_x = float(C) * ln_term
-                else:
-                    ln_x = 1.0
-                # If the logistic delta_2 term (the x value at the midpoint
-                # along the k axis) isn't specified, # then calculate it as
-                # halfway along the x axis
-                if (delta_2 is None) and (D is not None):
-                    delta_2 = (x_norm.max() - x_norm.min()) / 2
-                # Calculate the logistic contribution, only if D is not None
-                logit_x = float(D) / \
-                    (1 + np.exp(-delta_1 * (x_norm - float(delta_2)))) \
-                    if D is not None else 1.0
-                # Multiply all the expressions together for this dimension
-                X.append(power_x * exp_x * ln_x * logit_x)
-            # Calculate the final distribution by multiplying X across the
-            # dimensions
+            # Assign the relevant params to each dimension and get a
+            # list of regressions across the dimensions, X
+            X = FragmentMNP._assign_regression_params(params,
+                                                      grid,
+                                                      list(dims.keys()))
+            # Calculate the final distribution by multiplying or summing
+            # X across the dimensions
             if is_compound:
                 k = k_f * np.prod(X, axis=0) + k_0
             else:
@@ -518,6 +497,86 @@ class FragmentMNP():
         particles.
         """
         return (4.0/3.0) * np.pi * (psd / 2.0) ** 3
+
+    @staticmethod
+    def _assign_regression_params(params: dict,
+                                  grid: Sequence[npt.NDArray],
+                                  dim_names: list) \
+            -> Sequence[npt.NDArray]:
+        """
+        Given a list of regression parameters, a grid and dimension names,
+        return a list of the regressions for each dimensions.
+
+        Parameters
+        ----------
+        params : dict
+            The dict of parameters provided as input data
+        grid : list(np.ndarray)
+            The grid of values for each dimension, broadcast to the
+            correct number of dimensions
+        dim_names : list
+            The names of the dimensions
+
+        Returns
+        -------
+        X : list(np.ndarray)
+            List of regressions for each dimension
+        """
+        # List of the regressions for each dimension, which will be
+        # populated when we loop over the dimensions
+        X = []
+        # Loop over the dimensions
+        for i, x in enumerate(grid):
+            # Normalise the values
+            x_norm = x / np.median(x)
+            # Get the name of this dim
+            name = dim_names[i]
+            # Pull out the params for convenience
+            A = params.get(f'A_{name}', 1.0)
+            alpha = float(params.get(f'alpha_{name}', 0.0))
+            B = float(params.get(f'B_{name}', 1.0))
+            beta = float(params.get(f'beta_{name}', 0.0))
+            C = params.get(f'C_{name}', None)
+            gamma = float(params.get(f'gamma_{name}', 1.0))
+            D = params.get(f'D_{name}', None)
+            delta_1 = float(params.get(f'delta1_{name}', 1.0))
+            delta_2 = params.get(f'delta2_{name}', None)
+            # Let users specify a polynomial by listing A coefficients,
+            # presuming the exponents (alpha) will be 1, 2, 3 etc
+            # corresponding to the list elements in A. Otherwise, use
+            # A and alpha as a power law A*x**alpha
+            if isinstance(A, (list, tuple, np.ndarray)):
+                powers = np.arange(1, len(A) + 1)
+                power_x = 0.0
+                for i, power in enumerate(powers):
+                    power_x = power_x + A[i] * x_norm**power
+            else:
+                power_x = float(A) * x_norm**alpha
+            # Exponential term
+            exp_x = B * np.exp(-beta*x_norm)
+            # Only calculate the ln term if C is not None, and if x=0,
+            # then set ln(x) to 0
+            if C is not None:
+                arg = gamma * x_norm
+                ln_term = np.log(arg,
+                                 out=np.zeros_like(arg, dtype=np.float64),
+                                 where=(arg != 0))
+                ln_x = float(C) * ln_term
+            else:
+                ln_x = 1.0
+            # If the logistic delta_2 term (the x value at the midpoint
+            # along the k axis) isn't specified, # then calculate it as
+            # halfway along the x axis
+            if (delta_2 is None) and (D is not None):
+                delta_2 = (x_norm.max() - x_norm.min()) / 2
+            # Calculate the logistic contribution, only if D is not None
+            logit_x = float(D) / \
+                (1 + np.exp(-delta_1 * (x_norm - float(delta_2)))) \
+                if D is not None else 1.0
+            # Multiply all the expressions together for this dimension
+            X.append(power_x * exp_x * ln_x * logit_x)
+        # Return the list of regressions for each dimension
+        return X
 
     @staticmethod
     def _f_surface_area(psd: npt.NDArray[np.float64],

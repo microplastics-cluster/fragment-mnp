@@ -4,6 +4,10 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+## [1.1.6] - 2025-05-21
+
+* Updates based on JOSS paper review: https://github.com/openjournals/joss-reviews/issues/8061. Mostly to docs, with some refactoring of code for better modularity.
+
 ## [1.1.5] - 2025-04-22
 
 * Adding `show` parameter to `FMNPOutput.plot()`. If `show=True`, `plt.show()` is called by the model, triggering the plot to be displayed in non-interactive environments. The default is `show=False`.

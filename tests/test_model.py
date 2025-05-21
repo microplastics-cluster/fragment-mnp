@@ -23,7 +23,7 @@ def test_model_init():
 
 def test_model_run():
     """
-    Test the model run by check the outputs
+    Test the model run by checking the outputs
     """
     fmnp = FragmentMNP(minimal_config, minimal_data)
     output = fmnp.run()

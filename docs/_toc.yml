@@ -27,3 +27,6 @@ parts:
     - file: api/examples
     - file: api/output
     - file: api/validation
+  - caption: Reference
+    chapters:
+    - file: references
