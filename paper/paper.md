@@ -99,7 +99,7 @@ output = fmnp.run()
 output.plot()
 ```
 
-![Example model output showing the time evolution of particle size distributions undergoing fragmentation](./paper/fragmentmnp_example.png){height="900px"}
+![Example model output showing the time evolution of particle size distributions undergoing fragmentation](./fragmentmnp_example.png){height="900px"}
 
 # Related work
 
