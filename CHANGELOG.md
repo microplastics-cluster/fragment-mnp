@@ -4,6 +4,10 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+## [1.1.7] - 2025-05-29
+
+* No changes to code, only creating release to enable automatic push to Zenodo.
+
 ## [1.1.6] - 2025-05-21
 
 * Updates based on JOSS paper review: https://github.com/openjournals/joss-reviews/issues/8061. Mostly to docs, with some refactoring of code for better modularity.
