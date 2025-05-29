@@ -103,11 +103,15 @@ output.plot()
 
 # Related work
 
-The development of FRAGMENT-MNP is part of broader efforts to further our understanding of microplastics in the environment. This includes the development of other models covering emissions, additive release, long-range transport and exposure. Ongoing work is pursuing closer integration of these models and associated experimental data in order to provide holistic predictions of microplastic fate and exposure in the environment.
+The development of FRAGMENT-MNP is part of broader efforts to further our understanding of microplastics in the environment. For example, work is ongoing to integrate various data collated in the project that funded this work. These data include laboratory experiments that subjected a broad selection of polymers to various environmental stresses, including photolysis [@Pfohl:2025], hydrolysis and enzymatic activity. In this work, we aim to generate a database of fragmentation and dissolution rates across a range of polymers and stresses, which can be scaled to realistic stress combinations encountered by plastics in different environmental compartments. These data are providing important parameters to broader models of plastics in the environment, such as the UTOPIA unit-world model of microplastic exposure [@Domercq:2025]. This model was recently used in a UK goverment (Department for Environment, Food and Rural Affairs; Defra) report on risk mitigation options against intentionally added microplastics [@eftec:2025]. Also ongoing is the development of other models covering emissions, additive release, long-range transport and exposure, as part of associated projects funded by the European Chemical Industry Council Long-Range Research Iniative (Cefic-LRI; projects ECO56-60 and ECO68).
 
+
+# Author contributions
+
+SH, CU and BL developed the code behind FRAGMENT-MNP. All authors contributed to the conceptualisation and functionality of the model. This included, but was not limited to, performing laboratory experiments that provided insights into fragmentation mechanisms, which ultimately informed elements such as input data requirements, time and surface area dependencies of rate constants, and output data and plotting capabilities. SH, MW, WW, AP and CS supervised the model development and broader project.
 
 # Acknowledgements
 
-Thank you to the European Chemical Industry Council Long-Range Research Initiative (Cefic-LRI) for providing funding for this work, under project number ECO59.
+Thank you to Cefic-LRI for providing funding for this work, under project number ECO59.
 
 # References
