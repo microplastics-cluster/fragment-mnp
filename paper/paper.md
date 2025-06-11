@@ -41,7 +41,7 @@ authors:
     orcid: 0000-0002-0823-5045
     affiliation: 4
 affiliations:
-  - name: UK Centre for Ecology & Hydrology, Library Avenue, Bailrigg, Lancaster, LA1 4AP, UK
+  - name: UK Centre for Ecology & Hydrology, Library Avenue, Bailrigg, Lancaster, LA1 4AP, United Kingdom
     index: 1
   - name: BASF SE, Carl-Bosch-Str. 38, 67056 Ludwigshafen, Germany
     index: 2
@@ -51,11 +51,11 @@ affiliations:
     index: 4
   - name: University of Amsterdam, 1090 GE Amsterdam, Netherlands
     index: 5
-  - name: UK Centre for Ecology & Hydrology, Benson Lane, Crowmarsh Gifford, Wallingford, OX10 8BB, UK
+  - name: UK Centre for Ecology & Hydrology, Benson Lane, Crowmarsh Gifford, Wallingford, OX10 8BB, United Kingdom
     index: 6
   - name: Ira A. Fulton Schools of Engineering, Arizona State University, 1151 S Forest Ave, Tempe, AZ, United States
     index: 7
-  - name: School of Earth and Environment, University of Leeds, Leeds, LS2 9JT, UK
+  - name: School of Earth and Environment, University of Leeds, Leeds, LS2 9JT, United Kingdom
     index: 8
 date: 17 February 2025
 bibliography: paper.bib
@@ -103,7 +103,7 @@ output.plot()
 
 # Related work
 
-The development of FRAGMENT-MNP is part of broader efforts to further our understanding of microplastics in the environment. For example, work is ongoing to integrate various data collated in the project that funded this work. These data include laboratory experiments that subjected a broad selection of polymers to various environmental stresses, including photolysis [@Pfohl:2025], hydrolysis and enzymatic activity. In this work, we aim to generate a database of fragmentation and dissolution rates across a range of polymers and stresses, which can be scaled to realistic stress combinations encountered by plastics in different environmental compartments. These data are providing important parameters to broader models of plastics in the environment, such as the UTOPIA unit-world model of microplastic exposure [@Domercq:2025]. This model was recently used in a UK goverment (Department for Environment, Food and Rural Affairs; Defra) report on risk mitigation options against intentionally added microplastics [@eftec:2025]. Also ongoing is the development of other models covering emissions, additive release, long-range transport and exposure, as part of associated projects funded by the European Chemical Industry Council Long-Range Research Iniative (Cefic-LRI; projects ECO56-60 and ECO68).
+The development of FRAGMENT-MNP is part of broader efforts to further our understanding of microplastics in the environment. For example, work is ongoing to integrate various data collated in the project that funded this work. These data include laboratory experiments that subjected a broad selection of polymers to various environmental stresses, including photolysis [@Pfohl:2025], hydrolysis and enzymatic activity. In this work, we aim to generate a database of fragmentation and dissolution rates across a range of polymers and stresses, which can be scaled to realistic stress combinations encountered by plastics in different environmental compartments. These data are providing important parameters to broader models of plastics in the environment, such as the UTOPIA unit-world model of microplastic exposure [@Domercq:2025]. This model was recently used in a United Kingdom government (Department for Environment, Food and Rural Affairs; Defra) report on risk mitigation options against intentionally added microplastics [@eftec:2025]. Also ongoing is the development of other models covering emissions, additive release, long-range transport and exposure, as part of associated projects funded by the European Chemical Industry Council Long-Range Research Initiative (Cefic-LRI; projects ECO56-60 and ECO68).
 
 
 # Author contributions
