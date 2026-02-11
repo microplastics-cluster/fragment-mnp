@@ -3,6 +3,12 @@ FRAGMENT-MNP output
 ===================
 
 Provides functionality for processing and visulalising model output data.
+
+This file is extended to optionally hold additive outputs:
+- A_part: additive mass concentration in each size class (N x T)
+- A_aq:   additive mass concentration in water (T)
+
+Plotting is extended to optionally plot these additive time series.
 """
 import uuid
 import numpy as np
@@ -41,10 +47,15 @@ class FMNPOutput():
     psd : np.ndarray, shape (n_size_classes, )
         Particle size distribution - the average diameters of
         each of the particle size classes
+    A_part : np.ndarray, shape (n_size_classes, n_timesteps), optional
+        Additive mass concentration in particulate phase, per size class
+    A_aq : np.ndarray, shape (n_timesteps,), optional
+        Additive mass concentration in aqueous phase
     """
 
     __slots__ = ['t', 'c', 'n', 'c_diss', 'c_min',
-                 'n_timesteps', 'n_size_classes', 'soln', 'psd', 'id']
+                 'n_timesteps', 'n_size_classes', 'soln', 'psd', 'id',
+                 'A_part', 'A_aq']
 
     def __init__(self,
                  t: npt.NDArray,
@@ -53,7 +64,9 @@ class FMNPOutput():
                  c_diss: npt.NDArray,
                  c_min: npt.NDArray,
                  soln, psd,
-                 id=None) -> None:
+                 id=None,
+                 A_part=None,
+                 A_aq=None) -> None:
         """
         Initialise the output data object
         """
@@ -65,6 +78,9 @@ class FMNPOutput():
         self.c_min = c_min
         self.soln = soln
         self.psd = psd
+        # Optional additive outputs
+        self.A_part = A_part
+        self.A_aq = A_aq
         # Save the number of timesteps and size classes
         self.n_timesteps = self.t.shape[0]
         self.n_size_classes = self.c.shape[0]
@@ -79,6 +95,9 @@ class FMNPOutput():
              type: str = 'mass_conc',
              plot_dissolution: bool = False,
              plot_mineralisation: bool = False,
+             # NEW:
+             plot_additive: bool = False,
+             additive_log_yaxis=False,
              log_yaxis=False,
              units=None,
              cmap='viridis',
@@ -98,6 +117,12 @@ class FMNPOutput():
             Should dissolution be plotted on a separate y-axis
         plot_mineralisation : bool, default=False
             Should mineralised polymer be plotted on a separate y-axis
+        plot_additive : bool, default=False
+            If True and additive outputs are present, plot additive trajectories.
+            - particulate additive (per size class) uses same colormap scheme
+            - aqueous additive is plotted on a twin axis (dashed black)
+        additive_log_yaxis : bool or str, default=False
+            log scaling for additive axis (similar options as log_yaxis)
         log_yaxis : bool or str, default=False
             True and "log" plots the y axis on a log scale,
             "symlog" plots the y axis on a symlog scale (useful
@@ -203,6 +228,7 @@ class FMNPOutput():
                 legend = legend[size_classes_to_plot]
             ax1.legend(legend)
 
+        ax2 = None  # NEW: ensure ax2 always exists, even if we don't plot dissolution/mineralisation
         # Create and format the dissolution y axis
         if plot_dissolution or plot_mineralisation:
             ax2 = ax1.twinx()
@@ -235,11 +261,66 @@ class FMNPOutput():
         else:
             ax_ = ax1
 
+        # -----------------------------
+        # 3) NEW: Optional additive plotting
+        # -----------------------------
+        ax3 = None
+        if plot_additive:
+            # Make sure additive outputs exist (they are optional by design)
+            if (self.A_part is None) or (self.A_aq is None):
+                raise ValueError(
+                    "plot_additive=True was requested, but this output does not "
+                    "contain additive results. Ensure the model was run with "
+                    "`initial_additive_concs` and `additive_release`."
+                )
+
+            # Plot particulate additive per size class on the SAME primary axis
+            # using a thin line style so it doesn't dominate polymer curves.
+            Avals = self.A_part.T
+            if size_classes_to_plot is not None:
+                Avals = Avals[:, size_classes_to_plot]
+
+            # We don't want additive to overwrite the existing color cycle permanently,
+            # but in practice for a single plot call it's fine. We also use a different
+            # linestyle to distinguish it from polymer.
+            ax1.plot(self.t, Avals, ls='--', alpha=0.7)
+
+            # Now plot aqueous additive on a third axis so it has its own scaling.
+            # (If ax2 already exists, we offset ax3 outward to avoid label overlap.)
+            ax3 = ax1.twinx()
+            if ax2 is not None:
+                ax3.spines["right"].set_position(("outward", 60))
+
+            ax3.plot(self.t, self.A_aq, c='k', ls='-.')
+            ax3.set_ylabel('Additive (aqueous) mass concentration')
+            if unit_labels is not None:
+                ax3.set_ylabel(f'Additive (aqueous) mass concentration [{unit_labels["mass_conc"]}]')
+
+            # Use the same y scaling choice unless you want a dedicated control
+            if log_yaxis in [True, 'log']:
+                ax3.set_yscale('log')
+            elif log_yaxis == 'symlog':
+                ax3.set_yscale('symlog')
+
         # Call `plt.show()` if we've been asked to
         if show:
             plt.show()
         # Return the figure and the axis/axes
-        return fig, ax_
+        # Return axes depending on what exists
+        if plot_additive:
+            # If you created ax3 for aqueous additive, return it too
+            # Otherwise return just ax1/ax2
+            if ax2 is not None and ax3 is not None:
+                return fig, (ax1, ax2, ax3)
+            if ax2 is not None:
+                return fig, (ax1, ax2)
+            if ax3 is not None:
+                return fig, (ax1, ax3)
+            return fig, ax1
+
+        if ax2 is not None:
+            return fig, (ax1, ax2)
+        return fig, ax1
 
     def _construct_units(self, units):
         """

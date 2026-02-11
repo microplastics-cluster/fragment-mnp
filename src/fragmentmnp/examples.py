@@ -2,10 +2,18 @@
 Example config and data (:mod:`fragmentmnp.examples`)
 =====================================================
 
-Provides example config and data dictionaries for use
-in the FRAGMENT-MNP model.
+This module provides example config and data dictionaries for use
+with FRAGMENT-MNP.
+
+We keep the original examples intact, and add a *new* example that
+activates additive tracking and analytical release coupling.
 """
 import numpy as np
+
+
+# -------------------------
+# Example model configuration
+# -------------------------
 
 full_config = {
     'n_size_classes': 7,
@@ -29,8 +37,15 @@ minimal_config = {
 Other variables will take their default values."""
 
 
+# -------------------------
 # Example rate constant distribution parameters
+# -------------------------
+
 def _k_dist_params(dims):
+    """
+    Helper function to create default regression parameter dict entries
+    for the FRAGMENT-MNP rate-constant distribution builder.
+    """
     k_dist_params = {}
     for x in dims:
         k_dist_params[f'A_{x}'] = 1.0
@@ -74,3 +89,36 @@ minimal_data = {
 }
 """Example model data with only required variables.
 Other variables will take their default values."""
+
+
+# --------------------------------------------------------------------
+# NEW: Example that activates additive tracking + analytical release
+# --------------------------------------------------------------------
+
+minimal_data_with_additive = {
+    'initial_concs': [42.0] * 7,
+    'density': 1380,
+    'k_frag': 0.01,
+    'k_min': 0.0,
+
+    # Additive mass concentration in each size class at t=0
+    # (same binning as initial_concs)
+    'initial_additive_concs': [1.0] * 7,
+
+    # Additive release model configuration.
+    # This is where analytical solution parameters live.
+    #
+    # IMPORTANT:
+    # - The actual analytical formula is implemented in FragmentMNP._analytical_additive_release_fraction()
+    # - Here the parameter values are stored
+    'additive_release': {
+        'model': 'analytical',
+        'params': {
+            'D_p': 1e-16,    # diffusion in polymer (m2/s)
+            'D_w': 1e-9,     # diffusion in water (m2/s)
+            'K_pw': 1e4,     # polymer-water partition coefficient (-)
+            'n_terms': 50
+        }
+    }
+}
+"""Example data that activates additive bookkeeping + analytical release."""

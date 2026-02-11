@@ -3,6 +3,10 @@ Validation of config and data (:mod:`fragmentmnp.validation`)
 =============================================================
 
 Provides config and input data validation for the FRAGMENT-MNP model
+
+This file is extended to optionally validate:
+- initial_additive_concs (array, length n_size_classes, >=0)
+- additive_release (dict with 'model' and 'params')
 """
 import numpy as np
 from schema import And, Optional, Or, Schema
@@ -82,6 +86,20 @@ k_dist_2d_schema = k_dist_schema(['t', 's'])
 k_dist_t_schema = k_dist_schema(['t'])
 
 
+def additive_release_schema():
+    """
+    Schema for additive release model config.
+
+    We keep this permissive:
+      - 'model' identifies the release approach (e.g. 'analytical')
+      - 'params' holds physical parameters for that model (free-form dict)
+    """
+    return {
+        Optional('model', default='analytical'): str,
+        Optional('params', default={}): dict,
+    }
+
+
 # The schema that the config dict should follow
 config_schema = Schema({
     # There should be <= 100 size classes
@@ -126,7 +144,12 @@ data_schema = Schema({
     # fsd_beta is an empirical param that scales the depedence
     # of the fragment size distribution on particle diameter d
     # accordingly to d^beta. beta=0 means an equal split
-    Optional('fsd_beta', default=0.0): Or(int, float)
+    Optional('fsd_beta', default=0.0): Or(int, float),
+    # -----------------------------
+    # NEW OPTIONAL additive inputs
+    # -----------------------------
+    Optional('initial_additive_concs', default=None): Or(None, _is_positive_array),
+    Optional('additive_release', default=None): Or(None, additive_release_schema()),
 })
 
 
@@ -177,6 +200,15 @@ def validate_data(data: dict, config: dict) -> dict:
             f'Expecting {config["n_size_classes"]}-length array. ' +
             f'Received {len(data["initial_concs"])}-length array.'
         )
-
+    
+    # additive initial concentrations (if provided) must match n_size_classes
+    if validated.get('initial_additive_concs') is not None:
+        if len(validated['initial_additive_concs']) != config['n_size_classes']:
+            raise FMNPIncorrectDistributionLength(
+                'initial_additive_concs distribution provided in input data '
+                'is not the same length as particle size distribution. '
+                f'Expecting {config["n_size_classes"]}-length array. '
+                f'Received {len(validated["initial_additive_concs"])}-length array.'
+            )
     # TODO extra validation here, e.g. check lengths are n_size_classes
     return validated

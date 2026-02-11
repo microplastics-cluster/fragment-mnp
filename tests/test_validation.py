@@ -105,20 +105,41 @@ def test_invalid_config_size_range_not_length_2():
 
 def test_valid_data():
     """
-    Test for validating a correct data dict
+    Test for validating a correct data dict.
+
+    NOTE:
+    validate_data() returns a dict with defaults filled in. As the model evolves,
+    new Optional(..., default=...) entries may appear in the validated dict.
+
+    Therefore, we test that:
+      1) All keys provided by the user are preserved exactly.
+      2) New additive-related default keys exist and default to None.
     """
     validated = validate_data(valid_data, valid_config)
-    assert validated == valid_data
+
+    # 1) Make sure all original user-provided keys are unchanged
+    for k, v in valid_data.items():
+        assert k in validated
+        assert validated[k] == v
+
+    # 2) Check new collaboration defaults are present
+    assert "initial_additive_concs" in validated
+    assert validated["initial_additive_concs"] is None
+
+    assert "additive_release" in validated
+    assert validated["additive_release"] is None
 
 
 def test_valid_minimal_data():
     """
-    Test the minimal config example passes with
-    defaults filled in
+    Test the minimal config example passes with defaults filled in
     """
     validated = validate_data(valid_minimal_data, valid_config)
-    # k_diss should have been defaulted to 0
     assert validated['k_diss'] == 0.0
+
+    # Optional: additive defaults should also be present
+    assert validated["initial_additive_concs"] is None
+    assert validated["additive_release"] is None
 
 
 def test_invalid_initial_concs_distribution_length():

@@ -1,3 +1,27 @@
+"""
+Main FRAGMENT-MNP model class (:mod:`fragmentmnp.fragmentmnp`)
+=============================================================
+
+This file contains the FragmentMNP model class.
+
+COLLABORATION UPDATE
+---------------------------------------------
+
+We add optional additive tracking and analytical release modelling,
+WITHOUT changing the core polymer fragmentation ODE system.
+
+Key design choice:
+- The polymer model is solved using solve_ivp exactly as before.
+- After solving, if additive inputs are provided, we perform a simple
+  explicit bookkeeping loop over the solver output time grid:
+    (1) transport additive with fragmentation (mass-conserving)
+    (2) release additive to water using an analytical model function
+
+This "operator splitting" keeps the fragmentation core stable and makes
+the collaboration easy: the analytical formula is isolated in one method:
+    _analytical_additive_release_fraction()
+
+"""
 from typing import Tuple, Sequence
 import numpy as np
 import numpy.typing as npt
@@ -50,7 +74,7 @@ class FragmentMNP():
             if self.config['solver_t_eval'] == 'timesteps' \
             else self.config['solver_t_eval']
         # Initial concentrations
-        self.initial_concs = np.array(data['initial_concs'])
+        self.initial_concs = np.array(data['initial_concs'], dtype=float)
         self.initial_concs_diss = data['initial_concs_diss']
         # Set the particle phys-chem properties
         self.psd = self._set_psd()
@@ -58,7 +82,7 @@ class FragmentMNP():
         self.fsd = self.set_fsd(self.n_size_classes,
                                 self.psd,
                                 self.data['fsd_beta'])
-        self.density = data['density']
+        self.density = float(data['density'])
         # Stop Pylance complaining about k_frag, k_diss and k_min not being
         # present (or being the wrong type) by declaring them as NumPy arrays
         self.k_frag = np.empty((self.n_size_classes, self.n_timesteps))
@@ -68,6 +92,16 @@ class FragmentMNP():
         for k in ['k_frag', 'k_diss', 'k_min']:
             k_dist = self.set_rate_constant(data[k], k)
             setattr(self, k, k_dist)
+
+        # ------------------------------------------------------------
+        # OPTIONAL: additive coupling inputs (collaboration feature)
+        # ------------------------------------------------------------
+        init_A = data.get('initial_additive_concs', None)
+        self.initial_additive_concs = None if init_A is None else np.array(init_A, dtype=float)
+
+        # Example shape:
+        #   {'model': 'analytical', 'params': {'Dp':..., 'Dw':..., 'Kpw':..., 'Km':...}}
+        self.additive_release = data.get('additive_release', None)
 
     def run(self) -> FMNPOutput:
         r"""
@@ -183,6 +217,16 @@ class FragmentMNP():
         c_min_sol = soln.y[self.n_size_classes + 1, :]
         # Convert microparticle mass to particle number
         n_part_sol = self.mass_to_particle_number(c_part_sol)
+
+        # ------------------------------------------------------------
+        # OPTIONAL: compute additive time series (post-solve)
+        # ------------------------------------------------------------
+        A_part = None
+        A_aq = None
+
+        if (self.initial_additive_concs is not None) and (self.additive_release is not None):
+            A_part, A_aq = self._simulate_additives_postsolve(soln.t, c_part_sol)
+
         # Build the FMNPOutput object from the solution
         return FMNPOutput(
            t=soln.t,
@@ -192,7 +236,155 @@ class FragmentMNP():
            c_min=c_min_sol,
            soln=soln,
            psd=self.psd,
+           A_part=A_part,
+           A_aq=A_aq
         )
+    
+    # ---------------------------------------------------------------------
+    # Additive coupling implementation (post-solve bookkeeping)
+    # ---------------------------------------------------------------------
+
+    def _simulate_additives_postsolve(self,
+                                      t: npt.NDArray[np.float64],
+                                      c_part_sol: npt.NDArray[np.float64]):
+        """
+        Compute additive trajectories using the already-solved polymer output.
+
+        This method does NOT change polymer dynamics.
+
+        We do:
+          1) transport additive with polymer fragmentation
+          2) release additive to water using an analytical fraction
+
+        Inputs
+        ------
+        t : array (T,)
+            solver output times
+        c_part_sol : array (N, T)
+            polymer mass per size class over time
+
+        Returns
+        -------
+        A_part : array (N, T)
+            additive mass in particulate bins
+        A_aq : array (T,)
+            additive mass in aqueous pool
+        """
+        N, T = c_part_sol.shape
+        A_part = np.zeros((N, T), dtype=float)
+        A_aq = np.zeros((T,), dtype=float)
+
+        A_part[:, 0] = self.initial_additive_concs
+        A_aq[0] = 0.0
+
+        # Interpolate k_frag/k_diss from internal t_grid onto solver times.
+        f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
+                                      fill_value='extrapolate')
+        # k_diss not used yet, but kept for future coupling
+        # f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
+        #                               fill_value='extrapolate')
+
+        radii = self.psd / 2.0
+
+        release_model = str(self.additive_release.get('model', 'analytical')).lower()
+        release_params = self.additive_release.get('params', {})
+
+        eps = 1e-30  # avoid division by zero when polymer mass is ~0
+
+        for ti in range(T - 1):
+            dt_i = float(t[ti + 1] - t[ti])
+
+            # polymer mass in each bin at current time
+            c = c_part_sol[:, ti]
+
+            # fragmentation rate at current time
+            k_frag = f_frag(t[ti])
+
+            # -------------------------
+            # (1) Additive transport with fragmentation
+            # -------------------------
+            # Polymer mass lost by fragmentation in dt_i:
+            #   L_frag[i] = k_frag[i] * c[i] * dt_i
+            L_frag = k_frag * c * dt_i
+
+            # Polymer mass transferred from parent i to daughter k:
+            #   G[i,k] = fsd[i,k] * L_frag[i]
+            G = (self.fsd.T * L_frag).T  # (N,N)
+
+            # Assume additive is uniformly mixed within each size class:
+            # additive per polymer mass:
+            conc_A = A_part[:, ti] / np.maximum(c, eps)
+
+            # Additive transferred i -> k:
+            A_to_k = (G.T * conc_A).T  # (N,N)
+            A_gain = A_to_k.sum(axis=0)
+            A_loss = A_to_k.sum(axis=1)
+
+            # particulate additive after fragmentation redistribution
+            A_mid = A_part[:, ti] - A_loss + A_gain
+
+            # -------------------------
+            # (2) Additive release to water (analytical)
+            # -------------------------
+            if release_model == 'analytical':
+                rel = np.array([
+                    self._analytical_additive_release_fraction(
+                        radius_m=float(radii[i]),
+                        dt=dt_i,
+                        params=release_params
+                    )
+                    for i in range(N)
+                ], dtype=float)
+            else:
+                # Unknown release model -> no release (safe default)
+                rel = np.zeros((N,), dtype=float)
+
+            rel = np.clip(rel, 0.0, 1.0)
+
+            dA_rel = rel * A_mid
+            A_part[:, ti + 1] = A_mid - dA_rel
+            A_aq[ti + 1] = A_aq[ti] + float(dA_rel.sum())
+
+        return A_part, A_aq
+
+    def _analytical_additive_release_fraction(self, radius_m: float, dt: float, params: dict) -> float:
+        """
+        Return the fraction of additive released from a particle of radius_m
+        over timestep dt.
+
+        This is what your post-solve bookkeeping loop calls.
+
+        Required params in params dict:
+            - "D_p" : polymer diffusivity [m^2/s]
+            - "D_w" : water diffusivity [m^2/s]
+            - "K_pw": polymer-water partition coefficient [-]
+
+        Optional:
+            - "n_terms": int number of series terms (Bi>=100)
+
+        Returns
+        -------
+        float
+            Release fraction in [0,1]
+        """
+        D_p = float(params.get("D_p"))
+        D_w = float(params.get("D_w"))
+        K_pw = float(params.get("K_pw"))
+        n_terms = int(params.get("n_terms", 50))
+
+        F_remain = self._analytical_additive_remaining_fraction(
+            t=float(dt),
+            r=float(radius_m),
+            D_p=D_p,
+            D_w=D_w,
+            K_pw=K_pw,
+            n_terms=n_terms
+        )
+
+        # Release fraction = 1 - remaining fraction (bounded)
+        rel = 1.0 - F_remain
+        return float(np.clip(rel, 0.0, 1.0))
+     
 
     def mass_to_particle_number(self, mass):
         """
@@ -660,3 +852,104 @@ class FragmentMNP():
             raise SchemaError('Input data did not pass validation!') from err
         # Return the config and data with filled defaults
         return config, data
+    
+    @staticmethod
+    def _analytical_additive_remaining_fraction(
+        t: float,
+        r: float,
+        D_p: float,
+        D_w: float,
+        K_pw: float,
+        n_terms: int = 50
+    ) -> float:
+        """
+        Return the fraction of additive remaining in a spherical particle:
+            F(t) = M(t) / M0
+
+        This implements the "selection" approach based on a Biot number (Bi) regime:
+
+        - Bi <= 1:     external transfer dominated -> simple approximation
+        - 1 < Bi <100: intermediate -> smooth bridge approximation
+        - Bi >= 100:   internal diffusion dominated -> classical infinite series
+                       solution for radial diffusion in a sphere
+
+        Parameters
+        ----------
+        t : float
+            Time since (re-)initialisation of a uniform additive profile [s].
+            NOTE: In our operator-splitting implementation we apply this over a
+            timestep dt, which implicitly assumes the particle's additive profile
+            is "effectively reset" to uniform each step (or that the analytical
+            expression is used as a Markov-like step operator). This is the
+            minimal-change way to integrate analytical release.
+        r : float
+            Particle radius [m]
+        D_p : float
+            Additive diffusivity in polymer [m^2/s]
+        D_w : float
+            Additive diffusivity in water [m^2/s]
+        K_pw : float
+            Polymer-water partition coefficient [-]
+        n_terms : int
+            Number of terms used for truncating the infinite series (Bi>=100).
+            50 is usually plenty for numerical stability and accuracy.
+
+        Returns
+        -------
+        float
+            Remaining mass fraction F in [0, 1]
+        """
+        # Defensive programming: keep this stable and bounded.
+        if t <= 0.0:
+            return 1.0
+        if r <= 0.0:
+            # Zero radius is non-physical; treat as instantaneous release
+            return 0.0
+        if D_p <= 0.0 or D_w <= 0.0 or K_pw <= 0.0:
+            raise ValueError("D_p, D_w, and K_pw must be > 0 for analytical release model.")
+
+        # Fourier number: internal diffusion timescale for a sphere
+        Fo = D_p * t / (r * r)
+
+        # definitions:
+        # Km = (K_pw * D_w) / r  [m/s]
+        # Bi = Km * r / D_p = (K_pw * D_w) / D_p  [-]
+        #
+        # Note: Bi becomes independent of radius once Km is expressed this way.
+        Bi = (K_pw * D_w) / D_p
+
+        # -------------------------
+        # Case I: low Bi (<= 1)
+        # -------------------------
+        # Simple approximation:
+        #   F = exp(-Bi * Fo)
+        if Bi <= 1.0:
+            F = float(np.exp(-Bi * Fo))
+            return float(np.clip(F, 0.0, 1.0))
+
+        # -------------------------
+        # Case II: intermediate Bi
+        # -------------------------
+        # A smooth, semi-empirical bridge is often used between limiting cases.
+        # Here we use a stable exponential bridge:
+        #   F = exp(-Fo * (Bi/(1+Bi)))
+        # This has correct limiting behavior:
+        #   Bi->0 => exp(-Bi*Fo)
+        #   Bi->inf => exp(-Fo) (a reasonable bridge trend)
+        if Bi < 100.0:
+            F = float(np.exp(-Fo * (Bi / (1.0 + Bi))))
+            return float(np.clip(F, 0.0, 1.0))
+
+        # -------------------------
+        # Case III: high Bi (>=100)
+        # -------------------------
+        # Classical solution for diffusion in a sphere (Dirichlet boundary):
+        #   F = sum_{n=1}^\infty (6/(n^2*pi^2)) * exp(-n^2*pi^2*Fo)
+        #
+        # We truncate safely. This series is strictly positive and decreasing.
+        n = np.arange(1, n_terms + 1, dtype=float)
+        lam2 = (n * np.pi) ** 2
+        terms = (6.0 / lam2) * np.exp(-lam2 * Fo)
+        F = float(np.sum(terms))
+        return float(np.clip(F, 0.0, 1.0))
+
