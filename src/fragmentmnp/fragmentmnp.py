@@ -18,8 +18,9 @@ Key design choice:
     (2) release additive to water using an analytical model function
 
 This "operator splitting" keeps the fragmentation core stable and makes
-the collaboration easy: the analytical formula is isolated in one method:
+the collaboration easy: the analytical and/or numerical formula is isolated in one method:
     _analytical_additive_release_fraction()
+    _numerical_additive_release_fraction()
 
 """
 from typing import Tuple, Sequence
@@ -289,6 +290,24 @@ class FragmentMNP():
         release_model = str(self.additive_release.get('model', 'analytical')).lower()
         release_params = self.additive_release.get('params', {})
 
+        # Optional: fail fast if the release model is unknown
+        allowed = {"analytical", "numerical"}
+        if release_model not in allowed:
+            raise ValueError(
+                f"Unknown additive_release model '{release_model}'. "
+                f"Allowed values are {sorted(allowed)}."
+            )
+
+        # Optional: if numerical is selected, ensure required params exist
+        if release_model == "numerical":
+            required = ["D_p", "K_pw"]
+            missing = [k for k in required if k not in release_params]
+            if missing:
+                raise ValueError(
+                    f"additive_release.params missing required keys for numerical model: {missing}. "
+                    f"Provided keys: {sorted(release_params.keys())}"
+                )
+
         eps = 1e-30  # avoid division by zero when polymer mass is ~0
 
         for ti in range(T - 1):
@@ -324,7 +343,7 @@ class FragmentMNP():
             A_mid = A_part[:, ti] - A_loss + A_gain
 
             # -------------------------
-            # (2) Additive release to water (analytical)
+            # (2) Additive release to water (analytical or numerical)
             # -------------------------
             if release_model == 'analytical':
                 rel = np.array([
@@ -335,6 +354,17 @@ class FragmentMNP():
                     )
                     for i in range(N)
                 ], dtype=float)
+
+            elif release_model == 'numerical':
+                rel = np.array([
+                    self._numerical_additive_release_fraction(
+                        radius_m=float(radii[i]),
+                        dt=dt_i,
+                        params=release_params
+                    )
+                    for i in range(N)
+                ], dtype=float)
+
             else:
                 # Unknown release model -> no release (safe default)
                 rel = np.zeros((N,), dtype=float)
@@ -382,6 +412,53 @@ class FragmentMNP():
         )
 
         # Release fraction = 1 - remaining fraction (bounded)
+        rel = 1.0 - F_remain
+        return float(np.clip(rel, 0.0, 1.0))
+    
+    
+    def _numerical_additive_release_fraction(self, radius_m: float, dt: float, params: dict) -> float:
+        """
+        Release fraction computed by numerically solving diffusion in a sphere.
+
+        Required:
+            D_p, K_pw
+        Either:
+            k_m directly
+        OR:
+            D_w (and we compute k_m = K_pw * D_w / r for consistency with analytical assumptions)
+
+        Optional:
+            n_r (radial resolution, default 40)
+        """
+        D_p = float(params.get("D_p"))
+        K_pw = float(params.get("K_pw"))
+        n_r = int(params.get("n_r", 60))
+        n_substeps = int(params.get("n_substeps", 20))
+        theta = float(params.get("theta", 1.0))
+
+        # Preferred: k_m explicitly supplied
+        k_m = params.get("k_m", None)
+
+        if k_m is None:
+            # Backward-compatible derivation from your previous notes:
+            # k_m = K_pw * D_w / r
+            D_w = float(params.get("D_w"))
+            k_m = K_pw * D_w / max(radius_m, 1e-30)
+        else:
+            k_m = float(k_m)
+
+        n_substeps = int(params.get("n_substeps", 20))
+
+        F_remain = self._numerical_additive_remaining_fraction(
+            t=float(dt),
+            r=float(radius_m),
+            D_p=D_p,
+            K_pw=K_pw,
+            k_m=k_m,
+            n_r=n_r,
+            n_substeps=n_substeps,
+            theta=theta
+        )
         rel = 1.0 - F_remain
         return float(np.clip(rel, 0.0, 1.0))
      
@@ -853,6 +930,10 @@ class FragmentMNP():
         # Return the config and data with filled defaults
         return config, data
     
+    #############################
+    # Additive analytical
+    #############################
+    
     @staticmethod
     def _analytical_additive_remaining_fraction(
         t: float,
@@ -952,4 +1033,261 @@ class FragmentMNP():
         terms = (6.0 / lam2) * np.exp(-lam2 * Fo)
         F = float(np.sum(terms))
         return float(np.clip(F, 0.0, 1.0))
+    
+    #############################
+    # Additive numerical 
+    #############################
+    @staticmethod
+    def _numerical_additive_remaining_fraction(
+        t: float,
+        r: float,
+        D_p: float,
+        K_pw: float,
+        k_m: float,
+        n_r: int = 60,
+        n_substeps: int = 20,
+        theta: float = 1.0
+    ) -> float:
+        """
+        Numerical solution for additive remaining fraction in a sphere:
+            F(t) = M(t) / M0
+
+        We solve polymer-phase diffusion in spherical coordinates using a
+        *finite-volume* discretisation (mass-conservative), and a Robin
+        (mass-transfer-limited) boundary at the polymer-water interface.
+
+        Governing equation (polymer phase):
+            ∂C/∂t = D_p * (1/r^2) ∂/∂r ( r^2 ∂C/∂r )
+
+        Center symmetry:
+            ∂C/∂r = 0 at r = 0
+
+        Surface Robin BC (sink water, C_w ≈ 0):
+            -D_p ∂C/∂r |_{r=R} = (k_m / K_pw) * C_s
+
+        where:
+            k_m  : mass transfer coefficient in water [m/s]
+            K_pw : polymer-water partition coefficient [-]
+            C_s  : polymer concentration at the surface
+
+        Numerical notes / design choices
+        -------------------------------
+        - Finite-volume cells in radius ensure mass conservation.
+        - We use a theta-scheme in time:
+              (I - θ Δt L) C^{n+1} = (I + (1-θ) Δt L) C^n
+          Default θ=1 (Backward Euler) is unconditionally stable.
+        - Because the fragmentation model can have relatively large dt,
+          we add n_substeps internal steps to improve accuracy while keeping
+          stability. This makes the solver “more truly numerical” and less
+          sensitive to dt.
+
+        Initial condition for each call:
+            C(r,0) = 1 (uniform)
+        This matches your operator-splitting assumption (each timestep is
+        treated as a new “release operator” acting on a mixed particle).
+
+        Returns
+        -------
+        float
+            Remaining mass fraction F in [0,1]
+        """
+        # -------------------------
+        # Defensive checks
+        # -------------------------
+        if t <= 0.0:
+            return 1.0
+        if r <= 0.0:
+            return 0.0
+        if D_p <= 0.0:
+            raise ValueError("D_p must be > 0.")
+        if K_pw <= 0.0:
+            raise ValueError("K_pw must be > 0.")
+        if k_m < 0.0:
+            raise ValueError("k_m must be >= 0.")
+        if n_r < 5:
+            raise ValueError("n_r should be >= 5 for a meaningful radial grid.")
+        if n_substeps < 1:
+            raise ValueError("n_substeps must be >= 1.")
+        if not (0.0 <= theta <= 1.0):
+            raise ValueError("theta must be in [0, 1].")
+        
+        # If particle is extremely small, diffusion timescale is tiny.
+        # Treat as instantaneous release governed by boundary control.
+        # This avoids ill-conditioned grids when r is ~nanometers.
+        if r < 1e-8:
+            # If there is any coupling to water, release ~fully in this step.
+            # If k_m==0, no release.
+            return 1.0 if k_m == 0.0 else 0.0
+
+        # -------------------------
+        # Radial finite-volume grid
+        # -------------------------
+        # Faces at: 0, dr, 2dr, ..., R
+        # Cell centers at: dr/2, 3dr/2, ..., R - dr/2
+        dr = r / n_r
+        r_faces = np.arange(n_r + 1, dtype=float) * dr
+        r_centers = (np.arange(n_r, dtype=float) + 0.5) * dr
+
+        # In spherical FV, geometric factors (4π cancels in mass fractions):
+        # - cell "volume weights" proportional to ∫ r^2 dr over the cell
+        # - face "area weights" proportional to r^2 at the face
+        V = (r_faces[1:]**3 - r_faces[:-1]**3) / 3.0   # proportional volume weights
+        A = r_faces**2                                 # proportional face areas
+
+        # Start uniform profile: C = 1 everywhere.
+        C = np.ones(n_r, dtype=float)
+
+        # Total time stepping (substeps for accuracy)
+        dt_total = float(t)
+        dt = dt_total / float(n_substeps)
+
+        # -------------------------
+        # Build diffusion operator L as a tridiagonal (FV form)
+        # -------------------------
+        # FV update:
+        #   dC_i/dt = (D/V_i) * [ A_R (C_{i+1}-C_i)/dr - A_L (C_i - C_{i-1})/dr ] / dr
+        #          = (D/(V_i*dr^2)) * [ A_R C_{i+1} - (A_R + A_L) C_i + A_L C_{i-1} ]
+        #
+        # So L has:
+        #   L_lower[i] =  D * A_L / (V_i*dr^2)
+        #   L_upper[i] =  D * A_R / (V_i*dr^2)
+        #   L_diag[i]  = -(L_lower[i] + L_upper[i])  (plus boundary sink term)
+        #
+        # Center symmetry is naturally handled because A_L at r=0 is zero.
+
+        beta = D_p / dr
+        L_lower = np.zeros(n_r, dtype=float)
+        L_diag  = np.zeros(n_r, dtype=float)
+        L_upper = np.zeros(n_r, dtype=float)
+
+        for i in range(n_r):
+            Vi = V[i]
+            A_L = A[i]  # face area at r=i*dr
+
+            # Interior right face area:
+            # For the LAST cell, the right face is the boundary face.
+            # We must NOT treat it as an interior diffusive connection to a non-existent cell.
+            if i < n_r - 1:
+                A_R = A[i + 1]
+            else:
+                A_R = 0.0
+
+            cL = beta * (A_L / Vi)
+            cR = beta * (A_R / Vi)
+
+            if i > 0:
+                L_lower[i] = cL
+            if i < n_r - 1:
+                L_upper[i] = cR
+
+            L_diag[i] = -(cL + cR)
+
+        # -------------------------
+        # Robin BC at r=R as an *effective sink* on the last cell
+        # -------------------------
+        # Approximate gradient between last cell center and surface:
+        #   ∂C/∂r|R ≈ (C_s - C_last) / (dr/2)
+        #
+        # Robin:
+        #   -D (C_s - C_last)/(dr/2) = (k_m/K_pw) C_s
+        #
+        # Solve for C_s in terms of C_last:
+        #   C_s = C_last / (1 + (k_m/K_pw)*(dr/(2D)))
+        #
+        # Flux to water:
+        #   J = (k_m/K_pw) * C_s
+        #
+        # FV sink term in last cell:
+        #   dC_last/dt includes -(A_face/V_last) * J
+        #
+        # So define an effective boundary "loss velocity":
+        #   k_eff = (k_m/K_pw) / (1 + (k_m/K_pw)*(dr/(2D)))
+        #
+        # Then sink = (A_face/V_last) * k_eff
+        #
+        
+        if k_m > 0.0:
+            km_over_K = k_m / K_pw
+            denom = 1.0 + km_over_K * (dr / (2.0 * D_p))
+            k_eff = km_over_K / denom  # [m/s]
+        else:
+            k_eff = 0.0
+
+        sink = (A[-1] / V[-1]) * k_eff   # [1/s] in the last cell equation
+        L_diag[-1] -= sink               # more negative diagonal => more loss
+
+        # -------------------------
+        # Helper: tridiagonal matvec y = L x
+        # -------------------------
+        def L_dot(x: np.ndarray) -> np.ndarray:
+            y = L_diag * x
+            y[1:] += L_lower[1:] * x[:-1]
+            y[:-1] += L_upper[:-1] * x[1:]
+            return y
+
+        # -------------------------
+        # Time stepping (theta scheme)
+        # -------------------------
+        # (I - θ dt L) C^{n+1} = (I + (1-θ) dt L) C^n
+        #
+        # Build constant tridiagonal system matrix for each substep:
+        A_lower = -theta * dt * L_lower
+        A_diag  = 1.0 - theta * dt * L_diag
+        A_upper = -theta * dt * L_upper
+
+        for _ in range(n_substeps):
+            if theta == 1.0:
+                rhs = C.copy()
+            else:
+                rhs = C + (1.0 - theta) * dt * L_dot(C)
+
+            C = FragmentMNP._solve_tridiagonal(A_lower, A_diag, A_upper, rhs)
+
+            # Safety clip (numerical roundoff can create tiny negatives)
+            C = np.clip(C, 0.0, None)
+
+        # -------------------------
+        # Mass remaining fraction
+        # -------------------------
+        M0 = float(np.sum(V * 1.0))      # initial uniform profile
+        M1 = float(np.sum(V * C))        # mass-weighted remaining
+        return float(np.clip(M1 / M0, 0.0, 1.0))
+    
+    @staticmethod
+    def _solve_tridiagonal(lower: np.ndarray,
+                           diag: np.ndarray,
+                           upper: np.ndarray,
+                           rhs: np.ndarray) -> np.ndarray:
+        """
+        Solve a tridiagonal linear system Ax = rhs with Thomas algorithm.
+
+        lower[i] = A[i,i-1] for i>=1 (lower[0] unused or 0)
+        diag[i]  = A[i,i]
+        upper[i] = A[i,i+1] for i<=n-2 (upper[n-1] unused or 0)
+        """
+        n = len(diag)
+        a = lower.astype(float, copy=True)
+        b = diag.astype(float, copy=True)
+        c = upper.astype(float, copy=True)
+        d = rhs.astype(float, copy=True)
+
+        # Forward elimination
+        for i in range(1, n):
+            if b[i - 1] == 0.0:
+                raise ZeroDivisionError("Tridiagonal solver encountered zero pivot.")
+            w = a[i] / b[i - 1]
+            b[i] = b[i] - w * c[i - 1]
+            d[i] = d[i] - w * d[i - 1]
+
+        # Back substitution
+        x = np.zeros(n, dtype=float)
+        if b[-1] == 0.0:
+            raise ZeroDivisionError("Tridiagonal solver encountered zero pivot at last row.")
+        x[-1] = d[-1] / b[-1]
+        for i in range(n - 2, -1, -1):
+            if b[i] == 0.0:
+                raise ZeroDivisionError("Tridiagonal solver encountered zero pivot.")
+            x[i] = (d[i] - c[i] * x[i + 1]) / b[i]
+
+        return x
 

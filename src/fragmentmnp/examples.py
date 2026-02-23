@@ -92,7 +92,7 @@ Other variables will take their default values."""
 
 
 # --------------------------------------------------------------------
-# NEW: Example that activates additive tracking + analytical release
+# NEW: Example that activates additive tracking + analytical and/or numerical  release
 # --------------------------------------------------------------------
 
 minimal_data_with_additive = {
@@ -106,11 +106,23 @@ minimal_data_with_additive = {
     'initial_additive_concs': [1.0] * 7,
 
     # Additive release model configuration.
-    # This is where analytical solution parameters live.
+    # This is where analytical and/or numerical  solution parameters live.
     #
     # IMPORTANT:
-    # - The actual analytical formula is implemented in FragmentMNP._analytical_additive_release_fraction()
+    # - The actual analytical and/or numerical formula is implemented in FragmentMNP
     # - Here the parameter values are stored
+
+    #'additive_release': {
+    #    'model': 'numerical',
+    #    'params': {
+    #        'D_p': 1e-16,     # diffusion in polymer (m2/s)
+    #        'D_w': 1e-9,      # diffusion in water (m2/s)
+    #        'K_pw': 1e4,      # polymer-water partition coefficient (-)
+    #        'n_r': 40,        # numerical grid resolution
+    #        'n_substeps': 20  # (recommended improvement)
+    #    }
+    #}
+
     'additive_release': {
         'model': 'analytical',
         'params': {
