@@ -332,7 +332,11 @@ class FragmentMNP():
 
             # Assume additive is uniformly mixed within each size class:
             # additive per polymer mass:
-            conc_A = A_part[:, ti] / np.maximum(c, eps)
+            conc_A = np.zeros_like(A_part[:, ti], dtype=float)
+            mask = c > eps
+            conc_A[mask] = A_part[mask, ti] / c[mask]
+            # If polymer mass is effectively zero, concentration is irrelevant because G row is ~0.
+            # This prevents inf/nan propagation in extreme fragmentation / empty-bin cases.
 
             # Additive transferred i -> k:
             A_to_k = (G.T * conc_A).T  # (N,N)
@@ -1186,30 +1190,29 @@ class FragmentMNP():
         # Robin BC at r=R as an *effective sink* on the last cell
         # -------------------------
         # Approximate gradient between last cell center and surface:
-        #   ∂C/∂r|R ≈ (C_s - C_last) / (dr/2)
+        #   -D_p ∂C/∂r |_{r=R} = k_m * C_s
         #
         # Robin:
-        #   -D (C_s - C_last)/(dr/2) = (k_m/K_pw) C_s
+        #   -D (C_s - C_last)/(dr/2) = (k_m) C_s
         #
         # Solve for C_s in terms of C_last:
-        #   C_s = C_last / (1 + (k_m/K_pw)*(dr/(2D)))
+        #   C_s = C_last / (1 + (k_m*(dr/(2D)))
         #
         # Flux to water:
-        #   J = (k_m/K_pw) * C_s
+        #   J = (k_m) * C_s
         #
         # FV sink term in last cell:
         #   dC_last/dt includes -(A_face/V_last) * J
         #
         # So define an effective boundary "loss velocity":
-        #   k_eff = (k_m/K_pw) / (1 + (k_m/K_pw)*(dr/(2D)))
+        #   k_eff = (k_m) / (1 + (k_m)*(dr/(2D)))
         #
         # Then sink = (A_face/V_last) * k_eff
         #
         
         if k_m > 0.0:
-            km_over_K = k_m / K_pw
-            denom = 1.0 + km_over_K * (dr / (2.0 * D_p))
-            k_eff = km_over_K / denom  # [m/s]
+            denom = 1.0 + k_m * (dr / (2.0 * D_p))
+            k_eff = k_m / denom  # [m/s]
         else:
             k_eff = 0.0
 
