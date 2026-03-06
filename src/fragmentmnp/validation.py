@@ -86,9 +86,9 @@ k_dist_2d_schema = k_dist_schema(['t', 's'])
 k_dist_t_schema = k_dist_schema(['t'])
 
 
-def additive_release_schema():
+def _additive_release_schema():
     """
-    Schema for additive release model config.
+    Schema for additive release model data.
 
     We keep this permissive:
       - 'model' identifies the release approach (e.g. 'analytical')
@@ -149,7 +149,7 @@ data_schema = Schema({
     # NEW OPTIONAL additive inputs
     # -----------------------------
     Optional('initial_additive_concs', default=None): Or(None, _is_positive_array),
-    Optional('additive_release', default=None): Or(None, additive_release_schema()),
+    Optional('additive_release', default=None): Or(None, _additive_release_schema()),
 })
 
 

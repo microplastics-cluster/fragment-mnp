@@ -4,6 +4,8 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+* Adding ability to model chemical additive release.
+
 ## [1.1.7] - 2025-05-29
 
 * No changes to code, only creating release to enable automatic push to Zenodo.
