@@ -64,7 +64,8 @@ def _tols_from_bi(Bi: float):
     if Bi < 100.0:
         # bridge approximation: allow a bit more error
         return dict(ts=0.10, t50=0.15, tpeak=0.25)
-    # Bi >= 100: analytical uses Dirichlet series (perfect sink), so expect larger discrepancy
+    # Bi >= 100: analytical uses Dirichlet series (perfect sink), so expect
+    # larger discrepancy
     return dict(ts=0.25, t50=0.50, tpeak=0.60)
 
 

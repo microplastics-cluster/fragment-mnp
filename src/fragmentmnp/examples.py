@@ -92,7 +92,8 @@ Other variables will take their default values."""
 
 
 # --------------------------------------------------------------------
-# NEW: Example that activates additive tracking + analytical and/or numerical  release
+# NEW: Example that activates additive tracking + analytical and/or numerical
+# release
 # --------------------------------------------------------------------
 
 minimal_data_with_additive = {
@@ -106,10 +107,11 @@ minimal_data_with_additive = {
     'initial_additive_concs': [1.0] * 7,
 
     # Additive release model configuration.
-    # This is where analytical and/or numerical  solution parameters live.
+    # This is where analytical and/or numerical solution parameters live.
     #
     # IMPORTANT:
-    # - The actual analytical and/or numerical formula is implemented in FragmentMNP
+    # - The actual analytical and/or numerical formula is implemented in
+    #   FragmentMNP
     # - Here the parameter values are stored
 
     #'additive_release': {
