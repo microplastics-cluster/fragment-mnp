@@ -69,8 +69,7 @@ full_data = {
 minimal_data = {
     'initial_concs': [42.0] * 7,
     'density': 1380,              # PET density [kg/m3]
-    'k_frag': 0.01,
-    'k_min': 0.0  # Added k_min to minimal data
+    'k_frag': 0.01
 }
 """Example model data with only required variables.
 Other variables will take their default values."""
