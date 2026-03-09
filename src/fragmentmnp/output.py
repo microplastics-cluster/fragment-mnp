@@ -5,8 +5,8 @@ FRAGMENT-MNP output
 Provides functionality for processing and visulalising model output data.
 
 This file is extended to optionally hold additive outputs:
-- A_part: additive mass concentration in each size class (N x T)
-- A_aq:   additive mass concentration in water (T)
+- c_chem_part: additive mass concentration in each size class (N x T)
+- c_chem_medium:   additive mass concentration in water (T)
 
 Plotting is extended to optionally plot these additive time series.
 """
@@ -47,15 +47,15 @@ class FMNPOutput():
     psd : np.ndarray, shape (n_size_classes, )
         Particle size distribution - the average diameters of
         each of the particle size classes
-    A_part : np.ndarray, shape (n_size_classes, n_timesteps), optional
+    c_chem_part : np.ndarray, shape (n_size_classes, n_timesteps), optional
         Additive mass concentration in particulate phase, per size class
-    A_aq : np.ndarray, shape (n_timesteps,), optional
+    c_chem_medium : np.ndarray, shape (n_timesteps,), optional
         Additive mass concentration in aqueous phase
     """
 
     __slots__ = ['t', 'c', 'n', 'c_diss', 'c_min',
                  'n_timesteps', 'n_size_classes', 'soln', 'psd', 'id',
-                 'A_part', 'A_aq']
+                 'c_chem_part', 'c_chem_medium', 'A_part', 'A_aq']
 
     def __init__(self,
                  t: npt.NDArray,
@@ -65,8 +65,8 @@ class FMNPOutput():
                  c_min: npt.NDArray,
                  soln, psd,
                  id=None,
-                 A_part=None,
-                 A_aq=None) -> None:
+                 c_chem_part=None,
+                 c_chem_medium=None) -> None:
         """
         Initialise the output data object
         """
@@ -79,8 +79,11 @@ class FMNPOutput():
         self.soln = soln
         self.psd = psd
         # Optional additive outputs
-        self.A_part = A_part
-        self.A_aq = A_aq
+        self.c_chem_part = c_chem_part
+        self.c_chem_medium = c_chem_medium
+        # Backward-compatible aliases
+        self.A_part = c_chem_part
+        self.A_aq = c_chem_medium
         # Save the number of timesteps and size classes
         self.n_timesteps = self.t.shape[0]
         self.n_size_classes = self.c.shape[0]
@@ -267,16 +270,16 @@ class FMNPOutput():
         ax3 = None
         if plot_additive:
             # Make sure additive outputs exist (they are optional by design)
-            if (self.A_part is None) or (self.A_aq is None):
+            if (self.c_chem_part is None) or (self.c_chem_medium is None):
                 raise ValueError(
                     "plot_additive=True was requested, but this output does not "
-                    "contain additive results. Ensure the model was run with "
-                    "`initial_additive_concs` and `additive_release`."
+                    "contain chemical release results. Ensure the model was run with "
+                    "`initial_chemical_concs` and `chemical_release`."
                 )
 
             # Plot particulate additive per size class on the SAME primary axis
             # using a thin line style so it doesn't dominate polymer curves.
-            Avals = self.A_part.T
+            Avals = self.c_chem_part.T
             if size_classes_to_plot is not None:
                 Avals = Avals[:, size_classes_to_plot]
 
@@ -291,10 +294,12 @@ class FMNPOutput():
             if ax2 is not None:
                 ax3.spines["right"].set_position(("outward", 60))
 
-            ax3.plot(self.t, self.A_aq, c='k', ls='-.')
-            ax3.set_ylabel('Additive (aqueous) mass concentration')
+            ax3.plot(self.t, self.c_chem_medium, c='k', ls='-.')
+            ax3.set_ylabel('Chemical mass concentration in medium')
             if unit_labels is not None:
-                ax3.set_ylabel(f'Additive (aqueous) mass concentration [{unit_labels["mass_conc"]}]')
+                ax3.set_ylabel(
+                    f'Chemical mass concentration in medium [{unit_labels["mass_conc"]}]'
+                )
 
             # Use the same y scaling choice unless you want a dedicated control
             if log_yaxis in [True, 'log']:

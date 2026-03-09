@@ -95,14 +95,37 @@ class FragmentMNP():
             setattr(self, k, k_dist)
 
         # ------------------------------------------------------------
-        # OPTIONAL: additive coupling inputs (collaboration feature)
+        # OPTIONAL: chemical coupling inputs (collaboration feature)
         # ------------------------------------------------------------
-        init_A = data.get('initial_additive_concs', None)
-        self.initial_additive_concs = None if init_A is None else np.array(init_A, dtype=float)
+        init_A = data.get('initial_chemical_concs', data.get('initial_additive_concs', None))
+        self.initial_chemical_concs = None if init_A is None else np.array(init_A, dtype=float)
 
-        # Example shape:
-        #   {'model': 'analytical', 'params': {'Dp':..., 'Dw':..., 'Kpw':..., 'Km':...}}
-        self.additive_release = data.get('additive_release', None)
+        # Split chemical release settings:
+        #   config['chemical_release'] -> model + solver options
+        #   data['chemical_release']   -> physical/material parameters
+        self.chemical_release_config = config.get(
+            'chemical_release',
+            config.get('additive_release', None)
+        )
+        self.chemical_release_data = data.get(
+            'chemical_release',
+            data.get('additive_release', None)
+        )
+
+        # Backward compatibility:
+        # old schema kept everything under data['additive_release']
+        # as {'model': ..., 'params': {...}}
+        if (
+            self.chemical_release_config is None
+            and isinstance(self.chemical_release_data, dict)
+            and ('model' in self.chemical_release_data or 'params' in self.chemical_release_data)
+        ):
+            old = self.chemical_release_data
+            self.chemical_release_config = {
+                'model': old.get('model', 'analytical'),
+                'solver': {}
+            }
+            self.chemical_release_data = dict(old.get('params', {}))
 
     def run(self) -> FMNPOutput:
         r"""
@@ -222,11 +245,15 @@ class FragmentMNP():
         # ------------------------------------------------------------
         # OPTIONAL: compute additive time series (post-solve)
         # ------------------------------------------------------------
-        A_part = None
-        A_aq = None
+        c_chem_part = None
+        c_chem_medium = None
 
-        if (self.initial_additive_concs is not None) and (self.additive_release is not None):
-            A_part, A_aq = self._simulate_additives_postsolve(soln.t, c_part_sol)
+        if (
+            self.initial_chemical_concs is not None
+            and self.chemical_release_config is not None
+            and self.chemical_release_data is not None
+        ):
+            c_chem_part, c_chem_medium = self._simulate_additives_postsolve(soln.t, c_part_sol)
 
         # Build the FMNPOutput object from the solution
         return FMNPOutput(
@@ -237,8 +264,8 @@ class FragmentMNP():
            c_min=c_min_sol,
            soln=soln,
            psd=self.psd,
-           A_part=A_part,
-           A_aq=A_aq
+           c_chem_part=c_chem_part,
+           c_chem_medium=c_chem_medium
         )
     
     # ---------------------------------------------------------------------
@@ -266,17 +293,17 @@ class FragmentMNP():
 
         Returns
         -------
-        A_part : array (N, T)
+        c_chem_part : array (N, T)
             additive mass in particulate bins
-        A_aq : array (T,)
+        c_chem_medium : array (T,)
             additive mass in aqueous pool
         """
         N, T = c_part_sol.shape
-        A_part = np.zeros((N, T), dtype=float)
-        A_aq = np.zeros((T,), dtype=float)
+        c_chem_part = np.zeros((N, T), dtype=float)
+        c_chem_medium = np.zeros((T,), dtype=float)
 
-        A_part[:, 0] = self.initial_additive_concs
-        A_aq[0] = 0.0
+        c_chem_part[:, 0] = self.initial_chemical_concs
+        c_chem_medium[0] = 0.0
 
         # Interpolate k_frag/k_diss from internal t_grid onto solver times.
         f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
@@ -287,26 +314,20 @@ class FragmentMNP():
 
         radii = self.psd / 2.0
 
-        release_model = str(self.additive_release.get('model', 'analytical')).lower()
-        release_params = self.additive_release.get('params', {})
+        release_model = str(
+            self.chemical_release_config.get('model', 'analytical')
+        ).lower()
 
-        # Optional: fail fast if the release model is unknown
-        allowed = {"analytical", "numerical"}
-        if release_model not in allowed:
-            raise ValueError(
-                f"Unknown additive_release model '{release_model}'. "
-                f"Allowed values are {sorted(allowed)}."
-            )
+        solver_params = self.chemical_release_config.get('solver', {})
+        physical_params = self.chemical_release_data or {}
+        release_params = {**physical_params, **solver_params}
 
-        # Optional: if numerical is selected, ensure required params exist
-        if release_model == "numerical":
-            required = ["D_p", "K_pw"]
-            missing = [k for k in required if k not in release_params]
-            if missing:
-                raise ValueError(
-                    f"additive_release.params missing required keys for numerical model: {missing}. "
-                    f"Provided keys: {sorted(release_params.keys())}"
-                )
+        # Cache release fractions because they depend only on:
+        #   - dt_i
+        #   - radii
+        #   - release params
+        # and not on the current additive concentrations.
+        release_cache = {}
 
         eps = 1e-30  # avoid division by zero when polymer mass is ~0
 
@@ -332,9 +353,9 @@ class FragmentMNP():
 
             # Assume additive is uniformly mixed within each size class:
             # additive per polymer mass:
-            conc_A = np.zeros_like(A_part[:, ti], dtype=float)
+            conc_A = np.zeros_like(c_chem_part[:, ti], dtype=float)
             mask = c > eps
-            conc_A[mask] = A_part[mask, ti] / c[mask]
+            conc_A[mask] = c_chem_part[mask, ti] / c[mask]
             # If polymer mass is effectively zero, concentration is irrelevant because G row is ~0.
             # This prevents inf/nan propagation in extreme fragmentation / empty-bin cases.
 
@@ -344,42 +365,53 @@ class FragmentMNP():
             A_loss = A_to_k.sum(axis=1)
 
             # particulate additive after fragmentation redistribution
-            A_mid = A_part[:, ti] - A_loss + A_gain
+            A_mid = c_chem_part[:, ti] - A_loss + A_gain
 
             # -------------------------
             # (2) Additive release to water (analytical or numerical)
             # -------------------------
-            if release_model == 'analytical':
-                rel = np.array([
-                    self._analytical_additive_release_fraction(
-                        radius_m=float(radii[i]),
-                        dt=dt_i,
-                        params=release_params
-                    )
-                    for i in range(N)
-                ], dtype=float)
+            # Cache release fractions by timestep size.
+            # This is especially effective for regular output grids, where dt_i
+            # is identical at every step.
+            dt_key = float(dt_i)
 
-            elif release_model == 'numerical':
-                rel = np.array([
-                    self._numerical_additive_release_fraction(
-                        radius_m=float(radii[i]),
-                        dt=dt_i,
-                        params=release_params
-                    )
-                    for i in range(N)
-                ], dtype=float)
-
+            if dt_key in release_cache:
+                rel = release_cache[dt_key]
             else:
-                # Unknown release model -> no release (safe default)
-                rel = np.zeros((N,), dtype=float)
+                if release_model == 'analytical':
+                    rel = np.array([
+                        self._analytical_additive_release_fraction(
+                            radius_m=float(radii[i]),
+                            dt=dt_i,
+                            params=release_params
+                        )
+                        for i in range(N)
+                    ], dtype=float)
+
+                elif release_model == 'numerical':
+                    rel = np.array([
+                        self._numerical_additive_release_fraction(
+                            radius_m=float(radii[i]),
+                            dt=dt_i,
+                            params=release_params
+                        )
+                        for i in range(N)
+                    ], dtype=float)
+
+                else:
+                    raise ValueError(
+                        f"Unknown chemical_release model '{release_model}'."
+                    )
+
+                release_cache[dt_key] = rel
 
             rel = np.clip(rel, 0.0, 1.0)
 
             dA_rel = rel * A_mid
-            A_part[:, ti + 1] = A_mid - dA_rel
-            A_aq[ti + 1] = A_aq[ti] + float(dA_rel.sum())
+            c_chem_part[:, ti + 1] = A_mid - dA_rel
+            c_chem_medium[ti + 1] = c_chem_medium[ti] + float(dA_rel.sum())
 
-        return A_part, A_aq
+        return c_chem_part, c_chem_medium
 
     def _analytical_additive_release_fraction(self, radius_m: float, dt: float, params: dict) -> float:
         """
@@ -486,10 +518,10 @@ class FragmentMNP():
             psd = np.logspace(*self.config['particle_size_range'],
                               self.n_size_classes)
         else:
-            # TODO move this check into validation
-            raise ValueError('particle_size_classes or particle_size_range ' +
-                             'must be present in the model config, but ' +
-                             'neither were found.')
+            raise KeyError(
+                "Missing particle size configuration. Expected either "
+                "'particle_size_classes' or 'particle_size_range'."
+            )
         return psd
 
     def set_rate_constant(self, params: dict, name: str) \
@@ -710,6 +742,55 @@ class FragmentMNP():
             else:
                 k = k_f * np.sum(X, axis=0) + k_0
             return k
+        
+    @staticmethod
+    def _factor_tridiagonal(lower: np.ndarray,
+                            diag: np.ndarray,
+                            upper: np.ndarray):
+        """
+        Factor a tridiagonal matrix for repeated solves using the Thomas algorithm.
+
+        Returns modified copies of lower/diag/upper containing the factorization.
+        """
+        n = len(diag)
+        a = lower.astype(float, copy=True)
+        b = diag.astype(float, copy=True)
+        c = upper.astype(float, copy=True)
+
+        for i in range(1, n):
+            if b[i - 1] == 0.0:
+                raise ZeroDivisionError("Tridiagonal factorization encountered zero pivot.")
+            w = a[i] / b[i - 1]
+            a[i] = w
+            b[i] = b[i] - w * c[i - 1]
+
+        return a, b, c
+
+    @staticmethod
+    def _solve_tridiagonal_factored(a_fact: np.ndarray,
+                                    b_fact: np.ndarray,
+                                    c_fact: np.ndarray,
+                                    rhs: np.ndarray) -> np.ndarray:
+        """
+        Solve a tridiagonal system using a precomputed Thomas factorization.
+        """
+        n = len(b_fact)
+        d = rhs.astype(float, copy=True)
+
+        for i in range(1, n):
+            d[i] = d[i] - a_fact[i] * d[i - 1]
+
+        x = np.zeros(n, dtype=float)
+        if b_fact[-1] == 0.0:
+            raise ZeroDivisionError("Tridiagonal solver encountered zero pivot at last row.")
+        x[-1] = d[-1] / b_fact[-1]
+
+        for i in range(n - 2, -1, -1):
+            if b_fact[i] == 0.0:
+                raise ZeroDivisionError("Tridiagonal solver encountered zero pivot.")
+            x[i] = (d[i] - c_fact[i] * x[i + 1]) / b_fact[i]
+
+        return x
 
     @staticmethod
     def set_fsd(n: int,
@@ -1235,8 +1316,13 @@ class FragmentMNP():
         #
         # Build constant tridiagonal system matrix for each substep:
         A_lower = -theta * dt * L_lower
-        A_diag  = 1.0 - theta * dt * L_diag
+        A_diag = 1.0 - theta * dt * L_diag
         A_upper = -theta * dt * L_upper
+
+        # Factor once, solve many times
+        A_lower_fact, A_diag_fact, A_upper_fact = FragmentMNP._factor_tridiagonal(
+            A_lower, A_diag, A_upper
+        )
 
         for _ in range(n_substeps):
             if theta == 1.0:
@@ -1244,7 +1330,9 @@ class FragmentMNP():
             else:
                 rhs = C + (1.0 - theta) * dt * L_dot(C)
 
-            C = FragmentMNP._solve_tridiagonal(A_lower, A_diag, A_upper, rhs)
+            C = FragmentMNP._solve_tridiagonal_factored(
+                A_lower_fact, A_diag_fact, A_upper_fact, rhs
+            )
 
             # Safety clip (numerical roundoff can create tiny negatives)
             C = np.clip(C, 0.0, None)
@@ -1293,4 +1381,5 @@ class FragmentMNP():
             x[i] = (d[i] - c[i] * x[i + 1]) / b[i]
 
         return x
-
+    
+    

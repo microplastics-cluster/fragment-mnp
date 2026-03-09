@@ -75,20 +75,22 @@ def test_full_model_additive_mass_conserved_numerical():
     data = dict(minimal_data_with_additive)
 
     # Ensure we are actually testing the numerical branch
-    data["additive_release"] = dict(data["additive_release"])
-    data["additive_release"]["model"] = "numerical"
-    data["additive_release"]["params"] = dict(data["additive_release"]["params"])
+    config = dict(minimal_config)
+    config["additive_release"] = {
+        "model": "numerical",
+        "solver": {
+            "n_r": 60,
+            "n_substeps": 10,
+            "theta": 1.0,
+        }
+    }
 
-    # Provide numerical parameters expected by the numerical model
-    data["additive_release"]["params"].update({
-        "n_r": 60,
-        "n_substeps": 10,
-        # either provide k_m directly OR D_w so k_m is derived
-        # here we keep D_w-based derivation consistent with your code path
-        "D_w": data["additive_release"]["params"].get("D_w", 1e-9),
+    data["additive_release"] = dict(data["additive_release"])
+    data["additive_release"].update({
+        "D_w": data["additive_release"].get("D_w", 1e-9),
     })
 
-    out = FragmentMNP(minimal_config, data).run()
+    out = FragmentMNP(config, data).run()
 
     assert out.A_part is not None
     assert out.A_aq is not None

@@ -2,25 +2,25 @@
 Validation of config and data (:mod:`fragmentmnp.validation`)
 =============================================================
 
-Provides config and input data validation for the FRAGMENT-MNP model
+Provides config and input data validation for the FRAGMENT-MNP model.
 
 This file is extended to optionally validate:
-- initial_additive_concs (array, length n_size_classes, >=0)
-- additive_release (dict with 'model' and 'params')
+- initial_chemical_concs (array, length n_size_classes, >=0)
+- chemical_release settings split across:
+    config: model + solver controls
+    data:   physical/material parameters
 """
 import numpy as np
-from schema import And, Optional, Or, Schema
+from schema import And, Optional, Or, Schema, SchemaError
 
 from ._errors import FMNPIncorrectDistributionLength
 
 
 def _is_positive_array(arr):
-    """Check if arr is iterable and all elements are positive"""
+    """Check if arr is iterable and all elements are positive."""
     is_array = True
     try:
-        # Check it's iterable
         _ = iter(arr)
-        # Check if any element is < 0
         nparr = np.array(arr)
         if np.any(nparr < 0.0):
             is_array = False
@@ -30,34 +30,30 @@ def _is_positive_array(arr):
 
 
 def _is_array(arr):
-    """Check if arr is iterable"""
+    """Check if arr is iterable."""
     is_array = True
     try:
-        # Check it's iterable
         _ = iter(arr)
     except TypeError:
         is_array = False
     return is_array
 
 
-# The schema that particle size ranges should follow
-particle_size_range_schema = And(Or((int, float), [int, float]),
-                                 And(lambda d: len(d) == 2,
-                                     error='particle_size_range must ' +
-                                           'be a length-2 iterable'))
+particle_size_range_schema = And(
+    Or((int, float), [int, float]),
+    And(
+        lambda d: len(d) == 2,
+        error='particle_size_range must be a length-2 iterable'
+    )
+)
 
 
-# The schema that rate constants distributions, like k_frag, k_diss
-# and k_min should follow. Either a scalar is given (and it is
-# treated as constant), or # a dict is given with the params required
-# to calculate the 1D or 2D distribution. Basic checks here ensure k
-# values given are greater than zero, and auditing during the distribution
-# calculation makes sure no values in the calculated distribution
-# are less than zero
 def k_dist_schema(dims):
     k_dist_schema_ = Or(
-        Or(And(int, lambda x: x >= 0.0),
-        And(float, lambda x: x >= 0.0)),
+        Or(
+            And(int, lambda x: x >= 0.0),
+            And(float, lambda x: x >= 0.0)
+        ),
         {
             'k_f': And(Or(int, float), lambda x: x >= 0.0),
             Optional('k_0', default=0.0): Or(int, float),
@@ -65,8 +61,7 @@ def k_dist_schema(dims):
             **{
                 Optional(f'{name}_{x}'): Or(int, float)
                 for x in dims
-                for name in ['alpha', 'B', 'beta', 'gamma',
-                            'delta1']
+                for name in ['alpha', 'B', 'beta', 'gamma', 'delta1']
             },
             **{
                 Optional(f'{name}_{x}'): Or(int, float, None)
@@ -86,129 +81,278 @@ k_dist_2d_schema = k_dist_schema(['t', 's'])
 k_dist_t_schema = k_dist_schema(['t'])
 
 
-def _additive_release_schema():
+def _normalize_chemical_release_input(data: dict, config: dict) -> tuple[dict, dict]:
     """
-    Schema for additive release model data.
+    Backward compatibility for old additive/chemical release schemas.
 
-    We keep this permissive:
-      - 'model' identifies the release approach (e.g. 'analytical')
-      - 'params' holds physical parameters for that model (free-form dict)
+    Old:
+        data['additive_release'] = {
+            'model': 'analytical'|'numerical',
+            'params': {...}
+        }
+
+    New:
+        config['chemical_release'] = {
+            'model': ...,
+            'solver': {...}
+        }
+        data['chemical_release'] = {
+            'D_p': ..., 'D_w': ..., 'K_pw': ..., 'k_m': ...
+        }
+    """
+    data = dict(data)
+    config = dict(config)
+
+    # Old -> new key aliasing
+    if 'initial_additive_concs' in data and 'initial_chemical_concs' not in data:
+        data['initial_chemical_concs'] = data.pop('initial_additive_concs')
+
+    if 'additive_release' in config and 'chemical_release' not in config:
+        config['chemical_release'] = config.pop('additive_release')
+
+    if 'additive_release' in data and 'chemical_release' not in data:
+        data['chemical_release'] = data.pop('additive_release')
+
+    add_data = data.get('chemical_release', None)
+
+    # Backward compatibility for old all-in-data schema:
+    # data['additive_release'/'chemical_release'] = {'model': ..., 'params': {...}}
+    if isinstance(add_data, dict) and ('model' in add_data or 'params' in add_data):
+        old_model = str(add_data.get('model', 'analytical')).lower()
+        old_params = dict(add_data.get('params', {}))
+
+        # Split solver vs physical params
+        solver = {}
+        for key in ['n_r', 'n_substeps', 'theta', 'n_terms']:
+            if key in old_params:
+                solver[key] = old_params.pop(key)
+
+        # Only set config chemical_release if not already explicitly set
+        if config.get('chemical_release', None) is None:
+            config['chemical_release'] = {
+                'model': old_model,
+                'solver': solver,
+            }
+
+        data['chemical_release'] = old_params
+
+    return data, config
+
+
+def chemical_release_config_schema():
+    """
+    Config-side chemical release settings:
+      - model selection
+      - numerical solver controls
     """
     return {
-        Optional('model', default='analytical'): str,
-        Optional('params', default={}): dict,
+        Optional('model', default='analytical'): And(
+            str,
+            lambda x: x.lower() in ['analytical', 'numerical']
+        ),
+        Optional('solver', default={}): {
+            Optional('n_r', default=60): And(int, lambda x: x > 2),
+            Optional('n_substeps', default=20): And(int, lambda x: x >= 1),
+            Optional('theta', default=1.0): And(
+                Or(int, float),
+                lambda x: 0.0 <= x <= 1.0
+            ),
+            Optional('n_terms', default=50): And(int, lambda x: x >= 1),
+        }
     }
 
 
-# The schema that the config dict should follow
+def chemical_release_data_schema():
+    """
+    Data-side chemical release parameters:
+      - physical/material parameters only
+
+    Cross-field requirements depending on model are checked in validate_data().
+    """
+    return {
+        Optional('D_p'): And(Or(int, float), lambda x: x >= 0.0),
+        Optional('D_w'): And(Or(int, float), lambda x: x >= 0.0),
+        Optional('K_pw'): And(Or(int, float), lambda x: x > 0.0),
+        Optional('k_m'): And(Or(int, float), lambda x: x >= 0.0),
+    }
+
+
 config_schema = Schema({
-    # There should be <= 100 size classes
     'n_size_classes': And(int, lambda d: d <= 100),
-    # Size range should be a length-2 iterable of type int or float
     Optional('particle_size_range'): particle_size_range_schema,
-    # Size classes should be a list of ints of floats
     Optional('particle_size_classes'): _is_positive_array,
-    # Timesteps should be an integer
     'n_timesteps': int,
-    # Length of timesteps should be an integer (unit of seconds)
     Optional('dt', default=1): int,
-    # What ODE solver method should be used? Should be one of
-    # those available in scipy.solve_ivp:
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
     Optional('solver_method', default='LSODA'): str,
-    # Error tolerances for the ODE solver
     Optional('solver_atol', default=1e-6): Or(float, [float]),
     Optional('solver_rtol', default=1e-3): float,
-    # Max step size for the ODE solver
     Optional('solver_max_step', default=np.inf): float,
-    Optional('solver_t_eval', default='timesteps'): Or(_is_positive_array,
-                                                       'timesteps',
-                                                       None)
+    Optional('solver_t_eval', default='timesteps'): Or(
+        _is_positive_array,
+        'timesteps',
+        None
+    ),
+    Optional('chemical_release', default=None): Or(
+        None,
+        chemical_release_config_schema()
+    ),
 })
 
 
-# The schema that the data dict should follow
 data_schema = Schema({
-    # Initial concs must be a list and >= 0
     'initial_concs': _is_positive_array,
-    # Initial dissolved fraction concentration
     Optional('initial_concs_diss', default=0.0): Or(float, int),
-    # Density must either be a float/int and greater than 0
     'density': And(Or(int, float), lambda x: x >= 0.0),
-    # k_frag, k_diss and k_min must either be a float/int, or a
-    # dict containing an average value and parameters to create
-    # distribution from. Defaults to zero
     'k_frag': k_dist_2d_schema,
     Optional('k_diss', default=0.0): k_dist_2d_schema,
     Optional('k_min', default=0.0): k_dist_t_schema,
-    # fsd_beta is an empirical param that scales the depedence
-    # of the fragment size distribution on particle diameter d
-    # accordingly to d^beta. beta=0 means an equal split
     Optional('fsd_beta', default=0.0): Or(int, float),
-    # -----------------------------
-    # NEW OPTIONAL additive inputs
-    # -----------------------------
-    Optional('initial_additive_concs', default=None): Or(None, _is_positive_array),
-    Optional('additive_release', default=None): Or(None, _additive_release_schema()),
+
+    Optional('initial_chemical_concs', default=None): Or(None, _is_positive_array),
+
+    Optional('chemical_release', default=None): Or(
+        None,
+        chemical_release_data_schema()
+    ),
 })
 
 
+def _validate_config_cross_checks(config: dict) -> dict:
+    """
+    Additional config validation that depends on combinations of fields,
+    beyond what the schema package can express cleanly.
+    """
+    has_ps_classes = 'particle_size_classes' in config
+    has_ps_range = 'particle_size_range' in config
+
+    if not (has_ps_classes or has_ps_range):
+        raise SchemaError(
+            "Model config must contain either 'particle_size_classes' "
+            "or 'particle_size_range'."
+        )
+
+    chem_cfg = config.get('chemical_release', None)
+    if chem_cfg is not None:
+        model = str(chem_cfg.get('model', 'analytical')).lower()
+        if model not in ['analytical', 'numerical']:
+            raise SchemaError(
+                "config.chemical_release.model must be one of "
+                "['analytical', 'numerical']."
+            )
+
+    return config
+
+
+def _fill_chemical_release_defaults(config: dict) -> dict:
+    """
+    Fill nested defaults for chemical_release.solver, because nested schema
+    defaults are not always fully materialized when the parent dict is present
+    but child keys are omitted.
+    """
+    chem_cfg = config.get('chemical_release', None)
+    if chem_cfg is None:
+        return config
+
+    solver = dict(chem_cfg.get('solver', {}))
+    solver.setdefault('n_r', 60)
+    solver.setdefault('n_substeps', 20)
+    solver.setdefault('theta', 1.0)
+    solver.setdefault('n_terms', 50)
+
+    chem_cfg['solver'] = solver
+    config['chemical_release'] = chem_cfg
+    return config
+
+
+def _validate_chemical_release_cross_checks(data: dict, config: dict) -> None:
+    """
+    Cross-validation of chemical_release config/data split.
+    """
+    chem_cfg = config.get('chemical_release', None)
+    chem_data = data.get('chemical_release', None)
+
+    if chem_cfg is None:
+        return
+
+    model = str(chem_cfg.get('model', 'analytical')).lower()
+
+    if chem_data is None:
+        raise SchemaError(
+            f"config.chemical_release is set for model '{model}', "
+            "but data.chemical_release is missing."
+        )
+
+    if model == 'analytical':
+        required = ['D_p', 'D_w', 'K_pw']
+        missing = [k for k in required if k not in chem_data]
+        if missing:
+            raise SchemaError(
+                "data.chemical_release missing required keys for analytical model: "
+                f"{missing}"
+            )
+
+    elif model == 'numerical':
+        required = ['D_p', 'K_pw']
+        missing = [k for k in required if k not in chem_data]
+        if missing:
+            raise SchemaError(
+                "data.chemical_release missing required keys for numerical model: "
+                f"{missing}"
+            )
+
+        if ('k_m' not in chem_data) and ('D_w' not in chem_data):
+            raise SchemaError(
+                "data.chemical_release for numerical model must contain either "
+                "'k_m' or 'D_w'."
+            )
+
+
 def validate_config(config: dict) -> dict:
-    """
-    Validate the given config dict against required schema
+    # Normalize old config-side names before schema validation
+    config = dict(config)
 
-    Parameters
-    ----------
-    config : dict
-        Model config options
+    if 'additive_release' in config and 'chemical_release' not in config:
+        config['chemical_release'] = config.pop('additive_release')
 
-    Returns
-    -------
-    dict
-        Validated config dict
-    """
-    # Run the validation, and return the validated dict
-    # if it passes
     validated = Schema(config_schema).validate(config)
+    validated = _validate_config_cross_checks(validated)
+    validated = _fill_chemical_release_defaults(validated)
+
+    # Backward-compatible alias in validated output
+    if 'chemical_release' in validated and 'additive_release' not in validated:
+        validated['additive_release'] = validated['chemical_release']
+
     return validated
 
 
 def validate_data(data: dict, config: dict) -> dict:
-    """
-    Validate the given data dict against required schema
-
-    Parameters
-    ----------
-    data : dict
-        Model input data
-
-    Returns
-    -------
-    dict
-        Validated data dict
-    """
-
-    # Run the validation, and return the validated dict
-    # if it passes
+    data, config = _normalize_chemical_release_input(data, config)
     validated = Schema(data_schema).validate(data)
 
-    # Check initial conc distribution is the correct length
-    if len(data['initial_concs']) != config['n_size_classes']:
+    if len(validated['initial_concs']) != config['n_size_classes']:
         raise FMNPIncorrectDistributionLength(
-            'initial_concs distribution provided in input data ' +
-            'is not the same length as particle size distribution. ' +
-            f'Expecting {config["n_size_classes"]}-length array. ' +
-            f'Received {len(data["initial_concs"])}-length array.'
+            'initial_concs distribution provided in input data '
+            'is not the same length as particle size distribution. '
+            f'Expecting {config["n_size_classes"]}-length array. '
+            f'Received {len(validated["initial_concs"])}-length array.'
         )
-    
-    # additive initial concentrations (if provided) must match n_size_classes
-    if validated.get('initial_additive_concs') is not None:
-        if len(validated['initial_additive_concs']) != config['n_size_classes']:
+
+    if validated.get('initial_chemical_concs') is not None:
+        if len(validated['initial_chemical_concs']) != config['n_size_classes']:
             raise FMNPIncorrectDistributionLength(
-                'initial_additive_concs distribution provided in input data '
+                'initial_chemical_concs distribution provided in input data '
                 'is not the same length as particle size distribution. '
                 f'Expecting {config["n_size_classes"]}-length array. '
-                f'Received {len(validated["initial_additive_concs"])}-length array.'
+                f'Received {len(validated["initial_chemical_concs"])}-length array.'
             )
-    # TODO extra validation here, e.g. check lengths are n_size_classes
+
+    _validate_chemical_release_cross_checks(validated, config)
+
+    # Backward-compatible aliases in validated output
+    if 'initial_chemical_concs' in validated and 'initial_additive_concs' not in validated:
+        validated['initial_additive_concs'] = validated['initial_chemical_concs']
+
+    if 'chemical_release' in validated and 'additive_release' not in validated:
+        validated['additive_release'] = validated['chemical_release']
+
     return validated

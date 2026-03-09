@@ -17,9 +17,18 @@ def _make_config_with_dt(base_config: dict, dt: int) -> dict:
     return cfg
 
 
-def _make_data_release(base_data: dict, model: str, params: dict) -> dict:
+def _make_config_release(base_config: dict, model: str, solver: dict | None = None) -> dict:
+    cfg = copy.deepcopy(base_config)
+    cfg["additive_release"] = {
+        "model": model,
+        "solver": {} if solver is None else dict(solver),
+    }
+    return cfg
+
+
+def _make_data_release(base_data: dict, physical_params: dict) -> dict:
     d = copy.deepcopy(base_data)
-    d["additive_release"] = {"model": model, "params": dict(params)}
+    d["additive_release"] = dict(physical_params)
     return d
 
 
@@ -91,11 +100,25 @@ def test_benchmark_analytical_vs_numerical_agree_and_conserve(D_p, K_pw, stress_
     common = {"D_p": D_p, "D_w": D_w, "K_pw": K_pw}
 
     # Higher resolution in "verification mode" (still affordable)
-    data_a = _make_data_release(data_base, "analytical", {**common, "n_terms": 200})
-    out_a = FragmentMNP(cfg, data_a).run()
+    cfg_a = _make_config_release(
+        cfg,
+        "analytical",
+        {"n_terms": 200},
+    )
+    data_a = _make_data_release(data_base, common)
+    out_a = FragmentMNP(cfg_a, data_a).run()
 
-    data_n = _make_data_release(data_base, "numerical", {**common, "n_r": 200, "n_substeps": 80})
-    out_n = FragmentMNP(cfg, data_n).run()
+    cfg_n = _make_config_release(
+        cfg,
+        "numerical",
+        {
+            "n_r": 200,
+            "n_substeps": 80,
+            "theta": 1.0,
+        },
+    )
+    data_n = _make_data_release(data_base, common)
+    out_n = FragmentMNP(cfg_n, data_n).run()
 
     # 1) mass conservation
     A_tot_a = _total_additive(out_a)
@@ -136,20 +159,23 @@ def test_numerical_converges_with_dt_refinement():
     cfg0["dt"] = 200
     cfg0["n_timesteps"] = 50  # total duration = 10000 s
     cfg0["solver_t_eval"] = "timesteps"
+    cfg0["additive_release"] = {
+        "model": "numerical",
+        "solver": {
+            "n_r": 200,
+            "n_substeps": 80,
+            "theta": 1.0,
+        },
+    }
 
     data = copy.deepcopy(minimal_data_with_additive)
     data["k_frag"] = 0.02
     N = cfg0["n_size_classes"]
     data["initial_additive_concs"] = [1.0] * N
     data["additive_release"] = {
-        "model": "numerical",
-        "params": {
-            "D_p": 1e-16,
-            "D_w": 1e-9,
-            "K_pw": 1e4,
-            "n_r": 200,
-            "n_substeps": 80,
-        },
+        "D_p": 1e-16,
+        "D_w": 1e-9,
+        "K_pw": 1e4,
     }
 
     dts = [200, 100, 50]

@@ -33,6 +33,16 @@ minimal_config = {
     'particle_size_range': [-9, -3],
     'n_timesteps': 100,
 }
+
+minimal_config_with_additive = {
+    **minimal_config,
+    'additive_release': {
+        'model': 'analytical',
+        'solver': {
+            'n_terms': 50
+        }
+    }
+}
 """Example model config with only required variables.
 Other variables will take their default values."""
 
@@ -113,24 +123,12 @@ minimal_data_with_additive = {
     #   FragmentMNP
     # - Here the parameter values are stored
 
-    #'additive_release': {
-    #    'model': 'numerical',
-    #    'params': {
-    #        'D_p': 1e-16,     # diffusion in polymer (m2/s)
-    #        'D_w': 1e-9,      # diffusion in water (m2/s)
-    #        'K_pw': 1e4,      # polymer-water partition coefficient (-)
-    #        'n_r': 40,        # numerical grid resolution
-    #        'n_substeps': 20  # (recommended improvement)
-    #    }
-    #}
-
     'additive_release': {
         'model': 'analytical',
         'params': {
             'D_p': 1e-16,    # diffusion in polymer (m2/s)
             'D_w': 1e-9,     # diffusion in water (m2/s)
             'K_pw': 1e4,     # polymer-water partition coefficient (-)
-            'n_terms': 50
         }
     }
 }

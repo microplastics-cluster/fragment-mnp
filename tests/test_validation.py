@@ -2,6 +2,7 @@
 Unit tests for the config and data validation
 """
 import copy
+import pytest
 import numpy as np
 from schema import SchemaError
 from fragmentmnp import FragmentMNP
@@ -21,10 +22,13 @@ def test_valid_config():
     """
     Test for validating a correct config dict
     """
-    # Validated config will return the config dict if
-    # it passes
     validated = validate_config(valid_config)
-    assert validated == valid_config
+
+    for key, value in valid_config.items():
+        assert validated[key] == value
+
+    assert "additive_release" in validated
+    assert validated["additive_release"] is None
 
 
 def test_valid_minimal_config():
@@ -126,8 +130,19 @@ def test_valid_data():
     assert "initial_additive_concs" in validated
     assert validated["initial_additive_concs"] is None
 
-    assert "additive_release" in validated
-    assert validated["additive_release"] is None
+def test_valid_minimal_config_additive_defaults():
+        config = copy.deepcopy(valid_minimal_config)
+        config["additive_release"] = {
+            "model": "analytical"
+        }
+
+        validated = validate_config(config)
+
+        assert validated["additive_release"]["model"] == "analytical"
+        assert validated["additive_release"]["solver"]["n_terms"] == 50
+        assert validated["additive_release"]["solver"]["n_r"] == 60
+        assert validated["additive_release"]["solver"]["n_substeps"] == 20
+        assert validated["additive_release"]["solver"]["theta"] == 1.0
 
 
 def test_valid_minimal_data():
@@ -240,3 +255,64 @@ def test_t_eval():
         assert True
     except SchemaError:
         assert False
+
+def test_additive_release_analytical_requires_physical_params():
+    config = copy.deepcopy(valid_minimal_config)
+    config["additive_release"] = {
+        "model": "analytical",
+        "solver": {"n_terms": 25}
+    }
+
+    data = copy.deepcopy(valid_minimal_data)
+    data["initial_additive_concs"] = [1.0] * config["n_size_classes"]
+    data["additive_release"] = {
+        "D_p": 1e-16,
+        "K_pw": 1e4,
+        # missing D_w on purpose
+    }
+
+    try:
+        validate_data(data, validate_config(config))
+        assert False
+    except SchemaError:
+        assert True
+
+def test_additive_release_numerical_requires_km_or_Dw():
+    config = copy.deepcopy(valid_minimal_config)
+    config["additive_release"] = {
+        "model": "numerical",
+        "solver": {"n_r": 40, "n_substeps": 10, "theta": 1.0}
+    }
+
+    data = copy.deepcopy(valid_minimal_data)
+    data["initial_additive_concs"] = [1.0] * config["n_size_classes"]
+    data["additive_release"] = {
+        "D_p": 1e-16,
+        "K_pw": 1e4,
+        # neither k_m nor D_w provided
+    }
+
+    try:
+        validate_data(data, validate_config(config))
+        assert False
+    except SchemaError:
+        assert True
+
+def test_config_requires_particle_size_definition():
+    config = {
+        'n_size_classes': 7,
+        'n_timesteps': 100,
+    }
+
+    with pytest.raises(SchemaError):
+        validate_config(config)
+
+def test_config_rejects_invalid_additive_model():
+    config = copy.deepcopy(valid_minimal_config)
+    config['additive_release'] = {
+        'model': 'foo',
+        'solver': {}
+    }
+
+    with pytest.raises(SchemaError):
+        validate_config(config)
