@@ -9,6 +9,7 @@ from fragmentmnp import FragmentMNP
 from fragmentmnp.validation import validate_config, validate_data
 import fragmentmnp.examples
 from fragmentmnp._errors import FMNPIncorrectDistributionLength, FMNPDistributionValueError
+from fragmentmnp.examples import minimal_config, minimal_data
 
 
 # Get some valid config from the examples module
@@ -316,3 +317,98 @@ def test_config_rejects_invalid_additive_model():
 
     with pytest.raises(SchemaError):
         validate_config(config)
+
+def test_valid_multi_additives():
+    config = copy.deepcopy(minimal_config)
+    data = copy.deepcopy(minimal_data)
+
+    data["additives"] = [
+        {
+            "name": "AO168",
+            "pools": [
+                {
+                    "name": "fast",
+                    "initial_concs": [0.2] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "solver": {"n_terms": 25},
+                        "params": {
+                            "D_p": 1e-16,
+                            "D_w": 1e-9,
+                            "K_pw": 1e4,
+                        },
+                    },
+                },
+                {
+                    "name": "slow",
+                    "initial_concs": [0.8] * config["n_size_classes"],
+                    "release": {
+                        "model": "numerical",
+                        "solver": {
+                            "n_r": 40,
+                            "n_substeps": 10,
+                            "theta": 1.0,
+                        },
+                        "params": {
+                            "D_p": 1e-18,
+                            "K_pw": 1e5,
+                            "k_m": 1e-8,
+                        },
+                    },
+                },
+            ],
+        }
+    ]
+
+    validated = validate_data(data, validate_config(config))
+    assert validated["additives"] is not None
+    assert len(validated["additives"]) == 1
+    assert len(validated["additives"][0]["pools"]) == 2
+
+
+def test_invalid_multi_additives_missing_pool_release():
+    config = copy.deepcopy(minimal_config)
+    data = copy.deepcopy(minimal_data)
+
+    data["additives"] = [
+        {
+            "name": "AO168",
+            "pools": [
+                {
+                    "name": "fast",
+                    "initial_concs": [0.2] * config["n_size_classes"],
+                }
+            ],
+        }
+    ]
+
+    with pytest.raises(SchemaError):
+        validate_data(data, validate_config(config))
+
+
+def test_invalid_multi_additives_wrong_initial_conc_length():
+    config = copy.deepcopy(minimal_config)
+    data = copy.deepcopy(minimal_data)
+
+    data["additives"] = [
+        {
+            "name": "AO168",
+            "pools": [
+                {
+                    "name": "fast",
+                    "initial_concs": [0.2],   # wrong length
+                    "release": {
+                        "model": "analytical",
+                        "params": {
+                            "D_p": 1e-16,
+                            "D_w": 1e-9,
+                            "K_pw": 1e4,
+                        },
+                    },
+                }
+            ],
+        }
+    ]
+
+    with pytest.raises(FMNPIncorrectDistributionLength):
+        validate_data(data, validate_config(config))

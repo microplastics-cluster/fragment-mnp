@@ -53,9 +53,14 @@ class FMNPOutput():
         Additive mass concentration in aqueous phase
     """
 
-    __slots__ = ['t', 'c', 'n', 'c_diss', 'c_min',
-                 'n_timesteps', 'n_size_classes', 'soln', 'psd', 'id',
-                 'c_chem_part', 'c_chem_medium', 'A_part', 'A_aq']
+    __slots__ = [
+        't', 'c', 'n', 'c_diss', 'c_min',
+        'n_timesteps', 'n_size_classes', 'soln', 'psd', 'id',
+        'c_chem_part_species', 'c_chem_medium_species',
+        'c_chem_part_total', 'c_chem_medium_total',
+        'species_names', 'additive_names',
+        'c_chem_part', 'c_chem_medium', 'A_part', 'A_aq'
+    ]
 
     def __init__(self,
                  t: npt.NDArray,
@@ -65,8 +70,12 @@ class FMNPOutput():
                  c_min: npt.NDArray,
                  soln, psd,
                  id=None,
-                 c_chem_part=None,
-                 c_chem_medium=None) -> None:
+                 c_chem_part_species=None,
+                 c_chem_medium_species=None,
+                 c_chem_part_total=None,
+                 c_chem_medium_total=None,
+                 additive_names=None,
+                 species_names=None) -> None:
         """
         Initialise the output data object
         """
@@ -79,11 +88,29 @@ class FMNPOutput():
         self.soln = soln
         self.psd = psd
         # Optional additive outputs
-        self.c_chem_part = c_chem_part
-        self.c_chem_medium = c_chem_medium
+        self.c_chem_part_species = c_chem_part_species
+        self.c_chem_medium_species = c_chem_medium_species
+        self.c_chem_part_total = c_chem_part_total
+        self.c_chem_medium_total = c_chem_medium_total
+        self.additive_names = additive_names
+        self.species_names = species_names
+
         # Backward-compatible aliases
-        self.A_part = c_chem_part
-        self.A_aq = c_chem_medium
+        if c_chem_part_total is None:
+            self.c_chem_part = None
+            self.c_chem_medium = None
+            self.A_part = None
+            self.A_aq = None
+        elif c_chem_part_total.shape[0] == 1:
+            self.c_chem_part = c_chem_part_total[0]
+            self.c_chem_medium = c_chem_medium_total[0]
+            self.A_part = self.c_chem_part
+            self.A_aq = self.c_chem_medium
+        else:
+            self.c_chem_part = c_chem_part_total
+            self.c_chem_medium = c_chem_medium_total
+            self.A_part = c_chem_part_total
+            self.A_aq = c_chem_medium_total
         # Save the number of timesteps and size classes
         self.n_timesteps = self.t.shape[0]
         self.n_size_classes = self.c.shape[0]
@@ -106,6 +133,7 @@ class FMNPOutput():
              cmap='viridis',
              show_legend=True,
              size_classes_to_plot=None,
+             additive_index: int | None = None,
              show: bool = False):
         """
         Plot the output data by choosing from a number of

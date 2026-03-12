@@ -101,10 +101,8 @@ Other variables will take their default values."""
 
 
 # --------------------------------------------------------------------
-# NEW: Example that activates additive tracking + analytical and/or numerical
-# release
+# Legacy single-additive example
 # --------------------------------------------------------------------
-
 minimal_data_with_additive = {
     'initial_concs': [42.0] * 7,
     'density': 1380,
@@ -132,4 +130,70 @@ minimal_data_with_additive = {
         }
     }
 }
-"""Example data that activates additive bookkeeping + analytical release."""
+"""Example data that activates single additive bookkeeping + analytical release."""
+
+# --------------------------------------------------------------------
+# New canonical multi-additive / multi-pool example
+# --------------------------------------------------------------------
+minimal_data_with_multi_additives = {
+    'initial_concs': [42.0] * 7,
+    'density': 1380,
+    'k_frag': 0.01,
+    'k_min': 0.0,
+    'additives': [
+        {
+            'name': 'AO168',
+            'pools': [
+                {
+                    'name': 'fast',
+                    'initial_concs': [0.3] * 7,
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 50},
+                        'params': {
+                            'D_p': 1e-16,
+                            'D_w': 1e-9,
+                            'K_pw': 1e4,
+                        }
+                    }
+                },
+                {
+                    'name': 'slow',
+                    'initial_concs': [0.7] * 7,
+                    'release': {
+                        'model': 'numerical',
+                        'solver': {
+                            'n_r': 60,
+                            'n_substeps': 20,
+                            'theta': 1.0
+                        },
+                        'params': {
+                            'D_p': 1e-18,
+                            'K_pw': 1e5,
+                            'k_m': 1e-8
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            'name': 'UV328',
+            'pools': [
+                {
+                    'name': 'mobile',
+                    'initial_concs': [0.5] * 7,
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 50},
+                        'params': {
+                            'D_p': 1e-15,
+                            'D_w': 1e-9,
+                            'K_pw': 1e3,
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
+"""Canonical multi-additive / multi-pool example."""

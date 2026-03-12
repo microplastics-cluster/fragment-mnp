@@ -214,6 +214,7 @@ data_schema = Schema({
         None,
         chemical_release_data_schema()
     ),
+    Optional('additives', default=None): Or(None, list),
 })
 
 
@@ -307,6 +308,150 @@ def _validate_chemical_release_cross_checks(data: dict, config: dict) -> None:
             )
 
 
+def _default_release_solver(model: str) -> dict:
+    model = str(model).lower()
+    if model == 'analytical':
+        return {'n_terms': 50}
+    if model == 'numerical':
+        return {'n_r': 60, 'n_substeps': 20, 'theta': 1.0}
+    raise SchemaError(f"Unknown release model '{model}'.")
+
+
+def _validate_release_block(release: dict) -> dict:
+    if not isinstance(release, dict):
+        raise SchemaError("Each pool.release must be a dict.")
+
+    model = str(release.get('model', 'analytical')).lower()
+    if model not in ['analytical', 'numerical']:
+        raise SchemaError("pool.release.model must be 'analytical' or 'numerical'.")
+
+    solver = dict(_default_release_solver(model))
+    solver.update(release.get('solver', {}))
+    params = dict(release.get('params', {}))
+
+    if model == 'analytical':
+        required = ['D_p', 'D_w', 'K_pw']
+        missing = [k for k in required if k not in params]
+        if missing:
+            raise SchemaError(
+                f"Analytical release is missing required params: {missing}"
+            )
+    elif model == 'numerical':
+        required = ['D_p', 'K_pw']
+        missing = [k for k in required if k not in params]
+        if missing:
+            raise SchemaError(
+                f"Numerical release is missing required params: {missing}"
+            )
+        if ('k_m' not in params) and ('D_w' not in params):
+            raise SchemaError(
+                "Numerical release must contain either 'k_m' or 'D_w'."
+            )
+
+    return {
+        'model': model,
+        'solver': solver,
+        'params': params
+    }
+
+
+def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
+    if not isinstance(additives, list) or len(additives) == 0:
+        raise SchemaError("data.additives must be a non-empty list.")
+
+    out = []
+    for additive in additives:
+        if not isinstance(additive, dict):
+            raise SchemaError("Each additive entry must be a dict.")
+        if 'name' not in additive:
+            raise SchemaError("Each additive must contain 'name'.")
+        if 'pools' not in additive:
+            raise SchemaError(f"Additive '{additive['name']}' must contain 'pools'.")
+
+        pools = additive['pools']
+        if not isinstance(pools, list) or len(pools) == 0:
+            raise SchemaError(
+                f"Additive '{additive['name']}' must contain a non-empty pools list."
+            )
+
+        pools_out = []
+        for pool in pools:
+            if not isinstance(pool, dict):
+                raise SchemaError(
+                    f"Each pool in additive '{additive['name']}' must be a dict."
+                )
+            if 'name' not in pool:
+                raise SchemaError(
+                    f"Each pool in additive '{additive['name']}' must contain 'name'."
+                )
+            if 'initial_concs' not in pool:
+                raise SchemaError(
+                    f"Pool '{pool.get('name', '?')}' in additive '{additive['name']}' "
+                    "must contain 'initial_concs'."
+                )
+            if not _is_positive_array(pool['initial_concs']):
+                raise SchemaError(
+                    f"Pool '{pool['name']}' initial_concs must be a non-negative array."
+                )
+            if len(pool['initial_concs']) != n_size_classes:
+                raise FMNPIncorrectDistributionLength(
+                    f"Pool '{pool['name']}' in additive '{additive['name']}' has "
+                    f"{len(pool['initial_concs'])} initial concentrations; expected "
+                    f"{n_size_classes}."
+                )
+            if 'release' not in pool:
+                raise SchemaError(
+                    f"Pool '{pool['name']}' in additive '{additive['name']}' "
+                    "must contain 'release'."
+                )
+
+            pools_out.append({
+                'name': pool['name'],
+                'initial_concs': list(pool['initial_concs']),
+                'release': _validate_release_block(pool['release'])
+            })
+
+        out.append({
+            'name': additive['name'],
+            'pools': pools_out
+        })
+
+    return out
+
+
+def _normalize_to_additives(data: dict, config: dict) -> dict:
+    """
+    Normalize old single-additive input to the new canonical
+    data['additives'] structure.
+    """
+    data = dict(data)
+    config = dict(config)
+
+    if data.get('additives', None) is not None:
+        return data
+
+    init_A = data.get('initial_chemical_concs', data.get('initial_additive_concs', None))
+    chem_cfg = config.get('chemical_release', config.get('additive_release', None))
+    chem_data = data.get('chemical_release', data.get('additive_release', None))
+
+    if init_A is None or chem_cfg is None or chem_data is None:
+        return data
+
+    data['additives'] = [{
+        'name': 'additive_0',
+        'pools': [{
+            'name': 'pool_0',
+            'initial_concs': list(init_A),
+            'release': {
+                'model': str(chem_cfg.get('model', 'analytical')).lower(),
+                'solver': dict(chem_cfg.get('solver', {})),
+                'params': dict(chem_data),
+            }
+        }]
+    }]
+    return data
+
+
 def validate_config(config: dict) -> dict:
     # Normalize old config-side names before schema validation
     config = dict(config)
@@ -327,6 +472,7 @@ def validate_config(config: dict) -> dict:
 
 def validate_data(data: dict, config: dict) -> dict:
     data, config = _normalize_chemical_release_input(data, config)
+    data = _normalize_to_additives(data, config)
     validated = Schema(data_schema).validate(data)
 
     if len(validated['initial_concs']) != config['n_size_classes']:
@@ -346,7 +492,13 @@ def validate_data(data: dict, config: dict) -> dict:
                 f'Received {len(validated["initial_chemical_concs"])}-length array.'
             )
 
-    _validate_chemical_release_cross_checks(validated, config)
+    if validated.get('additives') is not None:
+        validated['additives'] = _validate_additives_structure(
+            validated['additives'],
+            config['n_size_classes']
+        )
+    else:
+        _validate_chemical_release_cross_checks(validated, config)
 
     # Backward-compatible aliases in validated output
     if 'initial_chemical_concs' in validated and 'initial_additive_concs' not in validated:

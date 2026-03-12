@@ -99,3 +99,43 @@ def test_full_model_additive_mass_conserved_numerical():
     totalT = float(np.sum(out.A_part[:, -1]) + out.A_aq[-1])
 
     assert np.isclose(totalT, total0, rtol=1e-12, atol=1e-10)
+
+
+def test_multi_pool_numerical_mass_conserved():
+    data = {
+        'initial_concs': [42.0] * 7,
+        'density': 1380,
+        'k_frag': 0.01,
+        'k_min': 0.0,
+        'additives': [
+            {
+                'name': 'AO168',
+                'pools': [
+                    {
+                        'name': 'fast',
+                        'initial_concs': [0.3] * 7,
+                        'release': {
+                            'model': 'numerical',
+                            'solver': {'n_r': 60, 'n_substeps': 10, 'theta': 1.0},
+                            'params': {'D_p': 1e-16, 'K_pw': 1e4, 'D_w': 1e-9}
+                        }
+                    },
+                    {
+                        'name': 'slow',
+                        'initial_concs': [0.7] * 7,
+                        'release': {
+                            'model': 'numerical',
+                            'solver': {'n_r': 60, 'n_substeps': 10, 'theta': 1.0},
+                            'params': {'D_p': 1e-18, 'K_pw': 1e5, 'D_w': 1e-9}
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+
+    out = FragmentMNP(minimal_config, data).run()
+
+    total0 = out.c_chem_part_total[0, :, 0].sum() + out.c_chem_medium_total[0, 0]
+    totalT = out.c_chem_part_total[0, :, -1].sum() + out.c_chem_medium_total[0, -1]
+    assert np.isclose(total0, totalT, rtol=1e-10, atol=1e-12)

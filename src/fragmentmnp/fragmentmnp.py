@@ -95,14 +95,13 @@ class FragmentMNP():
             setattr(self, k, k_dist)
 
         # ------------------------------------------------------------
-        # OPTIONAL: chemical coupling inputs (collaboration feature)
+        # OPTIONAL: multi-additive / multi-pool coupling inputs
         # ------------------------------------------------------------
+        self.additives = data.get('additives', None)
+
+        # Backward-compatible aliases for legacy single-additive inputs
         init_A = data.get('initial_chemical_concs', data.get('initial_additive_concs', None))
         self.initial_chemical_concs = None if init_A is None else np.array(init_A, dtype=float)
-
-        # Split chemical release settings:
-        #   config['chemical_release'] -> model + solver options
-        #   data['chemical_release']   -> physical/material parameters
         self.chemical_release_config = config.get(
             'chemical_release',
             config.get('additive_release', None)
@@ -112,20 +111,52 @@ class FragmentMNP():
             data.get('additive_release', None)
         )
 
-        # Backward compatibility:
-        # old schema kept everything under data['additive_release']
-        # as {'model': ..., 'params': {...}}
-        if (
-            self.chemical_release_config is None
-            and isinstance(self.chemical_release_data, dict)
-            and ('model' in self.chemical_release_data or 'params' in self.chemical_release_data)
+        # Flatten (additive, pool) -> one internal chemical species.
+        # This lets each pool carry its own release model and parameters,
+        # while keeping the polymer fragmentation core unchanged.
+        self.chemical_species = []
+        self.additive_names = []
+        self.species_names = []
+        self.species_additive_index = []
+
+        if self.additives is not None:
+            for a_idx, additive in enumerate(self.additives):
+                self.additive_names.append(additive['name'])
+                for pool in additive['pools']:
+                    self.chemical_species.append({
+                        'additive_name': additive['name'],
+                        'pool_name': pool['name'],
+                        'initial_concs': np.array(pool['initial_concs'], dtype=float),
+                        'model': str(pool['release']['model']).lower(),
+                        'solver': dict(pool['release'].get('solver', {})),
+                        'params': dict(pool['release'].get('params', {})),
+                    })
+                    self.species_names.append(f"{additive['name']}:{pool['name']}")
+                    self.species_additive_index.append(a_idx)
+        elif (
+            self.initial_chemical_concs is not None
+            and self.chemical_release_config is not None
+            and self.chemical_release_data is not None
         ):
-            old = self.chemical_release_data
-            self.chemical_release_config = {
-                'model': old.get('model', 'analytical'),
-                'solver': {}
-            }
-            self.chemical_release_data = dict(old.get('params', {}))
+            # Legacy single-additive path normalized into the same internal
+            # species representation.
+            self.additive_names = ['additive_0']
+            self.species_names = ['additive_0:pool_0']
+            self.chemical_species = [{
+                'additive_name': 'additive_0',
+                'pool_name': 'pool_0',
+                'initial_concs': np.array(self.initial_chemical_concs, dtype=float),
+                'model': str(
+                    self.chemical_release_config.get('model', 'analytical')
+                ).lower(),
+                'solver': dict(self.chemical_release_config.get('solver', {})),
+                'params': dict(self.chemical_release_data or {}),
+            }]
+            self.species_additive_index = [0]
+
+        self.species_additive_index = np.array(self.species_additive_index, dtype=int)
+        self.n_additives = len(self.additive_names)
+        self.n_chemical_species = len(self.chemical_species)
 
     def run(self) -> FMNPOutput:
         r"""
@@ -245,15 +276,18 @@ class FragmentMNP():
         # ------------------------------------------------------------
         # OPTIONAL: compute additive time series (post-solve)
         # ------------------------------------------------------------
-        c_chem_part = None
-        c_chem_medium = None
+        c_chem_part_species = None
+        c_chem_medium_species = None
+        c_chem_part_total = None
+        c_chem_medium_total = None
 
-        if (
-            self.initial_chemical_concs is not None
-            and self.chemical_release_config is not None
-            and self.chemical_release_data is not None
-        ):
-            c_chem_part, c_chem_medium = self._simulate_additives_postsolve(soln.t, c_part_sol)
+        if self.n_chemical_species > 0:
+            (
+                c_chem_part_species,
+                c_chem_medium_species,
+                c_chem_part_total,
+                c_chem_medium_total
+            ) = self._simulate_additives_postsolve(soln.t, c_part_sol)
 
         # Build the FMNPOutput object from the solution
         return FMNPOutput(
@@ -264,8 +298,12 @@ class FragmentMNP():
            c_min=c_min_sol,
            soln=soln,
            psd=self.psd,
-           c_chem_part=c_chem_part,
-           c_chem_medium=c_chem_medium
+           c_chem_part_species=c_chem_part_species,
+           c_chem_medium_species=c_chem_medium_species,
+           c_chem_part_total=c_chem_part_total,
+           c_chem_medium_total=c_chem_medium_total,
+           additive_names=self.additive_names,
+           species_names=self.species_names
         )
     
     # ---------------------------------------------------------------------
@@ -280,56 +318,41 @@ class FragmentMNP():
 
         This method does NOT change polymer dynamics.
 
-        We do:
-          1) transport additive with polymer fragmentation
-          2) release additive to water using an analytical fraction
-
-        Inputs
-        ------
-        t : array (T,)
-            solver output times
-        c_part_sol : array (N, T)
-            polymer mass per size class over time
+        Internal representation:
+            each (additive, pool) pair is treated as one independent
+            chemical species that:
+              1) moves with fragmentation
+              2) releases to water with its own model / params
 
         Returns
         -------
-        c_chem_part : array (N, T)
-            additive mass in particulate bins
-        c_chem_medium : array (T,)
-            additive mass in aqueous pool
+        c_chem_part_species : array (S, N, T)
+            particulate additive mass for each chemical species
+        c_chem_medium_species : array (S, T)
+            aqueous additive mass for each chemical species
+        c_chem_part_total : array (A, N, T)
+            additive totals aggregated over pools
+        c_chem_medium_total : array (A, T)
+            aqueous totals aggregated over pools
         """
         N, T = c_part_sol.shape
-        c_chem_part = np.zeros((N, T), dtype=float)
-        c_chem_medium = np.zeros((T,), dtype=float)
+        S = self.n_chemical_species
+        A = self.n_additives
 
-        c_chem_part[:, 0] = self.initial_chemical_concs
-        c_chem_medium[0] = 0.0
+        c_chem_part_species = np.zeros((S, N, T), dtype=float)
+        c_chem_medium_species = np.zeros((S, T), dtype=float)
 
-        # Interpolate k_frag/k_diss from internal t_grid onto solver times.
-        f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
-                                      fill_value='extrapolate')
-        # k_diss not used yet, but kept for future coupling
-        # f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
-        #                               fill_value='extrapolate')
+        for s, spec in enumerate(self.chemical_species):
+            c_chem_part_species[s, :, 0] = spec['initial_concs']
+            c_chem_medium_species[s, 0] = 0.0
+
+        f_frag = interpolate.interp1d(
+            self.t_grid, self.k_frag, axis=1, fill_value='extrapolate'
+        )
 
         radii = self.psd / 2.0
-
-        release_model = str(
-            self.chemical_release_config.get('model', 'analytical')
-        ).lower()
-
-        solver_params = self.chemical_release_config.get('solver', {})
-        physical_params = self.chemical_release_data or {}
-        release_params = {**physical_params, **solver_params}
-
-        # Cache release fractions because they depend only on:
-        #   - dt_i
-        #   - radii
-        #   - release params
-        # and not on the current additive concentrations.
+        eps = 1e-30
         release_cache = {}
-
-        eps = 1e-30  # avoid division by zero when polymer mass is ~0
 
         for ti in range(T - 1):
             dt_i = float(t[ti + 1] - t[ti])
@@ -340,78 +363,83 @@ class FragmentMNP():
             # fragmentation rate at current time
             k_frag = f_frag(t[ti])
 
-            # -------------------------
-            # (1) Additive transport with fragmentation
-            # -------------------------
-            # Polymer mass lost by fragmentation in dt_i:
-            #   L_frag[i] = k_frag[i] * c[i] * dt_i
+            # Polymer mass moved by fragmentation over dt
             L_frag = k_frag * c * dt_i
 
-            # Polymer mass transferred from parent i to daughter k:
-            #   G[i,k] = fsd[i,k] * L_frag[i]
-            G = (self.fsd.T * L_frag).T  # (N,N)
+            # Polymer mass transferred from parent i to daughter k
+            G = (self.fsd.T * L_frag).T  # (N, N)
 
-            # Assume additive is uniformly mixed within each size class:
-            # additive per polymer mass:
-            conc_A = np.zeros_like(c_chem_part[:, ti], dtype=float)
-            mask = c > eps
-            conc_A[mask] = c_chem_part[mask, ti] / c[mask]
-            # If polymer mass is effectively zero, concentration is irrelevant because G row is ~0.
-            # This prevents inf/nan propagation in extreme fragmentation / empty-bin cases.
+            for s, spec in enumerate(self.chemical_species):
+                # 1) transport additive with fragmentation
+                conc_A = np.zeros(N, dtype=float)
+                mask = c > eps
+                conc_A[mask] = c_chem_part_species[s, mask, ti] / c[mask]
 
-            # Additive transferred i -> k:
-            A_to_k = (G.T * conc_A).T  # (N,N)
-            A_gain = A_to_k.sum(axis=0)
-            A_loss = A_to_k.sum(axis=1)
+                A_to_k = (G.T * conc_A).T
+                A_gain = A_to_k.sum(axis=0)
+                A_loss = A_to_k.sum(axis=1)
+                A_mid = c_chem_part_species[s, :, ti] - A_loss + A_gain
 
-            # particulate additive after fragmentation redistribution
-            A_mid = c_chem_part[:, ti] - A_loss + A_gain
+                # 2) release from this species to water
+                cache_key = (
+                    s,
+                    float(dt_i),
+                )
 
-            # -------------------------
-            # (2) Additive release to water (analytical or numerical)
-            # -------------------------
-            # Cache release fractions by timestep size.
-            # This is especially effective for regular output grids, where dt_i
-            # is identical at every step.
-            dt_key = float(dt_i)
-
-            if dt_key in release_cache:
-                rel = release_cache[dt_key]
-            else:
-                if release_model == 'analytical':
-                    rel = np.array([
-                        self._analytical_additive_release_fraction(
-                            radius_m=float(radii[i]),
-                            dt=dt_i,
-                            params=release_params
-                        )
-                        for i in range(N)
-                    ], dtype=float)
-
-                elif release_model == 'numerical':
-                    rel = np.array([
-                        self._numerical_additive_release_fraction(
-                            radius_m=float(radii[i]),
-                            dt=dt_i,
-                            params=release_params
-                        )
-                        for i in range(N)
-                    ], dtype=float)
-
+                if cache_key in release_cache:
+                    rel = release_cache[cache_key]
                 else:
-                    raise ValueError(
-                        f"Unknown chemical_release model '{release_model}'."
-                    )
+                    release_params = {**spec['params'], **spec['solver']}
 
-                release_cache[dt_key] = rel
+                    if spec['model'] == 'analytical':
+                        rel = np.array([
+                            self._analytical_additive_release_fraction(
+                                radius_m=float(radii[i]),
+                                dt=dt_i,
+                                params=release_params
+                            )
+                            for i in range(N)
+                        ], dtype=float)
 
-            rel = np.clip(rel, 0.0, 1.0)
+                    elif spec['model'] == 'numerical':
+                        rel = np.array([
+                            self._numerical_additive_release_fraction(
+                                radius_m=float(radii[i]),
+                                dt=dt_i,
+                                params=release_params
+                            )
+                            for i in range(N)
+                        ], dtype=float)
 
-            dA_rel = rel * A_mid
-            c_chem_part[:, ti + 1] = A_mid - dA_rel
-            c_chem_medium[ti + 1] = c_chem_medium[ti] + float(dA_rel.sum())
+                    else:
+                        raise ValueError(
+                            f"Unknown chemical_release model '{spec['model']}' for "
+                            f"{spec['additive_name']}:{spec['pool_name']}."
+                        )
 
-        return c_chem_part, c_chem_medium
+                    rel = np.clip(rel, 0.0, 1.0)
+                    release_cache[cache_key] = rel
+
+                dA_rel = rel * A_mid
+                c_chem_part_species[s, :, ti + 1] = A_mid - dA_rel
+                c_chem_medium_species[s, ti + 1] = (
+                    c_chem_medium_species[s, ti] + float(dA_rel.sum())
+                )
+
+        # Aggregate species -> additive totals
+        c_chem_part_total = np.zeros((A, N, T), dtype=float)
+        c_chem_medium_total = np.zeros((A, T), dtype=float)
+
+        for s, a_idx in enumerate(self.species_additive_index):
+            c_chem_part_total[a_idx] += c_chem_part_species[s]
+            c_chem_medium_total[a_idx] += c_chem_medium_species[s]
+
+        return (
+            c_chem_part_species,
+            c_chem_medium_species,
+            c_chem_part_total,
+            c_chem_medium_total
+        )
 
     def _analytical_additive_release_fraction(self, radius_m: float, dt: float, params: dict) -> float:
         """
@@ -1381,5 +1409,3 @@ class FragmentMNP():
             x[i] = (d[i] - c[i] * x[i + 1]) / b[i]
 
         return x
-    
-    
