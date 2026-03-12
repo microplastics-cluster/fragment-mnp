@@ -140,13 +140,17 @@ minimal_data_with_multi_additives = {
     'density': 1380,
     'k_frag': 0.01,
     'k_min': 0.0,
+
     'additives': [
         {
-            'name': 'AO168',
+            'name': 'Additive A',
+
             'pools': [
                 {
-                    'name': 'fast',
+                    'name': 'Pool 1',
+
                     'initial_concs': [0.3] * 7,
+
                     'release': {
                         'model': 'analytical',
                         'solver': {'n_terms': 50},
@@ -157,31 +161,40 @@ minimal_data_with_multi_additives = {
                         }
                     }
                 },
+
                 {
-                    'name': 'slow',
+                    'name': 'Pool 2',
+
                     'initial_concs': [0.7] * 7,
+
                     'release': {
                         'model': 'numerical',
+
                         'solver': {
                             'n_r': 60,
                             'n_substeps': 20,
-                            'theta': 1.0
+                            'theta': 1.0,
                         },
+
                         'params': {
                             'D_p': 1e-18,
                             'K_pw': 1e5,
-                            'k_m': 1e-8
+                            'k_m': 1e-8,
                         }
                     }
                 }
             ]
         },
+
         {
-            'name': 'UV328',
+            'name': 'Additive B',
+
             'pools': [
                 {
-                    'name': 'mobile',
+                    'name': 'Pool 1',
+
                     'initial_concs': [0.5] * 7,
+
                     'release': {
                         'model': 'analytical',
                         'solver': {'n_terms': 50},
