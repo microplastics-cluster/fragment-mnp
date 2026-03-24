@@ -130,6 +130,7 @@ class FragmentMNP():
                         'model': str(pool['release']['model']).lower(),
                         'solver': dict(pool['release'].get('solver', {})),
                         'params': dict(pool['release'].get('params', {})),
+                        'fate': dict(pool.get('fate', {})),
                     })
                     self.species_names.append(f"{additive['name']}:{pool['name']}")
                     self.species_additive_index.append(a_idx)
@@ -151,6 +152,7 @@ class FragmentMNP():
                 ).lower(),
                 'solver': dict(self.chemical_release_config.get('solver', {})),
                 'params': dict(self.chemical_release_data or {}),
+                'fate': {},
             }]
             self.species_additive_index = [0]
 
@@ -323,6 +325,11 @@ class FragmentMNP():
             chemical species that:
               1) moves with fragmentation
               2) releases to water with its own model / params
+              3) optionally undergoes explicit first-order post-processing fate
+                 in the particulate phase:
+                    - k_deg
+                    - k_loss
+                    - transfers to other particulate pools
 
         Returns
         -------
@@ -342,7 +349,28 @@ class FragmentMNP():
         c_chem_part_species = np.zeros((S, N, T), dtype=float)
         c_chem_medium_species = np.zeros((S, T), dtype=float)
 
-        for s, spec in enumerate(self.chemical_species):
+        species_name_to_index = {
+            f"{spec['additive_name']}:{spec['pool_name']}": i
+            for i, spec in enumerate(self.chemical_species)
+        }
+
+        normalized_species = []
+        for spec in self.chemical_species:
+            fate = dict(spec.get('fate', {}))
+            transfers = []
+            for tr in fate.get('transfers', []):
+                target_name = tr['to']
+                transfers.append({
+                    'to': target_name,
+                    'k': float(tr['k']),
+                    'target_species_index': int(species_name_to_index[target_name]),
+                })
+            fate['k_deg'] = float(fate.get('k_deg', 0.0))
+            fate['k_loss'] = float(fate.get('k_loss', 0.0))
+            fate['transfers'] = transfers
+            normalized_species.append({**spec, 'fate': fate})
+
+        for s, spec in enumerate(normalized_species):
             c_chem_part_species[s, :, 0] = spec['initial_concs']
             c_chem_medium_species[s, 0] = 0.0
 
@@ -369,7 +397,12 @@ class FragmentMNP():
             # Polymer mass transferred from parent i to daughter k
             G = (self.fsd.T * L_frag).T  # (N, N)
 
-            for s, spec in enumerate(self.chemical_species):
+            # timestep accumulators
+            part_next = np.zeros((S, N), dtype=float)
+            medium_next = np.zeros(S, dtype=float)
+            transfer_incoming = np.zeros((S, N), dtype=float)
+
+            for s, spec in enumerate(normalized_species):
                 # 1) transport additive with fragmentation
                 conc_A = np.zeros(N, dtype=float)
                 mask = c > eps
@@ -421,10 +454,26 @@ class FragmentMNP():
                     release_cache[cache_key] = rel
 
                 dA_rel = rel * A_mid
-                c_chem_part_species[s, :, ti + 1] = A_mid - dA_rel
-                c_chem_medium_species[s, ti + 1] = (
-                    c_chem_medium_species[s, ti] + float(dA_rel.sum())
+                A_after_release = A_mid - dA_rel
+                medium_next[s] = c_chem_medium_species[s, ti] + float(dA_rel.sum())
+
+                # 3) explicit first-order fate in particulate pool
+                A_after_fate, transfer_out = self._apply_first_order_fate_explicit(
+                    A_in=A_after_release,
+                    dt=dt_i,
+                    spec=spec
                 )
+
+                part_next[s] = A_after_fate
+                if transfer_out:
+                    for target_idx, arr in transfer_out.items():
+                        transfer_incoming[target_idx] += arr
+
+            part_next += transfer_incoming
+
+            for s in range(S):
+                c_chem_part_species[s, :, ti + 1] = np.clip(part_next[s], 0.0, None)
+                c_chem_medium_species[s, ti + 1] = max(medium_next[s], 0.0)
 
         # Aggregate species -> additive totals
         c_chem_part_total = np.zeros((A, N, T), dtype=float)
@@ -440,6 +489,70 @@ class FragmentMNP():
             c_chem_part_total,
             c_chem_medium_total
         )
+
+
+    def _apply_first_order_fate_explicit(self,
+                                         A_in: npt.NDArray[np.float64],
+                                         dt: float,
+                                         spec: dict) -> Tuple[npt.NDArray[np.float64], dict]:
+        """
+        Apply explicit first-order fate to one particulate additive species
+        over a single post-processing timestep.
+
+        Implemented Phase 1 processes:
+        - k_deg: irreversible removal from modeled particulate system
+        - k_loss: irreversible removal from modeled particulate system
+        - transfers: explicit first-order transfer to other particulate pools
+
+        Notes
+        -----
+        - All rates are applied to the particulate mass remaining after release.
+        - Transfers are size-class preserving in Phase 1.
+        - Fragmentation inheritance remains proportional and is handled before
+          this method is called.
+        """
+        A_in = np.asarray(A_in, dtype=float)
+        A_work = np.clip(A_in, 0.0, None).copy()
+
+        fate = dict(spec.get('fate', {}))
+        k_deg = float(fate.get('k_deg', 0.0))
+        k_loss = float(fate.get('k_loss', 0.0))
+        transfers = list(fate.get('transfers', []))
+
+        total_k = k_deg + k_loss + sum(float(tr.get('k', 0.0)) for tr in transfers)
+        if total_k < 0.0:
+            raise SchemaError(
+                f"Negative total fate rate encountered for "
+                f"{spec['additive_name']}:{spec['pool_name']}."
+            )
+
+        if total_k == 0.0 or dt <= 0.0:
+            return A_work, {}
+
+        # Explicit Euler removal fractions. Guard against overshoot so masses
+        # remain non-negative even for large dt.
+        frac_deg = min(k_deg * dt, 1.0)
+        frac_loss = min(k_loss * dt, 1.0)
+        frac_transfers = [min(float(tr.get('k', 0.0)) * dt, 1.0) for tr in transfers]
+
+        frac_total = frac_deg + frac_loss + sum(frac_transfers)
+        scale = 1.0
+        if frac_total > 1.0:
+            scale = 1.0 / frac_total
+            frac_deg *= scale
+            frac_loss *= scale
+            frac_transfers = [f * scale for f in frac_transfers]
+
+        transfer_out = {}
+        for tr, frac in zip(transfers, frac_transfers):
+            moved = frac * A_work
+            target_idx = int(tr['target_species_index'])
+            transfer_out[target_idx] = transfer_out.get(target_idx, 0.0) + moved
+
+        retained_fraction = max(0.0, 1.0 - frac_deg - frac_loss - sum(frac_transfers))
+        A_out = retained_fraction * A_work
+
+        return np.clip(A_out, 0.0, None), transfer_out
 
     def _analytical_additive_release_fraction(self, radius_m: float, dt: float, params: dict) -> float:
         """

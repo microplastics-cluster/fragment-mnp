@@ -374,6 +374,8 @@ def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
                 f"Additive '{additive['name']}' must contain a non-empty pools list."
             )
 
+        valid_targets = {f"{additive['name']}:{pool['name']}" for pool in pools}
+
         pools_out = []
         for pool in pools:
             if not isinstance(pool, dict):
@@ -408,7 +410,13 @@ def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
             pools_out.append({
                 'name': pool['name'],
                 'initial_concs': list(pool['initial_concs']),
-                'release': _validate_release_block(pool['release'])
+                'release': _validate_release_block(pool['release']),
+                'fate': _validate_fate_block(
+                    pool.get('fate', {}),
+                    additive_name=additive['name'],
+                    pool_name=pool['name'],
+                    valid_targets=valid_targets
+                )
             })
 
         out.append({
@@ -418,6 +426,54 @@ def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
 
     return out
 
+
+
+
+def _normalize_transfer_target(raw_target: str, additive_name: str) -> str:
+    """Return fully-qualified transfer target name."""
+    target = str(raw_target)
+    return target if ':' in target else f"{additive_name}:{target}"
+
+
+def _validate_fate_block(fate: dict, additive_name: str, pool_name: str, valid_targets: set[str]) -> dict:
+    if not isinstance(fate, dict):
+        raise SchemaError(
+            f"pool.fate for '{additive_name}:{pool_name}' must be a dict."
+        )
+
+    k_deg = float(fate.get('k_deg', 0.0))
+    k_loss = float(fate.get('k_loss', 0.0))
+    if k_deg < 0.0:
+        raise SchemaError(f"k_deg must be non-negative for '{additive_name}:{pool_name}'.")
+    if k_loss < 0.0:
+        raise SchemaError(f"k_loss must be non-negative for '{additive_name}:{pool_name}'.")
+
+    transfers_out = []
+    for tr in fate.get('transfers', []):
+        if not isinstance(tr, dict):
+            raise SchemaError(
+                f"Each transfer in '{additive_name}:{pool_name}' fate must be a dict."
+            )
+        if 'to' not in tr or 'k' not in tr:
+            raise SchemaError(
+                f"Each transfer in '{additive_name}:{pool_name}' fate must contain 'to' and 'k'."
+            )
+        k = float(tr['k'])
+        if k < 0.0:
+            raise SchemaError(
+                f"Transfer rate k must be non-negative for '{additive_name}:{pool_name}'."
+            )
+        target = _normalize_transfer_target(tr['to'], additive_name)
+        this_name = f"{additive_name}:{pool_name}"
+        if target == this_name:
+            raise SchemaError(f"Self-transfer is not allowed for '{this_name}'.")
+        if target not in valid_targets:
+            raise SchemaError(
+                f"Unknown transfer target '{target}' for '{this_name}'."
+            )
+        transfers_out.append({'to': target, 'k': k})
+
+    return {'k_deg': k_deg, 'k_loss': k_loss, 'transfers': transfers_out}
 
 def _normalize_to_additives(data: dict, config: dict) -> dict:
     """

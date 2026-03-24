@@ -412,3 +412,94 @@ def test_invalid_multi_additives_wrong_initial_conc_length():
 
     with pytest.raises(FMNPIncorrectDistributionLength):
         validate_data(data, validate_config(config))
+
+
+def test_valid_multi_additives_with_fate_and_transfers():
+    config = copy.deepcopy(valid_minimal_config)
+    data = copy.deepcopy(valid_minimal_data)
+    data["additives"] = [
+        {
+            "name": "Additive A",
+            "pools": [
+                {
+                    "name": "Pool 1",
+                    "initial_concs": [1.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    },
+                    "fate": {
+                        "k_deg": 0.01,
+                        "k_loss": 0.02,
+                        "transfers": [{"to": "Pool 2", "k": 0.03}]
+                    }
+                },
+                {
+                    "name": "Pool 2",
+                    "initial_concs": [0.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    }
+                }
+            ]
+        }
+    ]
+
+    validated = validate_data(data, config)
+    fate = validated["additives"][0]["pools"][0]["fate"]
+    assert fate["k_deg"] == 0.01
+    assert fate["k_loss"] == 0.02
+    assert fate["transfers"][0]["to"] == "Additive A:Pool 2"
+
+
+def test_invalid_transfer_target_raises():
+    config = copy.deepcopy(valid_minimal_config)
+    data = copy.deepcopy(valid_minimal_data)
+    data["additives"] = [
+        {
+            "name": "Additive A",
+            "pools": [
+                {
+                    "name": "Pool 1",
+                    "initial_concs": [1.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    },
+                    "fate": {
+                        "transfers": [{"to": "Missing Pool", "k": 0.03}]
+                    }
+                }
+            ]
+        }
+    ]
+
+    with pytest.raises(SchemaError):
+        validate_data(data, config)
+
+
+def test_invalid_negative_fate_rate_raises():
+    config = copy.deepcopy(valid_minimal_config)
+    data = copy.deepcopy(valid_minimal_data)
+    data["additives"] = [
+        {
+            "name": "Additive A",
+            "pools": [
+                {
+                    "name": "Pool 1",
+                    "initial_concs": [1.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    },
+                    "fate": {
+                        "k_deg": -0.01
+                    }
+                }
+            ]
+        }
+    ]
+
+    with pytest.raises(SchemaError):
+        validate_data(data, config)

@@ -159,6 +159,13 @@ minimal_data_with_multi_additives = {
                             'D_w': 1e-9,
                             'K_pw': 1e4,
                         }
+                    },
+                    'fate': {
+                        'k_deg': 0.0,
+                        'k_loss': 0.0,
+                        'transfers': [
+                            {'to': 'Pool 2', 'k': 0.0}
+                        ]
                     }
                 },
 
@@ -181,6 +188,11 @@ minimal_data_with_multi_additives = {
                             'K_pw': 1e5,
                             'k_m': 1e-8,
                         }
+                    },
+                    'fate': {
+                        'k_deg': 0.0,
+                        'k_loss': 0.0,
+                        'transfers': []
                     }
                 }
             ]
@@ -203,6 +215,11 @@ minimal_data_with_multi_additives = {
                             'D_w': 1e-9,
                             'K_pw': 1e3,
                         }
+                    },
+                    'fate': {
+                        'k_deg': 0.0,
+                        'k_loss': 0.0,
+                        'transfers': []
                     }
                 }
             ]
@@ -210,3 +227,47 @@ minimal_data_with_multi_additives = {
     ]
 }
 """Canonical multi-additive / multi-pool example."""
+
+
+minimal_data_with_fate = {
+    'initial_concs': [42.0] * 7,
+    'density': 1380,
+    'k_frag': 0.01,
+    'k_min': 0.0,
+    'additives': [
+        {
+            'name': 'Additive A',
+            'pools': [
+                {
+                    'name': 'Pool 1',
+                    'initial_concs': [1.0] * 7,
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 50},
+                        'params': {'D_p': 1e-16, 'D_w': 1e-9, 'K_pw': 1e4}
+                    },
+                    'fate': {
+                        'k_deg': 0.0,
+                        'k_loss': 0.02,
+                        'transfers': [{'to': 'Pool 2', 'k': 0.05}]
+                    }
+                },
+                {
+                    'name': 'Pool 2',
+                    'initial_concs': [0.0] * 7,
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 50},
+                        'params': {'D_p': 1e-16, 'D_w': 1e-9, 'K_pw': 1e4}
+                    },
+                    'fate': {
+                        'k_deg': 0.01,
+                        'k_loss': 0.0,
+                        'transfers': []
+                    }
+                }
+            ]
+        }
+    ]
+}
+"""Example data with first-order particulate-pool fate enabled."""
