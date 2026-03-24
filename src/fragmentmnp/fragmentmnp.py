@@ -111,29 +111,54 @@ class FragmentMNP():
             data.get('additive_release', None)
         )
 
-        # Flatten (additive, pool) -> one internal chemical species.
-        # This lets each pool carry its own release model and parameters,
-        # while keeping the polymer fragmentation core unchanged.
+        # Flatten particulate pools and medium pools into internal species.
+        # Particulate species are size-resolved and move with fragmentation.
+        # Medium species are bulk pools updated in post-processing only.
         self.chemical_species = []
         self.additive_names = []
         self.species_names = []
         self.species_additive_index = []
+        self.medium_species = []
+        self.medium_species_names = []
+        self.medium_species_additive_index = []
 
         if self.additives is not None:
             for a_idx, additive in enumerate(self.additives):
-                self.additive_names.append(additive['name'])
-                for pool in additive['pools']:
+                additive_name = additive['name']
+                self.additive_names.append(additive_name)
+
+                particulate_pools = list(additive['pools'])
+                medium_pools = list(additive.get('medium_pools', []))
+                if len(medium_pools) == 0:
+                    medium_pools = [{
+                        'name': 'medium',
+                        'initial_mass': 0.0,
+                        'fate': {'k_deg': 0.0, 'k_loss': 0.0, 'transfers': []},
+                    }]
+
+                for pool in particulate_pools:
                     self.chemical_species.append({
-                        'additive_name': additive['name'],
+                        'additive_name': additive_name,
                         'pool_name': pool['name'],
                         'initial_concs': np.array(pool['initial_concs'], dtype=float),
                         'model': str(pool['release']['model']).lower(),
                         'solver': dict(pool['release'].get('solver', {})),
                         'params': dict(pool['release'].get('params', {})),
+                        'release_target': str(pool['release'].get('target', f"{additive_name}:medium")),
                         'fate': dict(pool.get('fate', {})),
                     })
-                    self.species_names.append(f"{additive['name']}:{pool['name']}")
+                    self.species_names.append(f"{additive_name}:{pool['name']}")
                     self.species_additive_index.append(a_idx)
+
+                for mpool in medium_pools:
+                    self.medium_species.append({
+                        'additive_name': additive_name,
+                        'pool_name': mpool['name'],
+                        'initial_mass': float(mpool.get('initial_mass', 0.0)),
+                        'fate': dict(mpool.get('fate', {})),
+                    })
+                    self.medium_species_names.append(f"{additive_name}:{mpool['name']}")
+                    self.medium_species_additive_index.append(a_idx)
         elif (
             self.initial_chemical_concs is not None
             and self.chemical_release_config is not None
@@ -152,13 +177,24 @@ class FragmentMNP():
                 ).lower(),
                 'solver': dict(self.chemical_release_config.get('solver', {})),
                 'params': dict(self.chemical_release_data or {}),
+                'release_target': 'additive_0:medium',
                 'fate': {},
             }]
             self.species_additive_index = [0]
+            self.medium_species = [{
+                'additive_name': 'additive_0',
+                'pool_name': 'medium',
+                'initial_mass': 0.0,
+                'fate': {'k_deg': 0.0, 'k_loss': 0.0, 'transfers': []},
+            }]
+            self.medium_species_names = ['additive_0:medium']
+            self.medium_species_additive_index = [0]
 
         self.species_additive_index = np.array(self.species_additive_index, dtype=int)
+        self.medium_species_additive_index = np.array(self.medium_species_additive_index, dtype=int)
         self.n_additives = len(self.additive_names)
         self.n_chemical_species = len(self.chemical_species)
+        self.n_medium_species = len(self.medium_species)
 
     def run(self) -> FMNPOutput:
         r"""
@@ -282,13 +318,15 @@ class FragmentMNP():
         c_chem_medium_species = None
         c_chem_part_total = None
         c_chem_medium_total = None
+        c_medium_pool_species = None
 
         if self.n_chemical_species > 0:
             (
                 c_chem_part_species,
                 c_chem_medium_species,
                 c_chem_part_total,
-                c_chem_medium_total
+                c_chem_medium_total,
+                c_medium_pool_species
             ) = self._simulate_additives_postsolve(soln.t, c_part_sol)
 
         # Build the FMNPOutput object from the solution
@@ -305,7 +343,9 @@ class FragmentMNP():
            c_chem_part_total=c_chem_part_total,
            c_chem_medium_total=c_chem_medium_total,
            additive_names=self.additive_names,
-           species_names=self.species_names
+           species_names=self.species_names,
+           c_medium_pool_species=c_medium_pool_species,
+           medium_pool_names=self.medium_species_names
         )
     
     # ---------------------------------------------------------------------
@@ -318,43 +358,44 @@ class FragmentMNP():
         """
         Compute additive trajectories using the already-solved polymer output.
 
-        This method does NOT change polymer dynamics.
-
-        Internal representation:
-            each (additive, pool) pair is treated as one independent
-            chemical species that:
-              1) moves with fragmentation
-              2) releases to water with its own model / params
-              3) optionally undergoes explicit first-order post-processing fate
-                 in the particulate phase:
-                    - k_deg
-                    - k_loss
-                    - transfers to other particulate pools
+        Phase 2 additions:
+        - named medium pools per additive
+        - release targets from particulate pools into named medium pools
+        - medium-pool fate / transfers (for transformed-product generation etc.)
 
         Returns
         -------
-        c_chem_part_species : array (S, N, T)
-            particulate additive mass for each chemical species
-        c_chem_medium_species : array (S, T)
-            aqueous additive mass for each chemical species
+        c_chem_part_species : array (S_part, N, T)
+            particulate additive mass for each particulate species
+        c_chem_medium_species : array (S_part, T)
+            cumulative mass released from each particulate species to medium
+            (kept for backward compatibility)
         c_chem_part_total : array (A, N, T)
-            additive totals aggregated over pools
+            additive totals aggregated over particulate pools
         c_chem_medium_total : array (A, T)
-            aqueous totals aggregated over pools
+            additive totals aggregated over all medium pools
+        c_medium_pool_species : array (S_med, T)
+            mass in each named medium pool
         """
         N, T = c_part_sol.shape
-        S = self.n_chemical_species
+        S_part = self.n_chemical_species
+        S_med = self.n_medium_species
         A = self.n_additives
 
-        c_chem_part_species = np.zeros((S, N, T), dtype=float)
-        c_chem_medium_species = np.zeros((S, T), dtype=float)
+        c_chem_part_species = np.zeros((S_part, N, T), dtype=float)
+        c_chem_medium_species = np.zeros((S_part, T), dtype=float)
+        c_medium_pool_species = np.zeros((S_med, T), dtype=float)
 
-        species_name_to_index = {
+        particulate_name_to_index = {
             f"{spec['additive_name']}:{spec['pool_name']}": i
             for i, spec in enumerate(self.chemical_species)
         }
+        medium_name_to_index = {
+            f"{spec['additive_name']}:{spec['pool_name']}": i
+            for i, spec in enumerate(self.medium_species)
+        }
 
-        normalized_species = []
+        normalized_particulate = []
         for spec in self.chemical_species:
             fate = dict(spec.get('fate', {}))
             transfers = []
@@ -363,47 +404,59 @@ class FragmentMNP():
                 transfers.append({
                     'to': target_name,
                     'k': float(tr['k']),
-                    'target_species_index': int(species_name_to_index[target_name]),
+                    'target_species_index': int(particulate_name_to_index[target_name]),
                 })
             fate['k_deg'] = float(fate.get('k_deg', 0.0))
             fate['k_loss'] = float(fate.get('k_loss', 0.0))
             fate['transfers'] = transfers
-            normalized_species.append({**spec, 'fate': fate})
+            normalized_particulate.append({
+                **spec,
+                'fate': fate,
+                'release_target_index': int(medium_name_to_index[spec['release_target']]),
+            })
 
-        for s, spec in enumerate(normalized_species):
+        normalized_medium = []
+        for spec in self.medium_species:
+            fate = dict(spec.get('fate', {}))
+            transfers = []
+            for tr in fate.get('transfers', []):
+                target_name = tr['to']
+                transfers.append({
+                    'to': target_name,
+                    'k': float(tr['k']),
+                    'target_species_index': int(medium_name_to_index[target_name]),
+                })
+            fate['k_deg'] = float(fate.get('k_deg', 0.0))
+            fate['k_loss'] = float(fate.get('k_loss', 0.0))
+            fate['transfers'] = transfers
+            normalized_medium.append({**spec, 'fate': fate})
+
+        for s, spec in enumerate(normalized_particulate):
             c_chem_part_species[s, :, 0] = spec['initial_concs']
             c_chem_medium_species[s, 0] = 0.0
+        for m_idx, spec in enumerate(normalized_medium):
+            c_medium_pool_species[m_idx, 0] = float(spec.get('initial_mass', 0.0))
 
         f_frag = interpolate.interp1d(
             self.t_grid, self.k_frag, axis=1, fill_value='extrapolate'
         )
-
         radii = self.psd / 2.0
         eps = 1e-30
         release_cache = {}
 
         for ti in range(T - 1):
             dt_i = float(t[ti + 1] - t[ti])
-
-            # polymer mass in each bin at current time
             c = c_part_sol[:, ti]
-
-            # fragmentation rate at current time
             k_frag = f_frag(t[ti])
-
-            # Polymer mass moved by fragmentation over dt
             L_frag = k_frag * c * dt_i
+            G = (self.fsd.T * L_frag).T
 
-            # Polymer mass transferred from parent i to daughter k
-            G = (self.fsd.T * L_frag).T  # (N, N)
+            part_next = np.zeros((S_part, N), dtype=float)
+            release_next = np.zeros(S_part, dtype=float)
+            transfer_incoming = np.zeros((S_part, N), dtype=float)
+            medium_release_incoming = np.zeros(S_med, dtype=float)
 
-            # timestep accumulators
-            part_next = np.zeros((S, N), dtype=float)
-            medium_next = np.zeros(S, dtype=float)
-            transfer_incoming = np.zeros((S, N), dtype=float)
-
-            for s, spec in enumerate(normalized_species):
-                # 1) transport additive with fragmentation
+            for s, spec in enumerate(normalized_particulate):
                 conc_A = np.zeros(N, dtype=float)
                 mask = c > eps
                 conc_A[mask] = c_chem_part_species[s, mask, ti] / c[mask]
@@ -413,81 +466,74 @@ class FragmentMNP():
                 A_loss = A_to_k.sum(axis=1)
                 A_mid = c_chem_part_species[s, :, ti] - A_loss + A_gain
 
-                # 2) release from this species to water
-                cache_key = (
-                    s,
-                    float(dt_i),
-                )
-
+                cache_key = (s, float(dt_i))
                 if cache_key in release_cache:
                     rel = release_cache[cache_key]
                 else:
                     release_params = {**spec['params'], **spec['solver']}
-
                     if spec['model'] == 'analytical':
                         rel = np.array([
                             self._analytical_additive_release_fraction(
-                                radius_m=float(radii[i]),
-                                dt=dt_i,
-                                params=release_params
-                            )
-                            for i in range(N)
+                                radius_m=float(radii[i]), dt=dt_i, params=release_params
+                            ) for i in range(N)
                         ], dtype=float)
-
                     elif spec['model'] == 'numerical':
                         rel = np.array([
                             self._numerical_additive_release_fraction(
-                                radius_m=float(radii[i]),
-                                dt=dt_i,
-                                params=release_params
-                            )
-                            for i in range(N)
+                                radius_m=float(radii[i]), dt=dt_i, params=release_params
+                            ) for i in range(N)
                         ], dtype=float)
-
                     else:
                         raise ValueError(
                             f"Unknown chemical_release model '{spec['model']}' for "
                             f"{spec['additive_name']}:{spec['pool_name']}."
                         )
-
                     rel = np.clip(rel, 0.0, 1.0)
                     release_cache[cache_key] = rel
 
                 dA_rel = rel * A_mid
                 A_after_release = A_mid - dA_rel
-                medium_next[s] = c_chem_medium_species[s, ti] + float(dA_rel.sum())
+                release_next[s] = c_chem_medium_species[s, ti] + float(dA_rel.sum())
+                medium_release_incoming[spec['release_target_index']] += float(dA_rel.sum())
 
-                # 3) explicit first-order fate in particulate pool
                 A_after_fate, transfer_out = self._apply_first_order_fate_explicit(
-                    A_in=A_after_release,
-                    dt=dt_i,
-                    spec=spec
+                    A_in=A_after_release, dt=dt_i, spec=spec
                 )
-
                 part_next[s] = A_after_fate
-                if transfer_out:
-                    for target_idx, arr in transfer_out.items():
-                        transfer_incoming[target_idx] += arr
+                for target_idx, arr in transfer_out.items():
+                    transfer_incoming[target_idx] += arr
 
             part_next += transfer_incoming
-
-            for s in range(S):
+            for s in range(S_part):
                 c_chem_part_species[s, :, ti + 1] = np.clip(part_next[s], 0.0, None)
-                c_chem_medium_species[s, ti + 1] = max(medium_next[s], 0.0)
+                c_chem_medium_species[s, ti + 1] = max(release_next[s], 0.0)
 
-        # Aggregate species -> additive totals
+            medium_next = c_medium_pool_species[:, ti].copy() + medium_release_incoming
+            medium_transfer_incoming = np.zeros(S_med, dtype=float)
+            medium_after_fate = np.zeros(S_med, dtype=float)
+            for m_idx, spec in enumerate(normalized_medium):
+                out_mass, transfer_out = self._apply_first_order_fate_explicit(
+                    A_in=np.array([medium_next[m_idx]], dtype=float), dt=dt_i, spec=spec
+                )
+                medium_after_fate[m_idx] = float(out_mass[0])
+                for target_idx, arr in transfer_out.items():
+                    medium_transfer_incoming[target_idx] += float(np.asarray(arr)[0])
+            medium_after_fate += medium_transfer_incoming
+            c_medium_pool_species[:, ti + 1] = np.clip(medium_after_fate, 0.0, None)
+
         c_chem_part_total = np.zeros((A, N, T), dtype=float)
         c_chem_medium_total = np.zeros((A, T), dtype=float)
-
         for s, a_idx in enumerate(self.species_additive_index):
             c_chem_part_total[a_idx] += c_chem_part_species[s]
-            c_chem_medium_total[a_idx] += c_chem_medium_species[s]
+        for m_idx, a_idx in enumerate(self.medium_species_additive_index):
+            c_chem_medium_total[a_idx] += c_medium_pool_species[m_idx]
 
         return (
             c_chem_part_species,
             c_chem_medium_species,
             c_chem_part_total,
-            c_chem_medium_total
+            c_chem_medium_total,
+            c_medium_pool_species,
         )
 
 

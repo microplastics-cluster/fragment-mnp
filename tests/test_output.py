@@ -4,7 +4,7 @@ Unit tests for model output, including additive summary helpers.
 import numpy as np
 
 from fragmentmnp import FragmentMNP
-from fragmentmnp.examples import minimal_config, minimal_data_with_multi_additives
+from fragmentmnp.examples import minimal_config, minimal_data_with_multi_additives, minimal_data_with_phase2
 from _mock_output import mock_output, t, c, n, c_diss, c_min
 
 
@@ -51,3 +51,11 @@ def test_additive_lookup_helpers():
     assert 'particulate_by_size' in ts
     assert 'aqueous' in ts
     assert ts['particulate_by_size'].shape[1] == out.n_timesteps
+
+
+def test_medium_pool_lookup_helpers():
+    out = FragmentMNP(minimal_config, minimal_data_with_phase2).run()
+    idx = out.get_medium_pool_index('Additive A:dissolved_parent')
+    assert idx == 0
+    ts = out.get_medium_pool_timeseries('Additive A:dissolved_parent')
+    assert ts.shape[0] == out.n_timesteps

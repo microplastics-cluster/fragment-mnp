@@ -368,69 +368,100 @@ def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
         if 'pools' not in additive:
             raise SchemaError(f"Additive '{additive['name']}' must contain 'pools'.")
 
+        additive_name = additive['name']
         pools = additive['pools']
         if not isinstance(pools, list) or len(pools) == 0:
             raise SchemaError(
-                f"Additive '{additive['name']}' must contain a non-empty pools list."
+                f"Additive '{additive_name}' must contain a non-empty pools list."
             )
 
-        valid_targets = {f"{additive['name']}:{pool['name']}" for pool in pools}
+        medium_pools = list(additive.get('medium_pools', []))
+        if len(medium_pools) == 0:
+            medium_pools = [{'name': 'medium', 'initial_mass': 0.0, 'fate': {}}]
+
+        valid_particulate_targets = {f"{additive_name}:{pool['name']}" for pool in pools}
+        valid_medium_targets = {f"{additive_name}:{pool['name']}" for pool in medium_pools}
 
         pools_out = []
         for pool in pools:
             if not isinstance(pool, dict):
                 raise SchemaError(
-                    f"Each pool in additive '{additive['name']}' must be a dict."
+                    f"Each pool in additive '{additive_name}' must be a dict."
                 )
             if 'name' not in pool:
                 raise SchemaError(
-                    f"Each pool in additive '{additive['name']}' must contain 'name'."
+                    f"Each pool in additive '{additive_name}' must contain 'name'."
                 )
             if 'initial_concs' not in pool:
                 raise SchemaError(
-                    f"Pool '{pool.get('name', '?')}' in additive '{additive['name']}' "
-                    "must contain 'initial_concs'."
+                    f"Pool '{pool.get('name', '?')}' in additive '{additive_name}' must contain 'initial_concs'."
                 )
             if not _is_positive_array(pool['initial_concs']):
-                raise SchemaError(
-                    f"Pool '{pool['name']}' initial_concs must be a non-negative array."
-                )
+                raise SchemaError(f"Pool '{pool['name']}' initial_concs must be a non-negative array.")
             if len(pool['initial_concs']) != n_size_classes:
                 raise FMNPIncorrectDistributionLength(
-                    f"Pool '{pool['name']}' in additive '{additive['name']}' has "
-                    f"{len(pool['initial_concs'])} initial concentrations; expected "
-                    f"{n_size_classes}."
+                    f"Pool '{pool['name']}' in additive '{additive_name}' has "
+                    f"{len(pool['initial_concs'])} initial concentrations; expected {n_size_classes}."
                 )
             if 'release' not in pool:
                 raise SchemaError(
-                    f"Pool '{pool['name']}' in additive '{additive['name']}' "
-                    "must contain 'release'."
+                    f"Pool '{pool['name']}' in additive '{additive_name}' must contain 'release'."
                 )
+
+            release = _validate_release_block(pool['release'])
+            release_target = _normalize_transfer_target(
+                pool.get('release', {}).get('target', f"{additive_name}:medium"), additive_name
+            )
+            if release_target not in valid_medium_targets:
+                raise SchemaError(
+                    f"Unknown release target '{release_target}' for particulate pool '{additive_name}:{pool['name']}'."
+                )
+            release['target'] = release_target
 
             pools_out.append({
                 'name': pool['name'],
                 'initial_concs': list(pool['initial_concs']),
-                'release': _validate_release_block(pool['release']),
+                'release': release,
                 'fate': _validate_fate_block(
                     pool.get('fate', {}),
-                    additive_name=additive['name'],
+                    additive_name=additive_name,
                     pool_name=pool['name'],
-                    valid_targets=valid_targets
+                    valid_targets=valid_particulate_targets
+                )
+            })
+
+        medium_pools_out = []
+        for pool in medium_pools:
+            if not isinstance(pool, dict):
+                raise SchemaError(f"Each medium_pool in additive '{additive_name}' must be a dict.")
+            if 'name' not in pool:
+                raise SchemaError(f"Each medium_pool in additive '{additive_name}' must contain 'name'.")
+            initial_mass = float(pool.get('initial_mass', 0.0))
+            if initial_mass < 0.0:
+                raise SchemaError(f"medium_pool initial_mass must be non-negative for '{additive_name}:{pool['name']}'.")
+            medium_pools_out.append({
+                'name': pool['name'],
+                'initial_mass': initial_mass,
+                'fate': _validate_fate_block(
+                    pool.get('fate', {}),
+                    additive_name=additive_name,
+                    pool_name=pool['name'],
+                    valid_targets=valid_medium_targets
                 )
             })
 
         out.append({
-            'name': additive['name'],
-            'pools': pools_out
+            'name': additive_name,
+            'pools': pools_out,
+            'medium_pools': medium_pools_out,
         })
 
     return out
 
 
 
-
 def _normalize_transfer_target(raw_target: str, additive_name: str) -> str:
-    """Return fully-qualified transfer target name."""
+    """Return fully-qualified target name."""
     target = str(raw_target)
     return target if ':' in target else f"{additive_name}:{target}"
 
@@ -502,7 +533,13 @@ def _normalize_to_additives(data: dict, config: dict) -> dict:
                 'model': str(chem_cfg.get('model', 'analytical')).lower(),
                 'solver': dict(chem_cfg.get('solver', {})),
                 'params': dict(chem_data),
+                'target': 'additive_0:medium',
             }
+        }],
+        'medium_pools': [{
+            'name': 'medium',
+            'initial_mass': 0.0,
+            'fate': {},
         }]
     }]
     return data

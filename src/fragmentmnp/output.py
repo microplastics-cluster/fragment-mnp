@@ -61,6 +61,7 @@ class FMNPOutput():
         'c_chem_part_species', 'c_chem_medium_species',
         'c_chem_part_total', 'c_chem_medium_total',
         'species_names', 'additive_names',
+        'c_medium_pool_species', 'medium_pool_names',
         'c_chem_part', 'c_chem_medium', 'A_part', 'A_aq'
     ]
 
@@ -77,7 +78,9 @@ class FMNPOutput():
                  c_chem_part_total=None,
                  c_chem_medium_total=None,
                  additive_names=None,
-                 species_names=None) -> None:
+                 species_names=None,
+                 c_medium_pool_species=None,
+                 medium_pool_names=None) -> None:
         """
         Initialise the output data object
         """
@@ -96,6 +99,8 @@ class FMNPOutput():
         self.c_chem_medium_total = c_chem_medium_total
         self.additive_names = additive_names
         self.species_names = species_names
+        self.c_medium_pool_species = c_medium_pool_species
+        self.medium_pool_names = medium_pool_names
 
         # Backward-compatible aliases
         if c_chem_part_total is None:
@@ -113,15 +118,10 @@ class FMNPOutput():
             self.c_chem_medium = c_chem_medium_total
             self.A_part = c_chem_part_total
             self.A_aq = c_chem_medium_total
-        # Save the number of timesteps and size classes
+
         self.n_timesteps = self.t.shape[0]
         self.n_size_classes = self.c.shape[0]
-        # Set the ID based on what we've been given, or
-        # give a unique ID
-        if id is None:
-            self.id = uuid.uuid4()
-        else:
-            self.id = id
+        self.id = uuid.uuid4() if id is None else id
 
     # ------------------------------------------------------------------
     # Basic helpers
@@ -216,6 +216,22 @@ class FMNPOutput():
     def get_additive_index(self, name: str) -> int:
         self._require_chemical_outputs()
         return self._resolve_additive_index(name)
+
+
+    def get_medium_pool_index(self, name: str) -> int:
+        self._require_chemical_outputs()
+        if self.medium_pool_names is None:
+            raise ValueError('No medium pool names are stored on this output object.')
+        if name not in self.medium_pool_names:
+            raise KeyError(f'Unknown medium pool name: {name}')
+        return self.medium_pool_names.index(name)
+
+    def get_medium_pool_timeseries(self, pool):
+        self._require_chemical_outputs()
+        i = pool if isinstance(pool, int) else self.get_medium_pool_index(pool)
+        if self.c_medium_pool_species is None:
+            raise ValueError('No medium pool time series are stored on this output object.')
+        return self.c_medium_pool_species[i].copy()
 
     def get_species_timeseries(self, species):
         self._require_chemical_outputs()
@@ -377,7 +393,6 @@ class FMNPOutput():
         except ImportError as exc:
             raise ImportError('size_class_contribution_dataframe() requires pandas.') from exc
         return pd.DataFrame(self.size_class_contribution_records(level=level))
-    
 
     # -----------------
     # Plotting 
@@ -642,6 +657,41 @@ class FMNPOutput():
         if show:
             plt.show()
         return fig, ax
+
+
+    def plot_medium_pools(self, additive, show=False):
+        self._require_chemical_outputs()
+        if self.c_medium_pool_species is None or self.medium_pool_names is None:
+            raise ValueError('This output object does not contain named medium pools.')
+        additive_name = self.additive_names[self._resolve_additive_index(additive)]
+        pool_indices = [
+            i for i, name in enumerate(self.medium_pool_names)
+            if str(name).startswith(f'{additive_name}:')
+        ]
+        fig, ax = plt.subplots()
+        for i in pool_indices:
+            pool_name = self.medium_pool_names[i].split(':', 1)[1]
+            ax.plot(self.t, self.c_medium_pool_species[i], label=pool_name)
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Medium-pool mass concentration')
+        ax.set_title(f'Medium pools: {additive_name}')
+        ax.legend()
+        if show:
+            plt.show()
+        return fig, ax
+
+    def get_medium_pool_timeseries_by_additive(self, additive):
+        self._require_chemical_outputs()
+        additive_name = self.additive_names[self._resolve_additive_index(additive)]
+        if self.c_medium_pool_species is None or self.medium_pool_names is None:
+            raise ValueError('No medium pool time series are stored on this output object.')
+
+        out = {}
+        for i, name in enumerate(self.medium_pool_names):
+            if str(name).startswith(f"{additive_name}:"):
+                short = str(name).split(":", 1)[1]
+                out[short] = self.c_medium_pool_species[i].copy()
+        return out
 
     def plot_stacked_cumulative_release(self, level='additive', show=False):
         self._require_chemical_outputs()

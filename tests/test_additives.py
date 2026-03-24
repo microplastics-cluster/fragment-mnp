@@ -1,13 +1,7 @@
 import numpy as np
 
 from fragmentmnp import FragmentMNP
-from fragmentmnp.examples import (
-    minimal_config,
-    minimal_config_with_additive,
-    minimal_data_with_additive,
-    minimal_data_with_multi_additives,
-    minimal_data_with_fate,
-)
+from fragmentmnp.examples import minimal_config, minimal_config_with_additive, minimal_data_with_additive, minimal_data_with_multi_additives, minimal_data_with_phase2
 
 
 def test_additive_outputs_exist_when_enabled():
@@ -69,30 +63,17 @@ def test_species_sum_matches_additive_total():
         out.c_chem_medium_total[0]
     )
 
-def test_zero_fate_rates_preserve_total_mass_conservation():
-    out = FragmentMNP(minimal_config, minimal_data_with_multi_additives).run()
+def test_phase2_medium_pools_exist_and_transform():
+    out = FragmentMNP(minimal_config, minimal_data_with_phase2).run()
+    assert out.c_medium_pool_species is not None
+    assert 'Additive A:dissolved_parent' in out.medium_pool_names
+    assert 'Additive A:transformed_product' in out.medium_pool_names
+    i_parent = out.get_medium_pool_index('Additive A:dissolved_parent')
+    i_prod = out.get_medium_pool_index('Additive A:transformed_product')
+    assert out.c_medium_pool_species[i_parent, -1] >= 0.0
+    assert out.c_medium_pool_species[i_prod, -1] > 0.0
 
-    total0 = out.c_chem_part_total[0, :, 0].sum() + out.c_chem_medium_total[0, 0]
-    totalT = out.c_chem_part_total[0, :, -1].sum() + out.c_chem_medium_total[0, -1]
-    assert np.isclose(total0, totalT, rtol=1e-10, atol=1e-12)
-
-
-def test_pool_transfer_moves_mass_to_target_pool():
-    out = FragmentMNP(minimal_config, minimal_data_with_fate).run()
-
-    pool1_initial = out.c_chem_part_species[0, :, 0].sum()
-    pool2_initial = out.c_chem_part_species[1, :, 0].sum()
-    pool2_later = out.c_chem_part_species[1, :, -1].sum()
-
-    assert np.isclose(pool2_initial, 0.0)
-    assert pool1_initial > 0.0
-    assert pool2_later > 0.0
-
-
-def test_k_deg_and_k_loss_reduce_modeled_total_mass():
-    out = FragmentMNP(minimal_config, minimal_data_with_fate).run()
-
-    total0 = out.c_chem_part_total[0, :, 0].sum() + out.c_chem_medium_total[0, 0]
-    totalT = out.c_chem_part_total[0, :, -1].sum() + out.c_chem_medium_total[0, -1]
-
-    assert totalT < total0
+def test_phase2_medium_totals_match_named_medium_pool_sum():
+    out = FragmentMNP(minimal_config, minimal_data_with_phase2).run()
+    summed = out.c_medium_pool_species.sum(axis=0)
+    assert np.allclose(summed, out.c_chem_medium_total[0])

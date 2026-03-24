@@ -159,13 +159,6 @@ minimal_data_with_multi_additives = {
                             'D_w': 1e-9,
                             'K_pw': 1e4,
                         }
-                    },
-                    'fate': {
-                        'k_deg': 0.0,
-                        'k_loss': 0.0,
-                        'transfers': [
-                            {'to': 'Pool 2', 'k': 0.0}
-                        ]
                     }
                 },
 
@@ -188,11 +181,6 @@ minimal_data_with_multi_additives = {
                             'K_pw': 1e5,
                             'k_m': 1e-8,
                         }
-                    },
-                    'fate': {
-                        'k_deg': 0.0,
-                        'k_loss': 0.0,
-                        'transfers': []
                     }
                 }
             ]
@@ -215,11 +203,6 @@ minimal_data_with_multi_additives = {
                             'D_w': 1e-9,
                             'K_pw': 1e3,
                         }
-                    },
-                    'fate': {
-                        'k_deg': 0.0,
-                        'k_loss': 0.0,
-                        'transfers': []
                     }
                 }
             ]
@@ -229,7 +212,10 @@ minimal_data_with_multi_additives = {
 """Canonical multi-additive / multi-pool example."""
 
 
-minimal_data_with_fate = {
+# --------------------------------------------------------------------
+# Phase 2 example with named medium pools and transformed-product generation
+# --------------------------------------------------------------------
+minimal_data_with_phase2 = {
     'initial_concs': [42.0] * 7,
     'density': 1380,
     'k_frag': 0.01,
@@ -239,35 +225,33 @@ minimal_data_with_fate = {
             'name': 'Additive A',
             'pools': [
                 {
-                    'name': 'Pool 1',
-                    'initial_concs': [1.0] * 7,
+                    'name': 'fast_domain',
+                    'initial_concs': [0.8] * 7,
                     'release': {
                         'model': 'analytical',
+                        'target': 'Additive A:dissolved_parent',
                         'solver': {'n_terms': 50},
-                        'params': {'D_p': 1e-16, 'D_w': 1e-9, 'K_pw': 1e4}
+                        'params': {'D_p': 1e-16, 'D_w': 1e-9, 'K_pw': 1e4},
                     },
-                    'fate': {
-                        'k_deg': 0.0,
-                        'k_loss': 0.02,
-                        'transfers': [{'to': 'Pool 2', 'k': 0.05}]
-                    }
+                    'fate': {'transfers': [{'to': 'slow_domain', 'k': 1e-3}]},
                 },
                 {
-                    'name': 'Pool 2',
-                    'initial_concs': [0.0] * 7,
+                    'name': 'slow_domain',
+                    'initial_concs': [0.2] * 7,
                     'release': {
                         'model': 'analytical',
+                        'target': 'Additive A:dissolved_parent',
                         'solver': {'n_terms': 50},
-                        'params': {'D_p': 1e-16, 'D_w': 1e-9, 'K_pw': 1e4}
+                        'params': {'D_p': 1e-18, 'D_w': 1e-9, 'K_pw': 1e5},
                     },
-                    'fate': {
-                        'k_deg': 0.01,
-                        'k_loss': 0.0,
-                        'transfers': []
-                    }
-                }
-            ]
+                    'fate': {'transfers': [{'to': 'fast_domain', 'k': 2e-4}]},
+                },
+            ],
+            'medium_pools': [
+                {'name': 'dissolved_parent', 'initial_mass': 0.0, 'fate': {'transfers': [{'to': 'transformed_product', 'k': 5e-3}]}},
+                {'name': 'transformed_product', 'initial_mass': 0.0, 'fate': {'k_loss': 1e-4}},
+                {'name': 'sorbed', 'initial_mass': 0.0, 'fate': {}},
+            ],
         }
-    ]
+    ],
 }
-"""Example data with first-order particulate-pool fate enabled."""
