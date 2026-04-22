@@ -478,6 +478,148 @@ def test_invalid_transfer_target_raises():
     with pytest.raises(SchemaError):
         validate_data(data, config)
 
+def test_valid_inheritance_block_defaults_to_proportional():
+    config = copy.deepcopy(valid_minimal_config)
+    data = copy.deepcopy(valid_minimal_data)
+
+    data["additives"] = [
+        {
+            "name": "Additive A",
+            "pools": [
+                {
+                    "name": "Pool 1",
+                    "initial_concs": [1.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    }
+                }
+            ]
+        }
+    ]
+
+    validated = validate_data(data, config)
+    inh = validated["additives"][0]["pools"][0]["inheritance"]
+    assert inh["mode"] == "proportional"
+
+
+def test_valid_size_biased_inheritance_block():
+    config = copy.deepcopy(valid_minimal_config)
+    data = copy.deepcopy(valid_minimal_data)
+
+    data["additives"] = [
+        {
+            "name": "Additive A",
+            "pools": [
+                {
+                    "name": "Pool 1",
+                    "initial_concs": [1.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    },
+                    "inheritance": {
+                        "mode": "size_biased",
+                        "beta": -1.0
+                    }
+                }
+            ]
+        }
+    ]
+
+    validated = validate_data(data, config)
+    inh = validated["additives"][0]["pools"][0]["inheritance"]
+    assert inh["mode"] == "size_biased"
+    assert inh["beta"] == -1.0
+
+
+def test_invalid_inheritance_mode_raises():
+    config = copy.deepcopy(valid_minimal_config)
+    data = copy.deepcopy(valid_minimal_data)
+
+    data["additives"] = [
+        {
+            "name": "Additive A",
+            "pools": [
+                {
+                    "name": "Pool 1",
+                    "initial_concs": [1.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    },
+                    "inheritance": {
+                        "mode": "not_a_mode"
+                    }
+                }
+            ]
+        }
+    ]
+
+    with pytest.raises(SchemaError):
+        validate_data(data, config)
+
+
+def test_valid_particulate_fate_allows_size_dependent_rates():
+    config = copy.deepcopy(valid_minimal_config)
+    data = copy.deepcopy(valid_minimal_data)
+
+    data["additives"] = [
+        {
+            "name": "Additive A",
+            "pools": [
+                {
+                    "name": "Pool 1",
+                    "initial_concs": [1.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    },
+                    "fate": {
+                        "k_deg": [1e-5] * config["n_size_classes"],
+                        "k_loss": [0.0] * config["n_size_classes"],
+                    }
+                },
+                {
+                    "name": "Pool 2",
+                    "initial_concs": [0.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    }
+                }
+            ]
+        }
+    ]
+
+    validated = validate_data(data, config)
+    assert isinstance(validated["additives"][0]["pools"][0]["fate"]["k_deg"], list)
+
+def test_invalid_size_dependent_fate_wrong_length_raises():
+    config = copy.deepcopy(valid_minimal_config)
+    data = copy.deepcopy(valid_minimal_data)
+
+    data["additives"] = [
+        {
+            "name": "Additive A",
+            "pools": [
+                {
+                    "name": "Pool 1",
+                    "initial_concs": [1.0] * config["n_size_classes"],
+                    "release": {
+                        "model": "analytical",
+                        "params": {"D_p": 1e-16, "D_w": 1e-9, "K_pw": 1e4}
+                    },
+                    "fate": {
+                        "k_deg": [1e-5, 2e-5]
+                    }
+                }
+            ]
+        }
+    ]
+
+    with pytest.raises(SchemaError):
+        validate_data(data, config)
 
 def test_invalid_negative_fate_rate_raises():
     config = copy.deepcopy(valid_minimal_config)

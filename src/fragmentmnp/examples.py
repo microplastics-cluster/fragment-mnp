@@ -159,6 +159,10 @@ minimal_data_with_multi_additives = {
                             'D_w': 1e-9,
                             'K_pw': 1e4,
                         }
+                    },
+
+                    'inheritance': {
+                        'mode': 'proportional'
                     }
                 },
 
@@ -181,6 +185,11 @@ minimal_data_with_multi_additives = {
                             'K_pw': 1e5,
                             'k_m': 1e-8,
                         }
+                    },
+
+                    'inheritance': {
+                        'mode': 'size_biased',
+                        'beta': -1.0
                     }
                 }
             ]
@@ -203,6 +212,11 @@ minimal_data_with_multi_additives = {
                             'D_w': 1e-9,
                             'K_pw': 1e3,
                         }
+                    },
+
+                    'inheritance': {
+                        'mode': 'surface_enriched',
+                        'gamma': 1.0
                     }
                 }
             ]
@@ -233,7 +247,15 @@ minimal_data_with_phase2 = {
                         'solver': {'n_terms': 50},
                         'params': {'D_p': 1e-16, 'D_w': 1e-9, 'K_pw': 1e4},
                     },
-                    'fate': {'transfers': [{'to': 'slow_domain', 'k': 1e-3}]},
+                    'inheritance': {
+                        'mode': 'proportional'
+                    },
+                    'fate': {
+                        'k_deg': [1e-5, 2e-5, 4e-5, 8e-5, 1.6e-4, 3.2e-4, 6.4e-4],
+                        'transfers': [
+                            {'to': 'slow_domain', 'k': [1e-4, 1e-4, 2e-4, 3e-4, 5e-4, 8e-4, 1e-3]}
+                        ]
+                    },
                 },
                 {
                     'name': 'slow_domain',
@@ -243,6 +265,10 @@ minimal_data_with_phase2 = {
                         'target': 'Additive A:dissolved_parent',
                         'solver': {'n_terms': 50},
                         'params': {'D_p': 1e-18, 'D_w': 1e-9, 'K_pw': 1e5},
+                    },
+                    'inheritance': {
+                        'mode': 'size_biased',
+                        'beta': -1.0
                     },
                     'fate': {'transfers': [{'to': 'fast_domain', 'k': 2e-4}]},
                 },
@@ -254,4 +280,74 @@ minimal_data_with_phase2 = {
             ],
         }
     ],
+}
+
+# Optional fragmentation inheritance rule for additive redistribution
+# during polymer fragmentation:
+# - proportional
+# - size_biased (beta)
+# - surface_enriched (gamma)
+"""Example data showing alternative fragmentation inheritance modes."""
+minimal_data_with_inheritance = {
+    'initial_concs': [42.0] * 7,
+    'density': 1380,
+    'k_frag': 0.01,
+    'k_min': 0.0,
+    'additives': [
+        {
+            'name': 'Additive A',
+            'pools': [
+                {
+                    'name': 'reference_pool',
+                    'initial_concs': [1.0] * 7,
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 50},
+                        'params': {
+                            'D_p': 1e-16,
+                            'D_w': 1e-9,
+                            'K_pw': 1e4,
+                        }
+                    },
+                    'inheritance': {
+                        'mode': 'proportional'
+                    }
+                },
+                {
+                    'name': 'small_fragment_enriched_pool',
+                    'initial_concs': [1.0] * 7,
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 50},
+                        'params': {
+                            'D_p': 1e-16,
+                            'D_w': 1e-9,
+                            'K_pw': 1e4,
+                        }
+                    },
+                    'inheritance': {
+                        'mode': 'size_biased',
+                        'beta': -1.0
+                    }
+                },
+                {
+                    'name': 'surface_enriched_pool',
+                    'initial_concs': [1.0] * 7,
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 50},
+                        'params': {
+                            'D_p': 1e-16,
+                            'D_w': 1e-9,
+                            'K_pw': 1e4,
+                        }
+                    },
+                    'inheritance': {
+                        'mode': 'surface_enriched',
+                        'gamma': 1.0
+                    }
+                }
+            ]
+        }
+    ]
 }

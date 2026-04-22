@@ -145,6 +145,7 @@ class FragmentMNP():
                         'solver': dict(pool['release'].get('solver', {})),
                         'params': dict(pool['release'].get('params', {})),
                         'release_target': str(pool['release'].get('target', f"{additive_name}:medium")),
+                        'inheritance': dict(pool.get('inheritance', {'mode': 'proportional'})),
                         'fate': dict(pool.get('fate', {})),
                     })
                     self.species_names.append(f"{additive_name}:{pool['name']}")
@@ -178,6 +179,7 @@ class FragmentMNP():
                 'solver': dict(self.chemical_release_config.get('solver', {})),
                 'params': dict(self.chemical_release_data or {}),
                 'release_target': 'additive_0:medium',
+                'inheritance': {'mode': 'proportional'},
                 'fate': {},
             }]
             self.species_additive_index = [0]
@@ -403,12 +405,14 @@ class FragmentMNP():
                 target_name = tr['to']
                 transfers.append({
                     'to': target_name,
-                    'k': float(tr['k']),
+                    'k': tr['k'],  # keep scalar or size-vector as provided
                     'target_species_index': int(particulate_name_to_index[target_name]),
                 })
-            fate['k_deg'] = float(fate.get('k_deg', 0.0))
-            fate['k_loss'] = float(fate.get('k_loss', 0.0))
+
+            fate['k_deg'] = fate.get('k_deg', 0.0)   # keep scalar or size-vector
+            fate['k_loss'] = fate.get('k_loss', 0.0) # keep scalar or size-vector
             fate['transfers'] = transfers
+
             normalized_particulate.append({
                 **spec,
                 'fate': fate,
@@ -423,12 +427,14 @@ class FragmentMNP():
                 target_name = tr['to']
                 transfers.append({
                     'to': target_name,
-                    'k': float(tr['k']),
+                    'k': tr['k'],  # medium pools still usually scalar, but no need to force here
                     'target_species_index': int(medium_name_to_index[target_name]),
                 })
-            fate['k_deg'] = float(fate.get('k_deg', 0.0))
-            fate['k_loss'] = float(fate.get('k_loss', 0.0))
+
+            fate['k_deg'] = fate.get('k_deg', 0.0)
+            fate['k_loss'] = fate.get('k_loss', 0.0)
             fate['transfers'] = transfers
+
             normalized_medium.append({**spec, 'fate': fate})
 
         for s, spec in enumerate(normalized_particulate):
@@ -461,9 +467,26 @@ class FragmentMNP():
                 mask = c > eps
                 conc_A[mask] = c_chem_part_species[s, mask, ti] / c[mask]
 
-                A_to_k = (G.T * conc_A).T
-                A_gain = A_to_k.sum(axis=0)
-                A_loss = A_to_k.sum(axis=1)
+                # Additive mass lost from each parent size class due to
+                # polymer fragmentation during this timestep.
+                A_loss = conc_A * L_frag
+
+                # Redistribute that additive mass to daughter classes using the
+                # selected inheritance mode.
+                A_gain = np.zeros(N, dtype=float)
+                inheritance = dict(spec.get('inheritance', {'mode': 'proportional'}))
+
+                for i_parent in range(N):
+                    lost_i = A_loss[i_parent]
+                    if lost_i <= 0.0:
+                        continue
+
+                    w_daughters = self._fragmentation_inheritance_weights(
+                        parent_size_index=i_parent,
+                        inheritance=inheritance
+                    )
+                    A_gain += lost_i * w_daughters
+
                 A_mid = c_chem_part_species[s, :, ti] - A_loss + A_gain
 
                 cache_key = (s, float(dt_i))
@@ -542,52 +565,58 @@ class FragmentMNP():
                                          dt: float,
                                          spec: dict) -> Tuple[npt.NDArray[np.float64], dict]:
         """
-        Apply explicit first-order fate to one particulate additive species
-        over a single post-processing timestep.
+        Apply explicit first-order fate over one timestep.
 
-        Implemented Phase 1 processes:
-        - k_deg: irreversible removal from modeled particulate system
-        - k_loss: irreversible removal from modeled particulate system
-        - transfers: explicit first-order transfer to other particulate pools
+        For particulate species:
+        - k_deg, k_loss, and transfer k may be scalars or size-class vectors.
 
-        Notes
-        -----
-        - All rates are applied to the particulate mass remaining after release.
-        - Transfers are size-class preserving in Phase 1.
-        - Fragmentation inheritance remains proportional and is handled before
-          this method is called.
+        For medium pools:
+        - A_in has length 1 and rates are treated as scalars.
         """
         A_in = np.asarray(A_in, dtype=float)
         A_work = np.clip(A_in, 0.0, None).copy()
+        n_local = A_work.size
 
         fate = dict(spec.get('fate', {}))
-        k_deg = float(fate.get('k_deg', 0.0))
-        k_loss = float(fate.get('k_loss', 0.0))
+
+        k_deg = self._expand_rate_to_size_vector(fate.get('k_deg', 0.0), n_local)
+        k_loss = self._expand_rate_to_size_vector(fate.get('k_loss', 0.0), n_local)
         transfers = list(fate.get('transfers', []))
 
-        total_k = k_deg + k_loss + sum(float(tr.get('k', 0.0)) for tr in transfers)
-        if total_k < 0.0:
+        k_transfer_list = []
+        for tr in transfers:
+            k_tr = self._expand_rate_to_size_vector(tr.get('k', 0.0), n_local)
+            k_transfer_list.append(k_tr)
+
+        total_k = k_deg + k_loss
+        for k_tr in k_transfer_list:
+            total_k = total_k + k_tr
+
+        if np.any(total_k < 0.0):
             raise SchemaError(
                 f"Negative total fate rate encountered for "
                 f"{spec['additive_name']}:{spec['pool_name']}."
             )
 
-        if total_k == 0.0 or dt <= 0.0:
+        if dt <= 0.0 or np.all(total_k == 0.0):
             return A_work, {}
 
-        # Explicit Euler removal fractions. Guard against overshoot so masses
-        # remain non-negative even for large dt.
-        frac_deg = min(k_deg * dt, 1.0)
-        frac_loss = min(k_loss * dt, 1.0)
-        frac_transfers = [min(float(tr.get('k', 0.0)) * dt, 1.0) for tr in transfers]
+        frac_deg = np.minimum(k_deg * dt, 1.0)
+        frac_loss = np.minimum(k_loss * dt, 1.0)
+        frac_transfers = [np.minimum(k_tr * dt, 1.0) for k_tr in k_transfer_list]
 
-        frac_total = frac_deg + frac_loss + sum(frac_transfers)
-        scale = 1.0
-        if frac_total > 1.0:
-            scale = 1.0 / frac_total
-            frac_deg *= scale
-            frac_loss *= scale
-            frac_transfers = [f * scale for f in frac_transfers]
+        frac_total = frac_deg + frac_loss
+        for ftr in frac_transfers:
+            frac_total = frac_total + ftr
+
+        # Prevent per-size overshoot
+        scale = np.ones(n_local, dtype=float)
+        mask = frac_total > 1.0
+        scale[mask] = 1.0 / frac_total[mask]
+
+        frac_deg = frac_deg * scale
+        frac_loss = frac_loss * scale
+        frac_transfers = [ftr * scale for ftr in frac_transfers]
 
         transfer_out = {}
         for tr, frac in zip(transfers, frac_transfers):
@@ -595,7 +624,11 @@ class FragmentMNP():
             target_idx = int(tr['target_species_index'])
             transfer_out[target_idx] = transfer_out.get(target_idx, 0.0) + moved
 
-        retained_fraction = max(0.0, 1.0 - frac_deg - frac_loss - sum(frac_transfers))
+        retained_fraction = 1.0 - frac_deg - frac_loss
+        for ftr in frac_transfers:
+            retained_fraction = retained_fraction - ftr
+        retained_fraction = np.clip(retained_fraction, 0.0, 1.0)
+
         A_out = retained_fraction * A_work
 
         return np.clip(A_out, 0.0, None), transfer_out
@@ -778,6 +811,60 @@ class FragmentMNP():
 
         # Return this distribution
         return k_dist
+    
+    def _fragmentation_inheritance_weights(self,
+                                           parent_size_index: int,
+                                           inheritance: dict) -> np.ndarray:
+        """
+        Return daughter weighting factors for additive inheritance from one
+        parent size class during a fragmentation event.
+
+        The returned vector has length n_size_classes and is only non-zero for
+        valid daughter classes (< parent_size_index). It is normalised to sum
+        to 1 over valid daughters.
+
+        Modes
+        -----
+        proportional:
+            Uses the polymer fragment size distribution row directly.
+
+        size_biased:
+            Reweights daughters by d^beta on top of the polymer FSD row.
+
+        surface_enriched:
+            Reweights daughters by surface_area^gamma on top of the polymer
+            FSD row.
+        """
+        mode = str(inheritance.get("mode", "proportional")).lower()
+
+        w = np.array(self.fsd[parent_size_index], dtype=float)
+        if parent_size_index <= 0 or np.sum(w) <= 0.0:
+            return w
+
+        daughter_mask = np.arange(self.n_size_classes) < parent_size_index
+
+        if mode == "proportional":
+            pass
+
+        elif mode == "size_biased":
+            beta = float(inheritance.get("beta", 0.0))
+            bias = np.zeros_like(w)
+            bias[daughter_mask] = self.psd[daughter_mask] ** beta
+            w = w * bias
+
+        elif mode == "surface_enriched":
+            gamma = float(inheritance.get("gamma", 1.0))
+            bias = np.zeros_like(w)
+            bias[daughter_mask] = self.surface_areas[daughter_mask] ** gamma
+            w = w * bias
+
+        else:
+            raise ValueError(f"Unknown inheritance mode '{mode}'.")
+
+        s = float(np.sum(w))
+        if s > 0.0:
+            w = w / s
+        return w
 
     @staticmethod
     def set_k_distribution(dims: dict, k_f: float, k_0: float = 0.0,
@@ -1568,3 +1655,18 @@ class FragmentMNP():
             x[i] = (d[i] - c[i] * x[i + 1]) / b[i]
 
         return x
+    
+    @staticmethod
+    def _expand_rate_to_size_vector(rate, n_size_classes: int) -> np.ndarray:
+        """
+        Convert a scalar or length-n_size_classes iterable into a size-vector.
+        """
+        if isinstance(rate, (int, float)):
+            return np.full(n_size_classes, float(rate), dtype=float)
+
+        arr = np.asarray(rate, dtype=float)
+        if arr.ndim != 1 or len(arr) != n_size_classes:
+            raise ValueError(
+                f"Expected scalar or length-{n_size_classes} rate vector."
+            )
+        return arr.astype(float, copy=False)

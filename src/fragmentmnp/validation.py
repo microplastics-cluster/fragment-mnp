@@ -354,6 +354,81 @@ def _validate_release_block(release: dict) -> dict:
         'params': params
     }
 
+def _validate_inheritance_block(inheritance: dict | None) -> dict:
+    """
+    Validate particulate fragmentation inheritance settings.
+
+    Supported modes
+    ---------------
+    proportional
+        Daughter fragments inherit additive in proportion to the parent
+        additive/polymer concentration. This is the current behaviour.
+
+    size_biased
+        Daughter fragments inherit additive using a weighting proportional
+        to daughter diameter**beta. beta < 0 enriches smaller daughters,
+        beta > 0 enriches larger daughters.
+
+    surface_enriched
+        Daughter fragments inherit additive using daughter surface area
+        weighting (surface area ** gamma). gamma=1 corresponds to direct
+        surface-area weighting.
+
+    Notes
+    -----
+    These rules redistribute the additive mass released by fragmentation
+    across daughter size classes, while conserving additive mass.
+    """
+    if inheritance is None:
+        inheritance = {}
+
+    if not isinstance(inheritance, dict):
+        raise SchemaError("pool.inheritance must be a dict if provided.")
+
+    mode = str(inheritance.get("mode", "proportional")).lower()
+    valid_modes = ["proportional", "size_biased", "surface_enriched"]
+    if mode not in valid_modes:
+        raise SchemaError(
+            f"pool.inheritance.mode must be one of {valid_modes}."
+        )
+
+    out = {"mode": mode}
+
+    if mode == "size_biased":
+        beta = float(inheritance.get("beta", 0.0))
+        out["beta"] = beta
+
+    if mode == "surface_enriched":
+        gamma = float(inheritance.get("gamma", 1.0))
+        if gamma < 0.0:
+            raise SchemaError("pool.inheritance.gamma must be non-negative.")
+        out["gamma"] = gamma
+
+    return out
+
+def _is_nonnegative_scalar_or_array(x, n_expected=None):
+    """
+    Accept either:
+    - non-negative scalar
+    - iterable of non-negative values
+
+    If n_expected is provided and x is iterable, require len(x) == n_expected.
+    """
+    if isinstance(x, (int, float)):
+        return float(x) >= 0.0
+
+    try:
+        arr = np.array(x, dtype=float)
+    except Exception:
+        return False
+
+    if arr.ndim != 1:
+        return False
+    if np.any(arr < 0.0):
+        return False
+    if n_expected is not None and len(arr) != n_expected:
+        return False
+    return True
 
 def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
     if not isinstance(additives, list) or len(additives) == 0:
@@ -422,11 +497,16 @@ def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
                 'name': pool['name'],
                 'initial_concs': list(pool['initial_concs']),
                 'release': release,
+                'inheritance': _validate_inheritance_block(
+                    pool.get('inheritance', {})
+                ),
                 'fate': _validate_fate_block(
                     pool.get('fate', {}),
                     additive_name=additive_name,
                     pool_name=pool['name'],
-                    valid_targets=valid_particulate_targets
+                    valid_targets=valid_particulate_targets,
+                    n_size_classes=n_size_classes,
+                    allow_size_dependent=True
                 )
             })
 
@@ -446,7 +526,9 @@ def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
                     pool.get('fate', {}),
                     additive_name=additive_name,
                     pool_name=pool['name'],
-                    valid_targets=valid_medium_targets
+                    valid_targets=valid_medium_targets,
+                    n_size_classes=None,
+                    allow_size_dependent=False
                 )
             })
 
@@ -466,18 +548,34 @@ def _normalize_transfer_target(raw_target: str, additive_name: str) -> str:
     return target if ':' in target else f"{additive_name}:{target}"
 
 
-def _validate_fate_block(fate: dict, additive_name: str, pool_name: str, valid_targets: set[str]) -> dict:
+def _validate_fate_block(fate: dict,
+                         additive_name: str,
+                         pool_name: str,
+                         valid_targets: set[str],
+                         n_size_classes: int | None = None,
+                         allow_size_dependent: bool = False) -> dict:
     if not isinstance(fate, dict):
         raise SchemaError(
             f"pool.fate for '{additive_name}:{pool_name}' must be a dict."
         )
 
-    k_deg = float(fate.get('k_deg', 0.0))
-    k_loss = float(fate.get('k_loss', 0.0))
-    if k_deg < 0.0:
-        raise SchemaError(f"k_deg must be non-negative for '{additive_name}:{pool_name}'.")
-    if k_loss < 0.0:
-        raise SchemaError(f"k_loss must be non-negative for '{additive_name}:{pool_name}'.")
+    def _validate_rate(name, value):
+        if allow_size_dependent:
+            if not _is_nonnegative_scalar_or_array(value, n_expected=n_size_classes):
+                raise SchemaError(
+                    f"{name} must be a non-negative scalar or a length-{n_size_classes} "
+                    f"non-negative array for '{additive_name}:{pool_name}'."
+                )
+        else:
+            value = float(value)
+            if value < 0.0:
+                raise SchemaError(
+                    f"{name} must be non-negative for '{additive_name}:{pool_name}'."
+                )
+        return value
+
+    k_deg = _validate_rate('k_deg', fate.get('k_deg', 0.0))
+    k_loss = _validate_rate('k_loss', fate.get('k_loss', 0.0))
 
     transfers_out = []
     for tr in fate.get('transfers', []):
@@ -489,11 +587,21 @@ def _validate_fate_block(fate: dict, additive_name: str, pool_name: str, valid_t
             raise SchemaError(
                 f"Each transfer in '{additive_name}:{pool_name}' fate must contain 'to' and 'k'."
             )
-        k = float(tr['k'])
-        if k < 0.0:
-            raise SchemaError(
-                f"Transfer rate k must be non-negative for '{additive_name}:{pool_name}'."
-            )
+
+        k_val = tr['k']
+        if allow_size_dependent:
+            if not _is_nonnegative_scalar_or_array(k_val, n_expected=n_size_classes):
+                raise SchemaError(
+                    f"Transfer rate k must be a non-negative scalar or a length-{n_size_classes} "
+                    f"non-negative array for '{additive_name}:{pool_name}'."
+                )
+        else:
+            k_val = float(k_val)
+            if k_val < 0.0:
+                raise SchemaError(
+                    f"Transfer rate k must be non-negative for '{additive_name}:{pool_name}'."
+                )
+
         target = _normalize_transfer_target(tr['to'], additive_name)
         this_name = f"{additive_name}:{pool_name}"
         if target == this_name:
@@ -502,7 +610,8 @@ def _validate_fate_block(fate: dict, additive_name: str, pool_name: str, valid_t
             raise SchemaError(
                 f"Unknown transfer target '{target}' for '{this_name}'."
             )
-        transfers_out.append({'to': target, 'k': k})
+
+        transfers_out.append({'to': target, 'k': k_val})
 
     return {'k_deg': k_deg, 'k_loss': k_loss, 'transfers': transfers_out}
 
