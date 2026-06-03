@@ -4,16 +4,22 @@ on: [push, pull_request]
 
 jobs:
   ci:
-    name: CI
+    name: CI (Python ${{ matrix.python-version }})
     # Set up operating system
     runs-on: ubuntu-latest
 
+    strategy:
+      # Don't cancel the whole matrix if one version fails
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13', '3.14']
+
     # Define job steps
     steps:
-    - name: Set up Python 3.12
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
-        python-version: 3.12
+        python-version: ${{ matrix.python-version }}
 
     - name: Check-out repository
       uses: actions/checkout@v4
@@ -27,10 +33,14 @@ jobs:
     - name: Test with pytest
       run: poetry run pytest
 
+    # Build and store the distribution once (on a single version) so the
+    # `cd` job has exactly one set of artifacts to publish.
     - name: Build package
+      if: matrix.python-version == '3.12'
       run: poetry build
 
     - name: Store the distribution packages
+      if: matrix.python-version == '3.12'
       uses: actions/upload-artifact@v4
       with:
         name: fragmentmnp
