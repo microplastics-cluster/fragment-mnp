@@ -4,6 +4,10 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-03
+
+* Updating supported Python versions to 3.11-3.14. Dropped support for Python 3.9 and 3.10.
+
 ## [1.1.7] - 2025-05-29
 
 * No changes to code, only creating release to enable automatic push to Zenodo.
@@ -58,7 +62,9 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 * Initial model version.
 
 
-[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.1.6...HEAD
+[Unreleased]: https://github.com/microplastics-cluster/fragment-mnp/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.2.0
+[1.1.7]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.7
 [1.1.6]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.6
 [1.1.5]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.5
 [1.1.4]: https://github.com/microplastics-cluster/fragment-mnp/releases/tag/1.1.4
