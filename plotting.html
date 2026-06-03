@@ -1,13 +1,13 @@
 
-
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="" >
+<html lang="en" data-content_root="./" >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>Plotting &#8212; FRAGMENT-MNP</title>
   
   
@@ -16,56 +16,59 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
   
-  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
-
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css" />
-    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
-    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
-    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.5ea377869091fd0449014c60fc090103.min.css" />
-  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
-  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/clipboard.min.js"></script>
-    <script src="_static/copybutton.js"></script>
-    <script src="_static/scripts/sphinx-book-theme.js"></script>
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
-    <script src="_static/togglebutton.js"></script>
+    <script src="_static/togglebutton.js?v=b8b12719"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script src="_static/design-tabs.js"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
-    <script async="async" src="_static/sphinx-thebe.js"></script>
+    <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'plotting';</script>
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Fragmentation, dissolution and mineralisation rates" href="fragmentation-dissolution-rates.html" />
     <link rel="prev" title="Input data" href="input-data.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
   </head>
   
   
@@ -81,19 +84,8 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-primary-sidebar-checkbox"/>
-  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-secondary-sidebar-checkbox"/>
-  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
+  <dialog id="pst-search-dialog">
+    
 <form class="bd-search d-flex align-items-center"
       action="search.html"
       method="get">
@@ -101,7 +93,6 @@
   <input type="search"
          class="form-control"
          name="q"
-         id="search-input"
          placeholder="Search this book..."
          aria-label="Search this book..."
          autocomplete="off"
@@ -109,8 +100,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
+</form>
+  </dialog>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -126,7 +117,8 @@
       
       
       
-      <div class="bd-sidebar-primary bd-sidebar">
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -156,21 +148,17 @@
     
     
     <img src="_static/logo.svg" class="logo__image only-light" alt="FRAGMENT-MNP - Home"/>
-    <script>document.write(`<img src="_static/logo.svg" class="logo__image only-dark" alt="FRAGMENT-MNP - Home"/>`);</script>
+    <img src="_static/logo.svg" class="logo__image only-dark pst-js-only" alt="FRAGMENT-MNP - Home"/>
   
   
 </a></div>
         <div class="sidebar-primary-item">
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script></div>
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
         <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
     <div class="bd-toc-item navbar-nav active">
         
@@ -227,9 +215,14 @@
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
   </div>
-  
-  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -359,7 +352,7 @@
 
 
 <button onclick="toggleFullScreen()"
-  class="btn btn-sm btn-fullscreen-button"
+  class="btn btn-sm btn-fullscreen-button pst-navbar-icon"
   title="Fullscreen mode"
   data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
@@ -373,25 +366,17 @@
 
 
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
 
 
-<script>
-document.write(`
-  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
-<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <span class="fa-solid fa-list"></span>
 </button>
 </div></div>
@@ -430,8 +415,8 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <div class="tex2jax_ignore mathjax_ignore section" id="plotting">
-<h1>Plotting<a class="headerlink" href="#plotting" title="Permalink to this heading">#</a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="plotting">
+<h1>Plotting<a class="headerlink" href="#plotting" title="Link to this heading">#</a></h1>
 <p>The model output offers a simple plotting function to make it easy to quickly visualise your simulations. See <a class="reference internal" href="api/output.html#fragmentmnp.output.FMNPOutput.plot" title="fragmentmnp.output.FMNPOutput.plot"><code class="xref py py-func docutils literal notranslate"><span class="pre">FMNPOutput.plot()</span></code></a> for full details.</p>
 <p>To plot the time evolution of mass concentrations across size classes:</p>
 <div class="cell docutils container">
@@ -449,15 +434,15 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/d5065d1f3e987adbc0294a7ad97548652ca78e2c03f684968bf4f960cb8e4800.png" src="_images/d5065d1f3e987adbc0294a7ad97548652ca78e2c03f684968bf4f960cb8e4800.png" />
+<img alt="_images/1ec7f9741b2699aea74ab733ac952d1eb0c64c756d3e1db69d3381171ac6c201.png" src="_images/1ec7f9741b2699aea74ab733ac952d1eb0c64c756d3e1db69d3381171ac6c201.png" />
 </div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If you are running the model via a script, rather than an interactive environment (e.g. Jupyter), you can pass <code class="docutils literal notranslate"><span class="pre">show=True</span></code> to the <code class="docutils literal notranslate"><span class="pre">plot</span></code> function in order to automatically display the plot, i.e. <code class="docutils literal notranslate"><span class="pre">output.plot(show=True)</span></code>. <code class="docutils literal notranslate"><span class="pre">show</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code> by default so as not to inhibit users from <a class="reference internal" href="#plotting-fig-ax"><span class="std std-ref">building more complex plots</span></a> by returning <code class="docutils literal notranslate"><span class="pre">fig,</span> <span class="pre">ax</span></code> and using these.</p>
 </div>
-<div class="section" id="plot-types-dissolution-mineralisation-and-log-scales">
-<h2>Plot types, dissolution/mineralisation and log scales<a class="headerlink" href="#plot-types-dissolution-mineralisation-and-log-scales" title="Permalink to this heading">#</a></h2>
+<section id="plot-types-dissolution-mineralisation-and-log-scales">
+<h2>Plot types, dissolution/mineralisation and log scales<a class="headerlink" href="#plot-types-dissolution-mineralisation-and-log-scales" title="Link to this heading">#</a></h2>
 <p>You can either plot mass concentrations (<code class="docutils literal notranslate"><span class="pre">mass_conc</span></code>) or particle number concentrations (<code class="docutils literal notranslate"><span class="pre">particle_number_conc</span></code>) by using the <code class="docutils literal notranslate"><span class="pre">type</span></code> parameter. The default is to plot mass concentrations (as per above). Dissolution and mineralisation mass concentrations can be included on a secondary y axis by specifying <code class="docutils literal notranslate"><span class="pre">plot_dissolution=True</span></code> and/or <code class="docutils literal notranslate"><span class="pre">plot_mineralisation=True</span></code>. In the following example, we specify an arbitrary dissolution rate to demonstrate this.</p>
 <p>By default, the y-axis scale is linear. A log scale can be used instead by specifying <code class="docutils literal notranslate"><span class="pre">log_yaxis=True</span></code> or <code class="docutils literal notranslate"><span class="pre">log_yaxis='log'</span></code>, or a <a class="reference external" href="https://matplotlib.org/stable/gallery/scales/symlog_demo.html">symlog</a> scale can be used by specifying <code class="docutils literal notranslate"><span class="pre">log_yaxis='symlog'</span></code>.</p>
 <div class="cell docutils container">
@@ -473,12 +458,12 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/b80bb22cf05934d796ab6ca40f3e7b228be63129f618296e8d243114dacf0b82.png" src="_images/b80bb22cf05934d796ab6ca40f3e7b228be63129f618296e8d243114dacf0b82.png" />
+<img alt="_images/ce5088fb8cc3c6fbb75d6063882f9dbf2cf6863dd765f7ad9f62a87a7cba4b55.png" src="_images/ce5088fb8cc3c6fbb75d6063882f9dbf2cf6863dd765f7ad9f62a87a7cba4b55.png" />
 </div>
 </div>
-</div>
-<div class="section" id="units">
-<h2>Units<a class="headerlink" href="#units" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="units">
+<h2>Units<a class="headerlink" href="#units" title="Link to this heading">#</a></h2>
 <p>The model itself is, by design, unit-agnostic. Because of this, if you want units on your axes and legend, they must be specified by using the <code class="docutils literal notranslate"><span class="pre">units</span></code> parameter. This can either be:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">SI</span></code>: Use SI units (kg, m, s).</p></li>
@@ -494,7 +479,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/33df8ed7b9c39572d84e264fb5f91ef6a4da56c5f61a30101bb82c49fef9400d.png" src="_images/33df8ed7b9c39572d84e264fb5f91ef6a4da56c5f61a30101bb82c49fef9400d.png" />
+<img alt="_images/cad9bb8eb7f5116a6c74f8ccb6cfe2f567059b1768989654aaff885921bdf1ba.png" src="_images/cad9bb8eb7f5116a6c74f8ccb6cfe2f567059b1768989654aaff885921bdf1ba.png" />
 </div>
 </div>
 <div class="admonition note">
@@ -511,12 +496,12 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/2db43dd79dcdd6e526d9e805429bba8a8ab678102877c7ea9decd14de1737828.png" src="_images/2db43dd79dcdd6e526d9e805429bba8a8ab678102877c7ea9decd14de1737828.png" />
+<img alt="_images/a285bbfe2aefff27dbdde641cc4f5adab2306c1c93ff600ecac3357d9080b398.png" src="_images/a285bbfe2aefff27dbdde641cc4f5adab2306c1c93ff600ecac3357d9080b398.png" />
 </div>
 </div>
-</div>
-<div class="section" id="legends-and-colourmaps">
-<h2>Legends and colourmaps<a class="headerlink" href="#legends-and-colourmaps" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="legends-and-colourmaps">
+<h2>Legends and colourmaps<a class="headerlink" href="#legends-and-colourmaps" title="Link to this heading">#</a></h2>
 <p>By default, the size class legend is shown. This can be toggled off with <code class="docutils literal notranslate"><span class="pre">show_legend=False</span></code>. Note that, if the dissolution axis is shown (<code class="docutils literal notranslate"><span class="pre">plot_dissolution=True</span></code>), the dissolution legend is always shown in order to distinguish it from the particle concentrations. If you wish to change this, you can <a class="reference internal" href="#plotting-fig-ax"><span class="std std-ref">access the underlying matplotlib fig and axes to do so</span></a>.</p>
 <p>You can also control the colourmap that is used by specifying the <code class="docutils literal notranslate"><span class="pre">cmap</span></code> option to be one of the <a class="reference external" href="https://matplotlib.org/stable/gallery/color/colormap_reference.html">options provided by matplotlib</a>. The default is “viridis”, which is a good colourblind-friendly option for sequential data (i.e. particle size classes).</p>
 <div class="cell docutils container">
@@ -527,12 +512,12 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/0183a73aa8e3cc5706d9c6f59aabefda2c6882b24c138c4e0d1628706b884560.png" src="_images/0183a73aa8e3cc5706d9c6f59aabefda2c6882b24c138c4e0d1628706b884560.png" />
+<img alt="_images/a640ec8beef4fb807e7bd41f2d0da2d5e8c6e1d8ea6589e70e764f09b07ebad0.png" src="_images/a640ec8beef4fb807e7bd41f2d0da2d5e8c6e1d8ea6589e70e764f09b07ebad0.png" />
 </div>
 </div>
-</div>
-<div class="section" id="selecting-which-size-classes-to-plot">
-<h2>Selecting which size classes to plot<a class="headerlink" href="#selecting-which-size-classes-to-plot" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="selecting-which-size-classes-to-plot">
+<h2>Selecting which size classes to plot<a class="headerlink" href="#selecting-which-size-classes-to-plot" title="Link to this heading">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">size_classes_to_plot</span></code> parameter lets you choose which size classes you want to plot. This might be useful if you are plotting the model output data against measurement data that is binned with a coarser size resolution, and you only wish to plot size classes for which there are measurement data. The <code class="docutils literal notranslate"><span class="pre">size_classes_to_plot</span></code> parameter takes a list of size class indices, with 0 representing the smallest size class. Setting <code class="docutils literal notranslate"><span class="pre">size_classes_to_plot</span></code> to <code class="docutils literal notranslate"><span class="pre">None</span></code> will result in all size classes being plotted, which is the default.</p>
 <p>For example, to plot only the smallest and largest size classes:</p>
 <div class="cell docutils container">
@@ -542,12 +527,12 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/b8e9194a6225f8f24f2ae4bbcaafdd85e2f890ca4614e6753efe00719fd90611.png" src="_images/b8e9194a6225f8f24f2ae4bbcaafdd85e2f890ca4614e6753efe00719fd90611.png" />
+<img alt="_images/48bafceab8d35c8faa25b7009c9f832625d21282602bfe3bea7a748519023489.png" src="_images/48bafceab8d35c8faa25b7009c9f832625d21282602bfe3bea7a748519023489.png" />
 </div>
 </div>
-</div>
-<div class="section" id="advanced-control-through-matplotlib">
-<span id="plotting-fig-ax"></span><h2>Advanced control through matplotlib<a class="headerlink" href="#advanced-control-through-matplotlib" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="advanced-control-through-matplotlib">
+<span id="plotting-fig-ax"></span><h2>Advanced control through matplotlib<a class="headerlink" href="#advanced-control-through-matplotlib" title="Link to this heading">#</a></h2>
 <p>If the simple options provided directly by the <code class="docutils literal notranslate"><span class="pre">plot()</span></code> function don’t meet your requirements, the underlying matplotlib <code class="docutils literal notranslate"><span class="pre">fig</span></code> and <code class="docutils literal notranslate"><span class="pre">ax</span></code> objects are returned from the function. For example, to change an axis label to a custom value:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -557,7 +542,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/968eecc3765e4eb2260f172ec92de15551e06f5fad66827d644a17b231ac9dcd.png" src="_images/968eecc3765e4eb2260f172ec92de15551e06f5fad66827d644a17b231ac9dcd.png" />
+<img alt="_images/f8b2e99b4758ccbd0f6e61915da088c0a8209435b4cf28fd55ea44f532be294b.png" src="_images/f8b2e99b4758ccbd0f6e61915da088c0a8209435b4cf28fd55ea44f532be294b.png" />
 </div>
 </div>
 <p>Note that, if <code class="docutils literal notranslate"><span class="pre">plot_dissolution=False</span></code> (default), then only one axis is created and returned by the function. If <code class="docutils literal notranslate"><span class="pre">plot_dissolution=True</span></code>, two axes are created and these are returned in a list:</p>
@@ -575,12 +560,12 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/c0438c6816e15eff704c5b5b6b8dae6e10ce32b7a94a9fe6d1d30695efead6f1.png" src="_images/c0438c6816e15eff704c5b5b6b8dae6e10ce32b7a94a9fe6d1d30695efead6f1.png" />
+<img alt="_images/071611808386d352b6255de7d6ad3ab2dcea58768afb828cdd15e490d540042d.png" src="_images/071611808386d352b6255de7d6ad3ab2dcea58768afb828cdd15e490d540042d.png" />
 </div>
 </div>
 <p>If you set the <code class="docutils literal notranslate"><span class="pre">plot()</span></code> parameter <code class="docutils literal notranslate"><span class="pre">show=True</span></code>, <code class="docutils literal notranslate"><span class="pre">plt.show()</span></code> will be called by the model and subsequent modifications to the fig and/or axes will not be displayed on the plotted figure.</p>
-</div>
-</div>
+</section>
+</section>
 
     <script type="text/x-thebe-config">
     {
@@ -637,14 +622,16 @@ document.write(`
             
             
               
-                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
-  <div class="sidebar-secondary-item">
-  <div class="page-toc tocsection onthispage">
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> Contents
   </div>
-  <nav class="bd-toc-nav page-toc">
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-types-dissolution-mineralisation-and-log-scales">Plot types, dissolution/mineralisation and log scales</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#units">Units</a></li>
@@ -699,8 +686,8 @@ By UKCEH
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
-<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
   </footer>
