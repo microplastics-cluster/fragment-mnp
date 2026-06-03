@@ -12,7 +12,7 @@ Install the model with `pip`:
 $ pip install fragmentmnp
 ```
 
-FRAGMENT-MNP requires a minimum Python version of 3.9. Then run the model with example data and plot the results:
+FRAGMENT-MNP requires a minimum Python version of 3.11. To run the model with example data and plot the results:
 
 ```python
 from fragmentmnp import FragmentMNP

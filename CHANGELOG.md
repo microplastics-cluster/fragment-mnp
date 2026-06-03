@@ -4,6 +4,8 @@ Notable changes to FRAGMENT-MNP will be documented here. We are using [semantic 
 
 ## [Unreleased]
 
+* Updating README to say minimum Python version is 3.11 (should have been updated for the 1.2.0 release).
+
 ## [1.2.0] - 2026-06-03
 
 * Updating supported Python versions to 3.11-3.14. Dropped support for Python 3.9 and 3.10.
