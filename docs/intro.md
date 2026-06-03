@@ -10,7 +10,7 @@ The easiest way to install FRAGMENT-MNP is by using `pip`:
 $ pip install fragmentmnp
 ```
 
-FRAGMENT-MNP requires a minimum Python version of 3.9. Below is a bare minimum example. See also the [](example-usage.ipynb).
+FRAGMENT-MNP requires a minimum Python version of 3.11. Below is a bare minimum example. See also the [](example-usage.ipynb).
 
 ```python
 from fragmentmnp import FragmentMNP
