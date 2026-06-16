@@ -351,3 +351,43 @@ minimal_data_with_inheritance = {
         }
     ]
 }
+
+# --------------------------------------------------------------------
+# Example with time-dependent additive release parameters
+# --------------------------------------------------------------------
+minimal_data_with_time_dependent_release = {
+    'initial_concs': [42.0] * 7,
+    'density': 1380,
+    'k_frag': 0.01,
+    'k_min': 0.0,
+    'additives': [
+        {
+            'name': 'Weathering-sensitive additive',
+            'pools': [
+                {
+                    'name': 'matrix_pool',
+                    'initial_concs': [1.0] * 7,
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 100},
+                        'params': {
+                            # D_p increases with weathering/ageing time.
+                            # Times use the same units as the model time grid.
+                            'D_p': {
+                                'times': [0.0, 25.0, 50.0, 100.0],
+                                'values': [1e-20, 1e-18, 1e-16, 1e-15],
+                            },
+                            'D_w': 1e-9,
+                            'K_pw': 1e10,
+                        }
+                    },
+                    'inheritance': {'mode': 'proportional'},
+                }
+            ],
+            'medium_pools': [
+                {'name': 'medium', 'initial_mass': 0.0, 'fate': {}},
+            ],
+        }
+    ],
+}
+"""Example where polymer diffusivity D_p evolves over model time."""

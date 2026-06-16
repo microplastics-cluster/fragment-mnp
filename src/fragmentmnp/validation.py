@@ -162,18 +162,41 @@ def chemical_release_config_schema():
     }
 
 
+def _is_release_parameter_like(x):
+    """
+    Accept release parameters as constants, size vectors, or time-dependent
+    dictionaries. Full cross-checking is done after we know the model type and
+    number of size classes.
+    """
+    if isinstance(x, (int, float)):
+        return True
+    if isinstance(x, dict):
+        return True
+    try:
+        arr = np.asarray(x, dtype=float)
+    except Exception:
+        return False
+    return arr.ndim in (1, 2)
+
+
 def chemical_release_data_schema():
     """
-    Data-side chemical release parameters:
-      - physical/material parameters only
+    Data-side chemical release parameters.
+
+    Each physical parameter can now be:
+      - a scalar constant, e.g. 1e-16
+      - a size-class vector, e.g. [1e-16, ...]
+      - a time-series dict, e.g. {"times": [...], "values": [...]}
+      - a simple model dict, e.g. {"type": "linear", "initial": 1e-16, "rate": 1e-3}
+      - a FRAGMENT-MNP distribution dict with k_f/k_0 and t/s regression terms
 
     Cross-field requirements depending on model are checked in validate_data().
     """
     return {
-        Optional('D_p'): And(Or(int, float), lambda x: x >= 0.0),
-        Optional('D_w'): And(Or(int, float), lambda x: x >= 0.0),
-        Optional('K_pw'): And(Or(int, float), lambda x: x > 0.0),
-        Optional('k_m'): And(Or(int, float), lambda x: x >= 0.0),
+        Optional('D_p'): _is_release_parameter_like,
+        Optional('D_w'): _is_release_parameter_like,
+        Optional('K_pw'): _is_release_parameter_like,
+        Optional('k_m'): _is_release_parameter_like,
     }
 
 
@@ -265,6 +288,174 @@ def _fill_chemical_release_defaults(config: dict) -> dict:
     return config
 
 
+def _validate_time_series_release_parameter(name: str,
+                                            value: dict,
+                                            n_size_classes: int,
+                                            strictly_positive: bool) -> None:
+    """Validate {times, values} release-parameter dictionaries."""
+    if 'times' not in value or 'values' not in value:
+        raise SchemaError(
+            f"Release parameter '{name}' time-series dict must contain 'times' and 'values'."
+        )
+    times = np.asarray(value['times'], dtype=float)
+    values = np.asarray(value['values'], dtype=float)
+
+    if times.ndim != 1 or times.size < 2:
+        raise SchemaError(f"Release parameter '{name}' times must be a 1D array with at least two values.")
+    if np.any(~np.isfinite(times)) or np.any(np.diff(times) <= 0.0):
+        raise SchemaError(f"Release parameter '{name}' times must be finite and strictly increasing.")
+    if np.any(~np.isfinite(values)):
+        raise SchemaError(f"Release parameter '{name}' values must be finite.")
+
+    if values.ndim == 1:
+        if values.size != times.size:
+            raise SchemaError(
+                f"Release parameter '{name}' values must have the same length as times."
+            )
+    elif values.ndim == 2:
+        valid_time_by_size = values.shape == (times.size, n_size_classes)
+        valid_size_by_time = values.shape == (n_size_classes, times.size)
+        if not (valid_time_by_size or valid_size_by_time):
+            raise SchemaError(
+                f"Release parameter '{name}' 2D values must have shape "
+                f"(len(times), n_size_classes) or (n_size_classes, len(times))."
+            )
+    else:
+        raise SchemaError(f"Release parameter '{name}' values must be 1D or 2D.")
+
+    if strictly_positive:
+        ok = np.all(values > 0.0)
+        msg = f"Release parameter '{name}' values must be positive."
+    else:
+        ok = np.all(values >= 0.0)
+        msg = f"Release parameter '{name}' values must be non-negative."
+    if not ok:
+        raise SchemaError(msg)
+
+
+def _validate_release_parameter(name: str,
+                                value,
+                                n_size_classes: int,
+                                strictly_positive: bool = True) -> None:
+    """
+    Validate one physical release parameter while preserving the user's input.
+
+    Accepted forms:
+      scalar constant
+      length-n_size_classes vector
+      {times, values} time series, where values can be scalar over size or size-resolved
+      {type/model: constant|linear|exponential|logistic, ...}
+      k-distribution style dict with k_f/k_0 and optional t/s terms
+    """
+    def _check_values(arr, what):
+        arr = np.asarray(arr, dtype=float)
+        if np.any(~np.isfinite(arr)):
+            raise SchemaError(f"Release parameter '{name}' {what} must be finite.")
+        if strictly_positive:
+            if np.any(arr <= 0.0):
+                raise SchemaError(f"Release parameter '{name}' {what} must be positive.")
+        else:
+            if np.any(arr < 0.0):
+                raise SchemaError(f"Release parameter '{name}' {what} must be non-negative.")
+
+    if isinstance(value, (int, float)):
+        _check_values([value], 'value')
+        return
+
+    if isinstance(value, dict):
+        # Time-series interpolation form.
+        if 'times' in value or 'values' in value:
+            _validate_time_series_release_parameter(
+                name=name,
+                value=value,
+                n_size_classes=n_size_classes,
+                strictly_positive=strictly_positive,
+            )
+            return
+
+        # Existing FRAGMENT-MNP distribution style, reusing k_f/k_0 with t/s regressions.
+        if 'k_f' in value:
+            _check_values([value.get('k_f', 0.0)], 'k_f')
+            if 'k_0' in value:
+                _check_values([value.get('k_0')], 'k_0')
+            return
+
+        # Simple parametric ageing/weathering models.
+        model = str(value.get('type', value.get('model', 'constant'))).lower()
+        valid_models = {'constant', 'linear', 'exponential', 'logistic'}
+        if model not in valid_models:
+            raise SchemaError(
+                f"Release parameter '{name}' model/type must be one of {sorted(valid_models)}."
+            )
+
+        base = value.get('initial', value.get('base', value.get('value', None)))
+        if base is None:
+            raise SchemaError(
+                f"Release parameter '{name}' model dict must contain one of 'initial', 'base', or 'value'."
+            )
+        _check_values(base, 'base/initial/value')
+
+        if 'size_factor' in value:
+            sf = np.asarray(value['size_factor'], dtype=float)
+            if sf.ndim != 1 or sf.size != n_size_classes:
+                raise SchemaError(
+                    f"Release parameter '{name}' size_factor must be a length-{n_size_classes} array."
+                )
+            _check_values(sf, 'size_factor')
+        return
+
+    try:
+        arr = np.asarray(value, dtype=float)
+    except Exception as exc:
+        raise SchemaError(f"Release parameter '{name}' has unsupported type.") from exc
+
+    if arr.ndim == 1:
+        if arr.size != n_size_classes:
+            raise SchemaError(
+                f"Release parameter '{name}' vector must have length {n_size_classes}; "
+                "use {'times': ..., 'values': ...} for time series."
+            )
+        _check_values(arr, 'vector')
+        return
+
+    if arr.ndim == 2:
+        # This is accepted as a compact (time, size) matrix for advanced users.
+        if arr.shape[1] != n_size_classes and arr.shape[0] != n_size_classes:
+            raise SchemaError(
+                f"Release parameter '{name}' 2D array must have one dimension equal to n_size_classes."
+            )
+        _check_values(arr, 'matrix')
+        return
+
+    raise SchemaError(f"Release parameter '{name}' must be scalar, vector, matrix, or dict.")
+
+
+def _validate_release_params_for_model(params: dict, model: str, n_size_classes: int) -> None:
+    """Validate required release parameters for analytical and numerical models."""
+    model = str(model).lower()
+    if model == 'analytical':
+        required = ['D_p', 'D_w', 'K_pw']
+    elif model == 'numerical':
+        required = ['D_p', 'K_pw']
+    else:
+        raise SchemaError(f"Unknown release model '{model}'.")
+
+    missing = [k for k in required if k not in params]
+    if missing:
+        label = 'Analytical' if model == 'analytical' else 'Numerical'
+        raise SchemaError(f"{label} release is missing required params: {missing}")
+
+    if model == 'numerical' and ('k_m' not in params) and ('D_w' not in params):
+        raise SchemaError("Numerical release must contain either 'k_m' or 'D_w'.")
+
+    # D_p, D_w, and K_pw must be positive when used. k_m may be zero.
+    for key in ['D_p', 'D_w', 'K_pw']:
+        if key in params:
+            _validate_release_parameter(key, params[key], n_size_classes, strictly_positive=True)
+    if 'k_m' in params:
+        _validate_release_parameter('k_m', params['k_m'], n_size_classes, strictly_positive=False)
+
+
 def _validate_chemical_release_cross_checks(data: dict, config: dict) -> None:
     """
     Cross-validation of chemical_release config/data split.
@@ -283,29 +474,11 @@ def _validate_chemical_release_cross_checks(data: dict, config: dict) -> None:
             "but data.chemical_release is missing."
         )
 
-    if model == 'analytical':
-        required = ['D_p', 'D_w', 'K_pw']
-        missing = [k for k in required if k not in chem_data]
-        if missing:
-            raise SchemaError(
-                "data.chemical_release missing required keys for analytical model: "
-                f"{missing}"
-            )
-
-    elif model == 'numerical':
-        required = ['D_p', 'K_pw']
-        missing = [k for k in required if k not in chem_data]
-        if missing:
-            raise SchemaError(
-                "data.chemical_release missing required keys for numerical model: "
-                f"{missing}"
-            )
-
-        if ('k_m' not in chem_data) and ('D_w' not in chem_data):
-            raise SchemaError(
-                "data.chemical_release for numerical model must contain either "
-                "'k_m' or 'D_w'."
-            )
+    _validate_release_params_for_model(
+        params=chem_data,
+        model=model,
+        n_size_classes=config['n_size_classes'],
+    )
 
 
 def _default_release_solver(model: str) -> dict:
@@ -317,7 +490,7 @@ def _default_release_solver(model: str) -> dict:
     raise SchemaError(f"Unknown release model '{model}'.")
 
 
-def _validate_release_block(release: dict) -> dict:
+def _validate_release_block(release: dict, n_size_classes: int) -> dict:
     if not isinstance(release, dict):
         raise SchemaError("Each pool.release must be a dict.")
 
@@ -329,24 +502,11 @@ def _validate_release_block(release: dict) -> dict:
     solver.update(release.get('solver', {}))
     params = dict(release.get('params', {}))
 
-    if model == 'analytical':
-        required = ['D_p', 'D_w', 'K_pw']
-        missing = [k for k in required if k not in params]
-        if missing:
-            raise SchemaError(
-                f"Analytical release is missing required params: {missing}"
-            )
-    elif model == 'numerical':
-        required = ['D_p', 'K_pw']
-        missing = [k for k in required if k not in params]
-        if missing:
-            raise SchemaError(
-                f"Numerical release is missing required params: {missing}"
-            )
-        if ('k_m' not in params) and ('D_w' not in params):
-            raise SchemaError(
-                "Numerical release must contain either 'k_m' or 'D_w'."
-            )
+    _validate_release_params_for_model(
+        params=params,
+        model=model,
+        n_size_classes=n_size_classes,
+    )
 
     return {
         'model': model,
@@ -483,7 +643,7 @@ def _validate_additives_structure(additives: list, n_size_classes: int) -> list:
                     f"Pool '{pool['name']}' in additive '{additive_name}' must contain 'release'."
                 )
 
-            release = _validate_release_block(pool['release'])
+            release = _validate_release_block(pool['release'], n_size_classes=n_size_classes)
             release_target = _normalize_transfer_target(
                 pool.get('release', {}).get('target', f"{additive_name}:medium"), additive_name
             )

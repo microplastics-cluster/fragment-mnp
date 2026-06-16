@@ -489,21 +489,39 @@ class FragmentMNP():
 
                 A_mid = c_chem_part_species[s, :, ti] - A_loss + A_gain
 
-                cache_key = (s, float(dt_i))
+                # Evaluate physical release parameters at the current model time.
+                # Backward-compatible scalar inputs become constant vectors, while
+                # time-series/model dictionaries can change from one timestep to the next.
+                release_params = {**spec['params'], **spec['solver']}
+                evaluated_release_params = self._evaluate_release_params_for_size_classes(
+                    params=release_params,
+                    t_current=float(t[ti]),
+                    n_size_classes=N,
+                )
+
+                cache_key = (
+                    s,
+                    float(dt_i),
+                    spec['model'],
+                    self._release_params_cache_key(evaluated_release_params),
+                )
                 if cache_key in release_cache:
                     rel = release_cache[cache_key]
                 else:
-                    release_params = {**spec['params'], **spec['solver']}
                     if spec['model'] == 'analytical':
                         rel = np.array([
                             self._analytical_additive_release_fraction(
-                                radius_m=float(radii[i]), dt=dt_i, params=release_params
+                                radius_m=float(radii[i]),
+                                dt=dt_i,
+                                params=self._release_params_for_size(evaluated_release_params, i),
                             ) for i in range(N)
                         ], dtype=float)
                     elif spec['model'] == 'numerical':
                         rel = np.array([
                             self._numerical_additive_release_fraction(
-                                radius_m=float(radii[i]), dt=dt_i, params=release_params
+                                radius_m=float(radii[i]),
+                                dt=dt_i,
+                                params=self._release_params_for_size(evaluated_release_params, i),
                             ) for i in range(N)
                         ], dtype=float)
                     else:
@@ -558,6 +576,283 @@ class FragmentMNP():
             c_chem_medium_total,
             c_medium_pool_species,
         )
+
+
+    def _evaluate_release_params_for_size_classes(self,
+                                                  params: dict,
+                                                  t_current: float,
+                                                  n_size_classes: int) -> dict:
+        """
+        Evaluate release parameters at the current model time.
+
+        Backward-compatible scalar parameters remain constant. New supported
+        time-dependent forms include:
+
+        1) Time series interpolation:
+           {'times': [0, 10, 20], 'values': [1e-16, 2e-16, 5e-16]}
+           or size-resolved values with shape (len(times), n_size_classes).
+
+        2) Simple weathering/ageing models:
+           {'type': 'linear', 'initial': 1e-16, 'rate': 1e-3}
+           {'type': 'exponential', 'initial': 1e-16, 'rate': 1e-5}
+           {'type': 'logistic', 'initial': 1e-16, 'factor': 10, 't_mid': 50, 'steepness': 0.1}
+
+        3) FRAGMENT-MNP distribution dictionaries with k_f/k_0 and optional
+           t/s regression terms. These are evaluated over the model t_grid and
+           interpolated to t_current.
+        """
+        out = dict(params)
+        for key in ['D_p', 'D_w', 'K_pw', 'k_m']:
+            if key in out:
+                out[key] = self._evaluate_release_parameter(
+                    name=key,
+                    value=out[key],
+                    t_current=t_current,
+                    n_size_classes=n_size_classes,
+                )
+        return out
+
+    @staticmethod
+    def _release_params_for_size(params: dict, size_index: int) -> dict:
+        """Extract scalar parameter values for one particle size class."""
+        out = dict(params)
+        for key in ['D_p', 'D_w', 'K_pw', 'k_m']:
+            if key in out:
+                val = out[key]
+                if isinstance(val, np.ndarray):
+                    out[key] = float(val[size_index])
+                elif isinstance(val, (list, tuple)):
+                    out[key] = float(val[size_index])
+        return out
+
+    @staticmethod
+    def _release_params_cache_key(params: dict) -> tuple:
+        """Build a hashable cache key from evaluated release and solver params."""
+        items = []
+        for key in sorted(params.keys()):
+            val = params[key]
+            if isinstance(val, np.ndarray):
+                items.append((key, tuple(np.round(val.astype(float), 30))))
+            elif isinstance(val, (list, tuple)):
+                try:
+                    arr = np.asarray(val, dtype=float)
+                    items.append((key, tuple(np.round(arr, 30))))
+                except Exception:
+                    items.append((key, tuple(val)))
+            elif isinstance(val, (int, float, str, bool)) or val is None:
+                items.append((key, val))
+            else:
+                items.append((key, repr(val)))
+        return tuple(items)
+
+    def _evaluate_release_parameter(self,
+                                    name: str,
+                                    value,
+                                    t_current: float,
+                                    n_size_classes: int) -> np.ndarray:
+        """Return a length-n_size_classes vector for one release parameter."""
+        if isinstance(value, (int, float)):
+            out = np.full(n_size_classes, float(value), dtype=float)
+            self._check_evaluated_release_parameter(name, out)
+            return out
+
+        if isinstance(value, dict):
+            if 'times' in value or 'values' in value:
+                out = self._evaluate_release_parameter_timeseries(
+                    value=value,
+                    t_current=t_current,
+                    n_size_classes=n_size_classes,
+                )
+                self._check_evaluated_release_parameter(name, out)
+                return out
+
+            if 'k_f' in value:
+                out = self._evaluate_release_parameter_distribution(
+                    value=value,
+                    t_current=t_current,
+                    n_size_classes=n_size_classes,
+                )
+                self._check_evaluated_release_parameter(name, out)
+                return out
+
+            out = self._evaluate_release_parameter_model(
+                value=value,
+                t_current=t_current,
+                n_size_classes=n_size_classes,
+            )
+            self._check_evaluated_release_parameter(name, out)
+            return out
+
+        arr = np.asarray(value, dtype=float)
+        if arr.ndim == 1:
+            if arr.size != n_size_classes:
+                raise ValueError(
+                    f"Release parameter '{name}' vector must have length {n_size_classes}."
+                )
+            out = arr.astype(float, copy=False)
+            self._check_evaluated_release_parameter(name, out)
+            return out
+
+        if arr.ndim == 2:
+            # Compact matrix form. One dimension must be size; the other is
+            # assumed to correspond to self.t_grid.
+            if arr.shape == (n_size_classes, self.t_grid.size):
+                mat = arr
+            elif arr.shape == (self.t_grid.size, n_size_classes):
+                mat = arr.T
+            else:
+                raise ValueError(
+                    f"Release parameter '{name}' 2D matrix must have shape "
+                    f"({n_size_classes}, {self.t_grid.size}) or "
+                    f"({self.t_grid.size}, {n_size_classes})."
+                )
+            out = np.array([
+                np.interp(t_current, self.t_grid, mat[i])
+                for i in range(n_size_classes)
+            ], dtype=float)
+            self._check_evaluated_release_parameter(name, out)
+            return out
+
+        raise ValueError(
+            f"Release parameter '{name}' must be scalar, vector, matrix, or dict."
+        )
+
+    def _evaluate_release_parameter_timeseries(self,
+                                               value: dict,
+                                               t_current: float,
+                                               n_size_classes: int) -> np.ndarray:
+        """Evaluate {'times': ..., 'values': ...} release-parameter input."""
+        times = np.asarray(value['times'], dtype=float)
+        values = np.asarray(value['values'], dtype=float)
+
+        if values.ndim == 1:
+            val = float(np.interp(t_current, times, values))
+            return np.full(n_size_classes, val, dtype=float)
+
+        if values.shape == (times.size, n_size_classes):
+            # values[time, size]
+            return np.array([
+                np.interp(t_current, times, values[:, i])
+                for i in range(n_size_classes)
+            ], dtype=float)
+
+        if values.shape == (n_size_classes, times.size):
+            # values[size, time]
+            return np.array([
+                np.interp(t_current, times, values[i, :])
+                for i in range(n_size_classes)
+            ], dtype=float)
+
+        raise ValueError(
+            "Time-dependent release parameter values must be 1D, "
+            "(len(times), n_size_classes), or (n_size_classes, len(times))."
+        )
+
+    def _evaluate_release_parameter_distribution(self,
+                                                 value: dict,
+                                                 t_current: float,
+                                                 n_size_classes: int) -> np.ndarray:
+        """
+        Evaluate a FRAGMENT-MNP-style t/s distribution for a release parameter.
+        """
+        k_f = float(value.get('k_f'))
+        k_0 = float(value.get('k_0', 0.0))
+        is_compound = bool(value.get('is_compound', True))
+        reg_params = {
+            k: v for k, v in value.items()
+            if k not in ['k_f', 'k_0', 'is_compound']
+        }
+        grid = self.set_k_distribution(
+            dims={'s': self.surface_areas, 't': self.t_grid},
+            k_f=k_f,
+            k_0=k_0,
+            params=reg_params,
+            is_compound=is_compound,
+        )
+        if grid.shape != (n_size_classes, self.t_grid.size):
+            raise ValueError("Unexpected release-parameter distribution shape.")
+        return np.array([
+            np.interp(t_current, self.t_grid, grid[i])
+            for i in range(n_size_classes)
+        ], dtype=float)
+
+    def _evaluate_release_parameter_model(self,
+                                          value: dict,
+                                          t_current: float,
+                                          n_size_classes: int) -> np.ndarray:
+        """Evaluate simple parametric ageing/weathering release models."""
+        model = str(value.get('type', value.get('model', 'constant'))).lower()
+        base = value.get('initial', value.get('base', value.get('value', None)))
+        if base is None:
+            raise ValueError(
+                "Release parameter model dict must contain 'initial', 'base', or 'value'."
+            )
+
+        base_arr = self._expand_release_value_to_size_vector(base, n_size_classes)
+        t0 = float(value.get('t0', value.get('time_origin', 0.0)))
+        tau = float(t_current) - t0
+
+        if model == 'constant':
+            out = base_arr.copy()
+
+        elif model == 'linear':
+            if 'slope' in value:
+                slope = self._expand_release_value_to_size_vector(value['slope'], n_size_classes)
+                out = base_arr + slope * tau
+            else:
+                rate = self._expand_release_value_to_size_vector(value.get('rate', 0.0), n_size_classes)
+                out = base_arr * (1.0 + rate * tau)
+
+        elif model == 'exponential':
+            rate = self._expand_release_value_to_size_vector(value.get('rate', 0.0), n_size_classes)
+            out = base_arr * np.exp(rate * tau)
+
+        elif model == 'logistic':
+            # Smooth transition from base to base*factor around t_mid.
+            factor = self._expand_release_value_to_size_vector(value.get('factor', 1.0), n_size_classes)
+            t_mid = self._expand_release_value_to_size_vector(value.get('t_mid', 0.0), n_size_classes)
+            steepness = self._expand_release_value_to_size_vector(value.get('steepness', 1.0), n_size_classes)
+            out = base_arr * (1.0 + (factor - 1.0) / (1.0 + np.exp(-steepness * (tau - t_mid))))
+
+        else:
+            raise ValueError(
+                "Release parameter model/type must be one of "
+                "'constant', 'linear', 'exponential', or 'logistic'."
+            )
+
+        if 'size_factor' in value:
+            out = out * self._expand_release_value_to_size_vector(value['size_factor'], n_size_classes)
+        if 'minimum' in value:
+            out = np.maximum(out, self._expand_release_value_to_size_vector(value['minimum'], n_size_classes))
+        if 'maximum' in value:
+            out = np.minimum(out, self._expand_release_value_to_size_vector(value['maximum'], n_size_classes))
+
+        return out.astype(float, copy=False)
+
+    @staticmethod
+    def _expand_release_value_to_size_vector(value, n_size_classes: int) -> np.ndarray:
+        """Expand scalar or length-n_size_classes value to a vector."""
+        if isinstance(value, (int, float)):
+            return np.full(n_size_classes, float(value), dtype=float)
+        arr = np.asarray(value, dtype=float)
+        if arr.ndim != 1 or arr.size != n_size_classes:
+            raise ValueError(
+                f"Expected scalar or length-{n_size_classes} value."
+            )
+        return arr.astype(float, copy=False)
+
+    @staticmethod
+    def _check_evaluated_release_parameter(name: str, values: np.ndarray) -> None:
+        """Runtime guard for evaluated release parameters."""
+        values = np.asarray(values, dtype=float)
+        if np.any(~np.isfinite(values)):
+            raise ValueError(f"Release parameter '{name}' evaluated to non-finite values.")
+        if name in ['D_p', 'D_w', 'K_pw']:
+            if np.any(values <= 0.0):
+                raise ValueError(f"Release parameter '{name}' must evaluate to positive values.")
+        elif name == 'k_m':
+            if np.any(values < 0.0):
+                raise ValueError("Release parameter 'k_m' must evaluate to non-negative values.")
 
 
     def _apply_first_order_fate_explicit(self,
@@ -640,10 +935,10 @@ class FragmentMNP():
 
         This is what your post-solve bookkeeping loop calls.
 
-        Required params in params dict:
-            - "D_p" : polymer diffusivity [m^2/s]
-            - "D_w" : water diffusivity [m^2/s]
-            - "K_pw": polymer-water partition coefficient [-]
+        Required params in params dict after time evaluation:
+            - "D_p" : polymer diffusivity at this timestep [m^2/s]
+            - "D_w" : water diffusivity at this timestep [m^2/s]
+            - "K_pw": polymer-water partition coefficient at this timestep [-]
 
         Optional:
             - "n_terms": int number of series terms (Bi>=100)
@@ -676,9 +971,9 @@ class FragmentMNP():
         """
         Release fraction computed by numerically solving diffusion in a sphere.
 
-        Required:
+        Required after time evaluation:
             D_p, K_pw
-        Either:
+        Either after time evaluation:
             k_m directly
         OR:
             D_w (and we compute k_m = K_pw * D_w / r for consistency with analytical assumptions)
