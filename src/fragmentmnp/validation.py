@@ -238,6 +238,7 @@ data_schema = Schema({
         chemical_release_data_schema()
     ),
     Optional('additives', default=None): Or(None, list),
+    Optional('components', default=None): Or(None, list),
 })
 
 
@@ -775,6 +776,150 @@ def _validate_fate_block(fate: dict,
 
     return {'k_deg': k_deg, 'k_loss': k_loss, 'transfers': transfers_out}
 
+
+def _normalize_components_input(data: dict, config: dict) -> dict:
+    """
+    Allow new component-only inputs while preserving the legacy schema.
+
+    New preferred form:
+        data['components'] = [
+            {'name': 'PE_outer', 'initial_concs': [...], 'density': ..., 'k_frag': ...},
+            {'name': 'EVOH_barrier', 'initial_concs': [...], 'density': ..., 'k_frag': ...},
+        ]
+
+    Legacy top-level keys are still accepted.  If components are supplied and
+    legacy aggregate keys are omitted, they are created as sums/defaults so old
+    validation and old downstream code remain functional.
+    """
+    data = dict(data)
+    components = data.get('components', None)
+    if components is None:
+        return data
+    if not isinstance(components, list) or len(components) == 0:
+        raise SchemaError("data.components must be a non-empty list when provided.")
+
+    n_size_classes = config['n_size_classes']
+    init_sum = np.zeros(n_size_classes, dtype=float)
+    densities = []
+    mass_by_component = []
+
+    for idx, comp in enumerate(components):
+        if not isinstance(comp, dict):
+            raise SchemaError("Each component entry must be a dict.")
+        if 'initial_concs' not in comp:
+            raise SchemaError(f"Component {idx} must contain 'initial_concs'.")
+        arr = np.asarray(comp['initial_concs'], dtype=float)
+        if arr.ndim != 1 or arr.size != n_size_classes:
+            raise FMNPIncorrectDistributionLength(
+                f"Component '{comp.get('name', idx)}' has {arr.size} initial concentrations; "
+                f"expected {n_size_classes}."
+            )
+        if np.any(~np.isfinite(arr)) or np.any(arr < 0.0):
+            raise SchemaError(f"Component '{comp.get('name', idx)}' initial_concs must be finite and non-negative.")
+        init_sum += arr
+        mass_by_component.append(float(np.sum(arr)))
+        if 'density' in comp:
+            densities.append(float(comp['density']))
+
+    if 'initial_concs' not in data:
+        data['initial_concs'] = init_sum.tolist()
+    if 'density' not in data:
+        if densities:
+            masses = np.asarray(mass_by_component, dtype=float)
+            dens = np.asarray([float(comp.get('density', densities[0])) for comp in components], dtype=float)
+            if np.sum(masses) > 0.0:
+                data['density'] = float(np.sum(dens * masses) / np.sum(masses))
+            else:
+                data['density'] = float(np.mean(dens))
+        else:
+            raise SchemaError("data.density is required if component densities are not provided.")
+    if 'k_frag' not in data:
+        for comp in components:
+            if 'k_frag' in comp:
+                data['k_frag'] = comp['k_frag']
+                break
+        else:
+            raise SchemaError("Either data.k_frag or each component k_frag must be provided.")
+    if 'k_diss' not in data:
+        data['k_diss'] = 0.0
+    if 'k_min' not in data:
+        data['k_min'] = 0.0
+    if 'fsd_beta' not in data:
+        data['fsd_beta'] = 0.0
+    if 'initial_concs_diss' not in data:
+        data['initial_concs_diss'] = float(sum(float(comp.get('initial_concs_diss', 0.0)) for comp in components))
+
+    return data
+
+
+def _validate_components_structure(components: list, data: dict, n_size_classes: int) -> list:
+    """Validate and default the component/formulation/layer structure."""
+    if not isinstance(components, list) or len(components) == 0:
+        raise SchemaError("data.components must be a non-empty list when provided.")
+
+    out = []
+    aggregate_initial = np.zeros(n_size_classes, dtype=float)
+
+    for idx, comp in enumerate(components):
+        if not isinstance(comp, dict):
+            raise SchemaError("Each component entry must be a dict.")
+
+        name = str(comp.get('name', f'component_{idx}'))
+        if any(prev['name'] == name for prev in out):
+            raise SchemaError(f"Duplicate component name '{name}'.")
+
+        if 'initial_concs' not in comp:
+            raise SchemaError(f"Component '{name}' must contain 'initial_concs'.")
+        initial = np.asarray(comp['initial_concs'], dtype=float)
+        if initial.ndim != 1 or initial.size != n_size_classes:
+            raise FMNPIncorrectDistributionLength(
+                f"Component '{name}' has {initial.size} initial concentrations; expected {n_size_classes}."
+            )
+        if np.any(~np.isfinite(initial)) or np.any(initial < 0.0):
+            raise SchemaError(f"Component '{name}' initial_concs must be finite and non-negative.")
+        aggregate_initial += initial
+
+        density = float(comp.get('density', data['density']))
+        if not np.isfinite(density) or density <= 0.0:
+            raise SchemaError(f"Component '{name}' density must be positive.")
+
+        init_diss = float(comp.get('initial_concs_diss', 0.0))
+        if not np.isfinite(init_diss) or init_diss < 0.0:
+            raise SchemaError(f"Component '{name}' initial_concs_diss must be non-negative.")
+
+        layer_thickness = comp.get('layer_thickness', None)
+        if layer_thickness is not None:
+            layer_thickness = float(layer_thickness)
+            if not np.isfinite(layer_thickness) or layer_thickness < 0.0:
+                raise SchemaError(f"Component '{name}' layer_thickness must be non-negative.")
+
+        fsd_beta = float(comp.get('fsd_beta', data.get('fsd_beta', 0.0)))
+
+        out.append({
+            'name': name,
+            'initial_concs': initial.tolist(),
+            'initial_concs_diss': init_diss,
+            'density': density,
+            'k_frag': comp.get('k_frag', data['k_frag']),
+            'k_diss': comp.get('k_diss', data.get('k_diss', 0.0)),
+            'k_min': comp.get('k_min', data.get('k_min', 0.0)),
+            'fsd_beta': fsd_beta,
+            'layer_thickness': layer_thickness,
+        })
+
+    # If the user supplied both aggregate initial_concs and component values,
+    # require consistency.  This prevents silent disagreement between the old
+    # and new input dimensions.
+    aggregate_user = np.asarray(data['initial_concs'], dtype=float)
+    if not np.allclose(aggregate_user, aggregate_initial, rtol=1e-10, atol=1e-12):
+        raise SchemaError(
+            "data.initial_concs must equal the sum of component initial_concs "
+            "when data.components is provided. Omit data.initial_concs to have "
+            "it generated automatically."
+        )
+
+    return out
+
 def _normalize_to_additives(data: dict, config: dict) -> dict:
     """
     Normalize old single-additive input to the new canonical
@@ -834,6 +979,7 @@ def validate_config(config: dict) -> dict:
 
 def validate_data(data: dict, config: dict) -> dict:
     data, config = _normalize_chemical_release_input(data, config)
+    data = _normalize_components_input(data, config)
     data = _normalize_to_additives(data, config)
     validated = Schema(data_schema).validate(data)
 
@@ -853,6 +999,13 @@ def validate_data(data: dict, config: dict) -> dict:
                 f'Expecting {config["n_size_classes"]}-length array. '
                 f'Received {len(validated["initial_chemical_concs"])}-length array.'
             )
+
+    if validated.get('components') is not None:
+        validated['components'] = _validate_components_structure(
+            validated['components'],
+            validated,
+            config['n_size_classes']
+        )
 
     if validated.get('additives') is not None:
         validated['additives'] = _validate_additives_structure(

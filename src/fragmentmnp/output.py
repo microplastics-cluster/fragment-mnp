@@ -62,7 +62,9 @@ class FMNPOutput():
         'c_chem_part_total', 'c_chem_medium_total',
         'species_names', 'additive_names',
         'c_medium_pool_species', 'medium_pool_names',
-        'c_chem_part', 'c_chem_medium', 'A_part', 'A_aq'
+        'c_chem_part', 'c_chem_medium', 'A_part', 'A_aq',
+        'c_component', 'n_component', 'c_diss_component', 'c_min_component',
+        'component_names', 'layer_thickness_component', 'layer_thickness_by_size'
     ]
 
     def __init__(self,
@@ -80,7 +82,14 @@ class FMNPOutput():
                  additive_names=None,
                  species_names=None,
                  c_medium_pool_species=None,
-                 medium_pool_names=None) -> None:
+                 medium_pool_names=None,
+                 c_component=None,
+                 n_component=None,
+                 c_diss_component=None,
+                 c_min_component=None,
+                 component_names=None,
+                 layer_thickness_component=None,
+                 layer_thickness_by_size=None) -> None:
         """
         Initialise the output data object
         """
@@ -101,6 +110,17 @@ class FMNPOutput():
         self.species_names = species_names
         self.c_medium_pool_species = c_medium_pool_species
         self.medium_pool_names = medium_pool_names
+
+        # Optional component / formulation / layer outputs.  If the model was
+        # run in legacy single-polymer mode these are still populated as one
+        # implicit component, which makes downstream code uniform.
+        self.c_component = c_component
+        self.n_component = n_component
+        self.c_diss_component = c_diss_component
+        self.c_min_component = c_min_component
+        self.component_names = component_names
+        self.layer_thickness_component = layer_thickness_component
+        self.layer_thickness_by_size = layer_thickness_by_size
 
         # Backward-compatible aliases
         if c_chem_part_total is None:
@@ -216,6 +236,78 @@ class FMNPOutput():
     def get_additive_index(self, name: str) -> int:
         self._require_chemical_outputs()
         return self._resolve_additive_index(name)
+
+    def get_component_index(self, component) -> int:
+        """Resolve a component/layer name or integer index."""
+        if self.c_component is None:
+            raise ValueError('This output object does not contain component-resolved data.')
+        if isinstance(component, int):
+            return component
+        if self.component_names is None:
+            raise ValueError('No component names are stored on this output object.')
+        if component not in self.component_names:
+            raise KeyError(f'Unknown component name: {component}')
+        return self.component_names.index(component)
+
+    def get_component_timeseries(self, component):
+        """Return particle, dissolved, mineralised and thickness time series for one component."""
+        i = self.get_component_index(component)
+        out = {
+            'particulate_by_size': self.c_component[i].copy(),
+            'particle_number_by_size': self.n_component[i].copy() if self.n_component is not None else None,
+            'particulate_total': self.c_component[i].sum(axis=0),
+            'dissolved': self.c_diss_component[i].copy() if self.c_diss_component is not None else None,
+            'mineralised': self.c_min_component[i].copy() if self.c_min_component is not None else None,
+        }
+        if self.layer_thickness_component is not None:
+            out['layer_thickness'] = self.layer_thickness_component[i].copy()
+        if self.layer_thickness_by_size is not None:
+            out['layer_thickness_by_size'] = self.layer_thickness_by_size[i].copy()
+        return out
+
+    def component_summary_records(self):
+        """Return a component/layer mass-balance summary table as records."""
+        if self.c_component is None:
+            raise ValueError('This output object does not contain component-resolved data.')
+        records = []
+        names = self.component_names or [f'component_{i}' for i in range(self.c_component.shape[0])]
+        for i, name in enumerate(names):
+            part0 = float(np.sum(self.c_component[i, :, 0]))
+            partT = float(np.sum(self.c_component[i, :, -1]))
+            diss0 = float(self.c_diss_component[i, 0]) if self.c_diss_component is not None else 0.0
+            dissT = float(self.c_diss_component[i, -1]) if self.c_diss_component is not None else 0.0
+            min0 = float(self.c_min_component[i, 0]) if self.c_min_component is not None else 0.0
+            minT = float(self.c_min_component[i, -1]) if self.c_min_component is not None else 0.0
+            initial_total = part0 + diss0 + min0
+            final_total = partT + dissT + minT
+            rec = {
+                'component': name,
+                'initial_particulate': part0,
+                'final_particulate': partT,
+                'initial_dissolved': diss0,
+                'final_dissolved': dissT,
+                'initial_mineralised': min0,
+                'final_mineralised': minT,
+                'initial_total': initial_total,
+                'final_total': final_total,
+                'mass_balance_residual': final_total - initial_total,
+                'mass_balance_residual_rel': (
+                    (final_total - initial_total) / initial_total
+                    if not np.isclose(initial_total, 0.0) else 0.0
+                ),
+            }
+            if self.layer_thickness_component is not None:
+                rec['initial_layer_thickness'] = float(self.layer_thickness_component[i, 0])
+                rec['final_layer_thickness'] = float(self.layer_thickness_component[i, -1])
+            records.append(rec)
+        return records
+
+    def component_summary_dataframe(self):
+        try:
+            import pandas as pd
+        except ImportError as exc:
+            raise ImportError('component_summary_dataframe() requires pandas.') from exc
+        return pd.DataFrame(self.component_summary_records())
 
 
     def get_medium_pool_index(self, name: str) -> int:
@@ -615,6 +707,41 @@ class FMNPOutput():
         if ax2 is not None:
             return fig, (ax1, ax2)
         return fig, ax1
+
+    def plot_components_mass(self, show=False):
+        """Plot total particulate polymer mass by component/layer."""
+        if self.c_component is None:
+            raise ValueError('This output object does not contain component-resolved data.')
+        fig, ax = plt.subplots()
+        names = self.component_names or [f'component_{i}' for i in range(self.c_component.shape[0])]
+        for i, name in enumerate(names):
+            ax.plot(self.t, self.c_component[i].sum(axis=0), label=name)
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Particulate polymer mass concentration')
+        ax.set_title('Component/layer particulate mass')
+        ax.legend()
+        if show:
+            plt.show()
+        return fig, ax
+
+    def plot_layer_thickness(self, show=False):
+        """Plot equivalent remaining layer thickness for layered components."""
+        if self.layer_thickness_component is None:
+            raise ValueError('No layer thickness diagnostics are stored on this output object.')
+        fig, ax = plt.subplots()
+        names = self.component_names or [f'component_{i}' for i in range(self.layer_thickness_component.shape[0])]
+        for i, name in enumerate(names):
+            y = self.layer_thickness_component[i]
+            if np.all(~np.isfinite(y)):
+                continue
+            ax.plot(self.t, y, label=name)
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Equivalent remaining layer thickness')
+        ax.set_title('Layer thickness tracking')
+        ax.legend()
+        if show:
+            plt.show()
+        return fig, ax
 
     def plot_release_by_additive(self, additive, show=False):
         self._require_chemical_outputs()

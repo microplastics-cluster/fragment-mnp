@@ -55,51 +55,137 @@ class FragmentMNP():
                  data: dict,
                  validate: bool = True) -> None:
         """
-        Initialise the model
+        Initialise the model.
+
+        Component/layer update
+        ----------------------
+        The original FRAGMENT-MNP state vector was size-resolved only.  This
+        version keeps that public behaviour, but internally represents the
+        particulate polymer state as a component-by-size matrix:
+
+            c_component[j, k]
+
+        where ``j`` is the formulation/layer/component index and ``k`` is the
+        particle-size class.  When ``data['components']`` is not provided, the
+        model creates one implicit component from the legacy top-level inputs,
+        so existing scripts remain valid.
         """
         # Validate the config and data (if we are meant to)
         if validate:
             config, data = self._validate_inputs(config, data)
-        # If we passed validation (or aren't validating), save attributes
+
         self.config = config
         self.data = data
-        # Set the number of particle size classes and timesteps, and
-        # the times at which to store the computed solution
+
+        # Set the number of particle size classes and timesteps, and the times
+        # at which to store the computed solution.
         self.n_size_classes = self.config['n_size_classes']
         self.n_timesteps = self.config['n_timesteps']
         self.dt = self.config['dt']
-        self.t_grid = np.arange(0.5*self.dt,
-                                self.n_timesteps*self.dt + 0.5*self.dt,
+        self.t_grid = np.arange(0.5 * self.dt,
+                                self.n_timesteps * self.dt + 0.5 * self.dt,
                                 self.dt)
         self.t_eval = self.t_grid \
             if self.config['solver_t_eval'] == 'timesteps' \
             else self.config['solver_t_eval']
-        # Initial concentrations
-        self.initial_concs = np.array(data['initial_concs'], dtype=float)
-        self.initial_concs_diss = data['initial_concs_diss']
-        # Set the particle phys-chem properties
+
+        # Particle size geometry shared by all components.
         self.psd = self._set_psd()
         self.surface_areas = self.surface_area(self.psd)
         self.fsd = self.set_fsd(self.n_size_classes,
                                 self.psd,
                                 self.data['fsd_beta'])
-        self.density = float(data['density'])
-        # Stop Pylance complaining about k_frag, k_diss and k_min not being
-        # present (or being the wrong type) by declaring them as NumPy arrays
-        self.k_frag = np.empty((self.n_size_classes, self.n_timesteps))
-        self.k_diss = np.empty((self.n_size_classes, self.n_timesteps))
-        self.k_min = np.empty((self.n_timesteps,))
-        # Calculate the rate constant distributions
-        for k in ['k_frag', 'k_diss', 'k_min']:
-            k_dist = self.set_rate_constant(data[k], k)
-            setattr(self, k, k_dist)
+
+        # ------------------------------------------------------------------
+        # NEW: component / formulation / layer dimension for the polymer core
+        # ------------------------------------------------------------------
+        component_defs = self.data.get('components', None)
+        if component_defs is None:
+            component_defs = [{
+                'name': 'polymer_0',
+                'initial_concs': list(self.data['initial_concs']),
+                'initial_concs_diss': float(self.data.get('initial_concs_diss', 0.0)),
+                'density': float(self.data['density']),
+                'k_frag': self.data['k_frag'],
+                'k_diss': self.data.get('k_diss', 0.0),
+                'k_min': self.data.get('k_min', 0.0),
+                'fsd_beta': self.data.get('fsd_beta', 0.0),
+                'layer_thickness': None,
+            }]
+
+        self.components = component_defs
+        self.n_components = len(component_defs)
+        self.component_names = []
+        self.component_layer_initial_thickness = np.full(self.n_components, np.nan, dtype=float)
+
+        component_initial_concs = []
+        component_initial_concs_diss = []
+        component_density = []
+        component_fsd = []
+        component_k_frag = []
+        component_k_diss = []
+        component_k_min = []
+
+        for j, component in enumerate(component_defs):
+            self.component_names.append(str(component.get('name', f'component_{j}')))
+            component_initial_concs.append(
+                np.asarray(component['initial_concs'], dtype=float)
+            )
+            component_initial_concs_diss.append(
+                float(component.get('initial_concs_diss', 0.0))
+            )
+            component_density.append(float(component.get('density', self.data['density'])))
+            component_fsd.append(
+                self.set_fsd(self.n_size_classes,
+                             self.psd,
+                             float(component.get('fsd_beta', self.data.get('fsd_beta', 0.0))))
+            )
+            component_k_frag.append(
+                self.set_rate_constant(component.get('k_frag', self.data['k_frag']), 'k_frag')
+            )
+            component_k_diss.append(
+                self.set_rate_constant(component.get('k_diss', self.data.get('k_diss', 0.0)), 'k_diss')
+            )
+            component_k_min.append(
+                self.set_rate_constant(component.get('k_min', self.data.get('k_min', 0.0)), 'k_min')
+            )
+
+            layer_h = component.get('layer_thickness', None)
+            if layer_h is not None:
+                self.component_layer_initial_thickness[j] = float(layer_h)
+
+        self.component_initial_concs = np.asarray(component_initial_concs, dtype=float)
+        self.component_initial_concs_diss = np.asarray(component_initial_concs_diss, dtype=float)
+        self.component_density = np.asarray(component_density, dtype=float)
+        self.component_fsd = np.asarray(component_fsd, dtype=float)          # (C, N, N)
+        self.component_k_frag = np.asarray(component_k_frag, dtype=float)    # (C, N, T)
+        self.component_k_diss = np.asarray(component_k_diss, dtype=float)    # (C, N, T)
+        self.component_k_min = np.asarray(component_k_min, dtype=float)      # (C, T)
+
+        # Backward-compatible aggregate aliases used by the old API/tests.
+        self.initial_concs = np.sum(self.component_initial_concs, axis=0)
+        self.initial_concs_diss = float(np.sum(self.component_initial_concs_diss))
+        total_initial_mass = float(np.sum(self.component_initial_concs))
+        if total_initial_mass > 0.0:
+            weights = np.sum(self.component_initial_concs, axis=1) / total_initial_mass
+            self.density = float(np.sum(weights * self.component_density))
+        else:
+            self.density = float(np.mean(self.component_density))
+
+        # Backward-compatible rate aliases.  For multi-component systems these
+        # are mass-weighted effective rates used only by legacy helper logic and
+        # old additive post-processing.  The core ODE uses component-specific
+        # rates stored above.
+        self.k_frag = self._component_weighted_rate(self.component_k_frag)
+        self.k_diss = self._component_weighted_rate(self.component_k_diss)
+        self.k_min = np.average(self.component_k_min, axis=0, weights=self._component_mass_weights())
 
         # ------------------------------------------------------------
         # OPTIONAL: multi-additive / multi-pool coupling inputs
         # ------------------------------------------------------------
         self.additives = data.get('additives', None)
 
-        # Backward-compatible aliases for legacy single-additive inputs
+        # Backward-compatible aliases for legacy single-additive inputs.
         init_A = data.get('initial_chemical_concs', data.get('initial_additive_concs', None))
         self.initial_chemical_concs = None if init_A is None else np.array(init_A, dtype=float)
         self.chemical_release_config = config.get(
@@ -208,91 +294,78 @@ class FragmentMNP():
 
         Notes
         -----
-        The model numerically solves the following set of differential
-        equations to give a time series of mass concentrations of particles
-        `c`, dissolved polymer `c_diss` and mineralised polymer `c_min`.
-        `k` is the current size class, `i` are the daughter size classes.
+        The legacy polymer equations are now evaluated for each component
+        ``j`` and size class ``k``:
 
         .. math::
-            \frac{dc_k}{dt} = -k_{\text{frag},k} c_k +
-            \sum_i f_{i,k} k_{\text{frag},i} c_i - k_{\text{diss},k} c_k
+            \frac{dc_{j,k}}{dt} =
+            -k_{\mathrm{frag},j,k} c_{j,k}
+            + \sum_i f_{j,i,k} k_{\mathrm{frag},j,i} c_{j,i}
+            - k_{\mathrm{diss},j,k} c_{j,k}
 
         .. math::
-            \frac{dc_\text{diss}}{dt} = \sum_k k_{\text{diss},k} c_k -
-            k_\text{min} c_\text{diss}
+            \frac{dc_{\mathrm{diss},j}}{dt} =
+            \sum_k k_{\mathrm{diss},j,k} c_{j,k}
+            - k_{\mathrm{min},j} c_{\mathrm{diss},j}
 
         .. math::
-            \frac{dc_\text{min}}{dt} = k_\text{min} c_\text{diss}
+            \frac{dc_{\mathrm{min},j}}{dt} =
+            k_{\mathrm{min},j} c_{\mathrm{diss},j}
 
-        Here, :math:`k_{\text{frag},k}` is the fragmentation rate of size
-        class `k`, :math:`f_{i,k}` is the fraction of daughter
-        fragments produced from a fragmenting particle of size `i` that are of
-        size `k`, :math:`k_{\text{diss},k}` is the dissolution rate from
-        size class `k` and :math:`k_\text{min}` is the mineralisation rate
-        from the dissolved pool.
-
-        Mass concentrations are converted to particle number concentrations by
-        assuming spherical particles with the density given in the input data.
+        Aggregated legacy outputs are returned as sums over ``j``.  New
+        component-resolved outputs are also stored in ``FMNPOutput``.
         """
-        def f(t, c):
-            """
-            The initial value problem for SciPy to solve. This must satisfy
-            c'(t) = f(t, c) with initial values given in data, with N+2
-            solutions:
-              c[:N]   = mass concentration in each of the N size classes
-              c[N]    = total dissolved mass concentration
-              c[N+1]  = mineralised mass concentration
-            """
-            # Get the number of size classes
-            N = self.n_size_classes
-            # Unpack the solutions
-            c_particles = c[:N]
-            c_dissolved = c[N]
-            c_min = c[N + 1]   # Not used as a source in any ODE (only grows)
-            # Interpolate the time-dependent parameters to the specific
-            # timestep given (which will be a float, rather than integer index)
-            f_frag = interpolate.interp1d(self.t_grid, self.k_frag, axis=1,
-                                          fill_value='extrapolate')
-            f_diss = interpolate.interp1d(self.t_grid, self.k_diss, axis=1,
-                                          fill_value='extrapolate')
-            f_min = interpolate.interp1d(self.t_grid, self.k_min, axis=0,
-                                         fill_value='extrapolate')
-            k_frag = f_frag(t)
-            k_diss = f_diss(t)
-            k_min = f_min(t)
-            # Build array of d/dt
-            dcdt = np.empty(N+2)
-            # Particle ODEs, for each size class:
-            #   Gains: fragmentation from bigger size classes
-            #   Loss:  dissolution and fragmentation to smaller size classes
-            for k in range(N):
-                dcdt[k] = (
-                    - k_frag[k] * c_particles[k]
-                    + np.sum(self.fsd[:, k] * k_frag * c_particles[:N])
-                    - k_diss[k] * c_particles[k]
-                )
-            # Dissolved mass ODE:
-            #   Gains: sum of kdiss[k] * c_particles[k]
-            #   Loss:  k_min * c_dissolved
-            dcdt_dissolved = np.sum(k_diss * c_particles) - k_min * c_dissolved
-            # Assign to last entry
-            dcdt[N] = dcdt_dissolved
-            # Mineralized ODE:
-            #   Gains: k_min_avg * c_dissolved
-            #   No loss, so it's purely accumulative
-            dcdt_min = k_min * c_dissolved
-            dcdt[N + 1] = dcdt_min
-            # Final differential to return
-            return dcdt
+        C = self.n_components
+        N = self.n_size_classes
 
-        # Build the new N+2 initial conditions: N particulate states,
-        # +1 dissolved, +1 mineralized
+        # Build interpolators once; solve_ivp calls f many times.
+        f_frag = interpolate.interp1d(self.t_grid, self.component_k_frag, axis=2,
+                                      fill_value='extrapolate')
+        f_diss = interpolate.interp1d(self.t_grid, self.component_k_diss, axis=2,
+                                      fill_value='extrapolate')
+        f_min = interpolate.interp1d(self.t_grid, self.component_k_min, axis=1,
+                                     fill_value='extrapolate')
+
+        def f(t, y):
+            """
+            Component-resolved initial value problem.
+
+            State layout:
+              y[:C*N]              = particulate polymer by component and size
+              y[C*N:C*N+C]         = dissolved polymer by component
+              y[C*N+C:C*N+2*C]     = mineralised polymer by component
+            """
+            c_particles = y[:C * N].reshape(C, N)
+            c_dissolved = y[C * N:C * N + C]
+
+            k_frag_t = f_frag(t)  # (C, N)
+            k_diss_t = f_diss(t)  # (C, N)
+            k_min_t = f_min(t)    # (C,)
+
+            d_part = np.zeros((C, N), dtype=float)
+            d_diss = np.zeros(C, dtype=float)
+            d_min = np.zeros(C, dtype=float)
+
+            for j in range(C):
+                fsd_j = self.component_fsd[j]
+                frag_loss = k_frag_t[j] * c_particles[j]
+                diss_loss = k_diss_t[j] * c_particles[j]
+
+                # Gains to size k from all fragmenting parent classes i.
+                frag_gain = np.sum(fsd_j * frag_loss[:, np.newaxis], axis=0)
+
+                d_part[j] = -frag_loss + frag_gain - diss_loss
+                d_diss[j] = float(np.sum(diss_loss) - k_min_t[j] * c_dissolved[j])
+                d_min[j] = float(k_min_t[j] * c_dissolved[j])
+
+            return np.concatenate([d_part.ravel(), d_diss, d_min])
+
         y0 = np.concatenate([
-           self.initial_concs,          # microplastic mass per size class
-           [self.initial_concs_diss],   # dissolved mass
-           [0.0]                        # mineralized (initially zero)
+            self.component_initial_concs.ravel(),
+            self.component_initial_concs_diss,
+            np.zeros(C, dtype=float),
         ])
-        # Solve the ODE
+
         soln = solve_ivp(
             fun=f,
             method=self.config['solver_method'],
@@ -306,12 +379,30 @@ class FragmentMNP():
         if not soln.success:
             raise FMNPNumericalError('Model solution could not be found: ' +
                                      f'{soln.message}')
-        # Extract solution
-        c_part_sol = soln.y[:self.n_size_classes, :]
-        c_diss_sol = soln.y[self.n_size_classes, :]
-        c_min_sol = soln.y[self.n_size_classes + 1, :]
-        # Convert microparticle mass to particle number
-        n_part_sol = self.mass_to_particle_number(c_part_sol)
+
+        T = soln.y.shape[1]
+        c_component_sol = soln.y[:C * N, :].reshape(C, N, T)
+        c_diss_component_sol = soln.y[C * N:C * N + C, :]
+        c_min_component_sol = soln.y[C * N + C:C * N + 2 * C, :]
+
+        # Backward-compatible aggregate outputs.
+        c_part_sol = np.sum(c_component_sol, axis=0)
+        c_diss_sol = np.sum(c_diss_component_sol, axis=0)
+        c_min_sol = np.sum(c_min_component_sol, axis=0)
+
+        # Convert microparticle mass to particle number.  The legacy one-
+        # component path deliberately calls mass_to_particle_number() so user
+        # overloads of that method still behave as before.
+        if C == 1:
+            n_part_sol = self.mass_to_particle_number(c_part_sol)
+            n_component_sol = n_part_sol[np.newaxis, :, :]
+        else:
+            n_component_sol = self._mass_to_particle_number_components(c_component_sol)
+            n_part_sol = np.sum(n_component_sol, axis=0)
+
+        layer_thickness_component, layer_thickness_by_size = self._calculate_layer_thickness(
+            c_component_sol
+        )
 
         # ------------------------------------------------------------
         # OPTIONAL: compute additive time series (post-solve)
@@ -331,25 +422,119 @@ class FragmentMNP():
                 c_medium_pool_species
             ) = self._simulate_additives_postsolve(soln.t, c_part_sol)
 
-        # Build the FMNPOutput object from the solution
         return FMNPOutput(
-           t=soln.t,
-           c=c_part_sol,
-           n=n_part_sol,
-           c_diss=c_diss_sol,
-           c_min=c_min_sol,
-           soln=soln,
-           psd=self.psd,
-           c_chem_part_species=c_chem_part_species,
-           c_chem_medium_species=c_chem_medium_species,
-           c_chem_part_total=c_chem_part_total,
-           c_chem_medium_total=c_chem_medium_total,
-           additive_names=self.additive_names,
-           species_names=self.species_names,
-           c_medium_pool_species=c_medium_pool_species,
-           medium_pool_names=self.medium_species_names
+            t=soln.t,
+            c=c_part_sol,
+            n=n_part_sol,
+            c_diss=c_diss_sol,
+            c_min=c_min_sol,
+            soln=soln,
+            psd=self.psd,
+            c_chem_part_species=c_chem_part_species,
+            c_chem_medium_species=c_chem_medium_species,
+            c_chem_part_total=c_chem_part_total,
+            c_chem_medium_total=c_chem_medium_total,
+            additive_names=self.additive_names,
+            species_names=self.species_names,
+            c_medium_pool_species=c_medium_pool_species,
+            medium_pool_names=self.medium_species_names,
+            c_component=c_component_sol,
+            n_component=n_component_sol,
+            c_diss_component=c_diss_component_sol,
+            c_min_component=c_min_component_sol,
+            component_names=self.component_names,
+            layer_thickness_component=layer_thickness_component,
+            layer_thickness_by_size=layer_thickness_by_size,
         )
-    
+
+    # ------------------------------------------------------------------
+    # Component / multilayer helper methods
+    # ------------------------------------------------------------------
+
+    def _component_mass_weights(self) -> np.ndarray:
+        """Return initial-mass weights for component aggregation."""
+        m = np.sum(self.component_initial_concs, axis=1)
+        total = float(np.sum(m))
+        if total <= 0.0:
+            return np.full(self.n_components, 1.0 / max(self.n_components, 1), dtype=float)
+        return m / total
+
+    def _component_weighted_rate(self, arr: np.ndarray) -> np.ndarray:
+        """
+        Convert component-resolved rates to a legacy aggregate rate array.
+
+        ``arr`` can have shape (C, N, T) or (C, T).  The result is used for
+        backward-compatible helper methods only; the core ODE never uses this
+        aggregate in multi-component mode.
+        """
+        arr = np.asarray(arr, dtype=float)
+        weights = self._component_mass_weights()
+        if arr.ndim == 3:
+            return np.tensordot(weights, arr, axes=(0, 0))
+        if arr.ndim == 2:
+            return np.tensordot(weights, arr, axes=(0, 0))
+        raise ValueError('Component rate array must have shape (C,N,T) or (C,T).')
+
+    def _mass_to_particle_number_components(self,
+                                            mass_component: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """
+        Convert component-resolved mass concentrations to number concentrations.
+
+        This is density-resolved, so two layers with the same mass and size but
+        different densities produce different particle-number contributions.
+        """
+        mass_component = np.asarray(mass_component, dtype=float)
+        volume = self.volume(self.psd)
+        denom = self.component_density[:, np.newaxis, np.newaxis] * volume[np.newaxis, :, np.newaxis]
+        return mass_component / denom
+
+    def _calculate_layer_thickness(self,
+                                   c_component_sol: npt.NDArray[np.float64]) -> tuple[np.ndarray | None, np.ndarray | None]:
+        """
+        Track equivalent remaining thickness for explicitly layered components.
+
+        For a component with initial layer thickness ``h_j(0)``, the bulk
+        equivalent thickness is:
+
+            h_j(t) = h_j(0) * M_j(t) / M_j(0)
+
+        and the size-resolved diagnostic is:
+
+            h_{j,k}(t) = h_j(0) * c_{j,k}(t) / c_{j,k}(0)
+
+        where undefined ratios for initially empty size classes are returned as
+        zero.  These are diagnostic layer-origin metrics: fragmentation can move
+        layer-origin mass between size classes, while total component mass still
+        controls the physically interpretable equivalent layer thickness.
+        """
+        if np.all(~np.isfinite(self.component_layer_initial_thickness)):
+            return None, None
+
+        C, N, T = c_component_sol.shape
+        h_component = np.full((C, T), np.nan, dtype=float)
+        h_by_size = np.full((C, N, T), np.nan, dtype=float)
+
+        for j in range(C):
+            h0 = self.component_layer_initial_thickness[j]
+            if not np.isfinite(h0):
+                continue
+
+            m0 = float(np.sum(self.component_initial_concs[j]))
+            mt = np.sum(c_component_sol[j], axis=0)
+            if m0 > 0.0:
+                h_component[j] = h0 * mt / m0
+            else:
+                h_component[j] = 0.0
+
+            for k in range(N):
+                c0 = float(self.component_initial_concs[j, k])
+                if c0 > 0.0:
+                    h_by_size[j, k] = h0 * c_component_sol[j, k] / c0
+                else:
+                    h_by_size[j, k] = 0.0
+
+        return h_component, h_by_size
+
     # ---------------------------------------------------------------------
     # Additive coupling implementation (post-solve bookkeeping)
     # ---------------------------------------------------------------------

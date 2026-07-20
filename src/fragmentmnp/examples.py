@@ -391,3 +391,51 @@ minimal_data_with_time_dependent_release = {
     ],
 }
 """Example where polymer diffusivity D_p evolves over model time."""
+
+# --------------------------------------------------------------------
+# Component / multilayer packaging example
+# --------------------------------------------------------------------
+minimal_data_with_components = {
+    # Legacy aggregate fields are optional when components are provided, but
+    # included here to make the aggregate/component consistency explicit.
+    'initial_concs': [40.0, 25.0, 10.0, 0.0, 0.0, 0.0, 0.0],
+    'density': 1012.5,
+    'k_frag': 0.0,
+    'k_diss': 0.0,
+    'k_min': 0.0,
+    'fsd_beta': 0.0,
+    'components': [
+        {
+            'name': 'PE_outer_layer',
+            'initial_concs': [25.0, 15.0, 5.0, 0.0, 0.0, 0.0, 0.0],
+            'density': 930.0,
+            'k_frag': 0.015,
+            'k_diss': 0.0,
+            'k_min': 0.0,
+            'fsd_beta': -0.2,
+            'layer_thickness': 40e-6,
+        },
+        {
+            'name': 'EVOH_barrier_layer',
+            'initial_concs': [5.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0],
+            'density': 1190.0,
+            'k_frag': 0.004,
+            'k_diss': 0.0,
+            'k_min': 0.0,
+            'fsd_beta': 0.0,
+            'layer_thickness': 5e-6,
+        },
+        {
+            'name': 'PP_inner_layer',
+            'initial_concs': [10.0, 7.0, 3.0, 0.0, 0.0, 0.0, 0.0],
+            'density': 900.0,
+            'k_frag': 0.010,
+            'k_diss': 0.0,
+            'k_min': 0.0,
+            'fsd_beta': -0.1,
+            'layer_thickness': 25e-6,
+        },
+    ],
+}
+"""Example data for multilayer packaging with component-specific density,
+fragmentation rates and tracked layer thickness."""
