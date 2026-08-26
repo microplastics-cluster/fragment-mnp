@@ -35,7 +35,7 @@ html:
   extra_footer: |
     <div style="position: relative">
       <a href="https://www.ceh.ac.uk/privacy-notice" target="_blank">Privacy notice</a>
-      <img src="_static/ukceh.png" width=200 style="position: absolute; right: 0; bottom: 0;">
+      <span class="ukceh-logo" role="img" aria-label="UK Centre for Ecology &amp; Hydrology"></span>
     </div>
 
 parse:

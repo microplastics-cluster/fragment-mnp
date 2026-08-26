@@ -1,0 +1,22 @@
+/* UKCEH logo in the page footer.
+ *
+ * The image is referenced from CSS rather than directly from the
+ * html.extra_footer HTML in _config.yml. Sphinx inserts extra_footer
+ * verbatim, so a relative src there only resolves on root-level pages.
+ * Stylesheet links, by contrast, are rewritten per page depth, and url()
+ * below is resolved relative to this file, which always sits in _static/.
+ */
+.ukceh-logo {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 200px;
+  aspect-ratio: 2361 / 624;
+  background: url("ukceh.png") no-repeat right bottom / contain;
+}
+
+/* The theme resolves its "auto" setting to a concrete data-theme value on
+ * <html>, so this covers both an explicit dark choice and system dark mode. */
+html[data-theme="dark"] .ukceh-logo {
+  background-image: url("ukceh_white.png");
+}
