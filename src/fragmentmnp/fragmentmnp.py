@@ -24,14 +24,18 @@ the collaboration easy: the analytical and/or numerical formula is isolated in o
 
 """
 from typing import Tuple, Sequence
+from functools import lru_cache
 import numpy as np
 import numpy.typing as npt
 from scipy.integrate import solve_ivp
 from scipy import interpolate
+from scipy.optimize import brentq
+from scipy.special import j0, j1, jn_zeros
 from schema import SchemaError
 from . import validation
 from .output import FMNPOutput
 from ._errors import FMNPNumericalError, FMNPDistributionValueError
+from .geometry import make_geometry
 
 
 class FragmentMNP():
@@ -89,9 +93,19 @@ class FragmentMNP():
             if self.config['solver_t_eval'] == 'timesteps' \
             else self.config['solver_t_eval']
 
-        # Particle size geometry shared by all components.
+        # Particle geometry shared by all components.  The legacy/default
+        # geometry is a sphere, where psd values are particle diameters.  When
+        # shape='fibre', the same size coordinate is interpreted as fibre
+        # length and a separate fibre diameter defines the cross-section.
         self.psd = self._set_psd()
-        self.surface_areas = self.surface_area(self.psd)
+        self.geometry = make_geometry(
+            self.config.get('particle_geometry', {'shape': 'sphere'}),
+            n_size_classes=self.n_size_classes,
+        )
+        self.particle_geometry = self.geometry.metadata()
+        self.surface_areas = self.geometry.surface_area(self.psd)
+        self.particle_volumes = self.geometry.volume(self.psd)
+        self.release_radii = self.geometry.release_radius(self.psd)
         self.fsd = self.set_fsd(self.n_size_classes,
                                 self.psd,
                                 self.data['fsd_beta'])
@@ -445,6 +459,7 @@ class FragmentMNP():
             component_names=self.component_names,
             layer_thickness_component=layer_thickness_component,
             layer_thickness_by_size=layer_thickness_by_size,
+            particle_geometry=self.particle_geometry,
         )
 
     # ------------------------------------------------------------------
@@ -631,7 +646,7 @@ class FragmentMNP():
         f_frag = interpolate.interp1d(
             self.t_grid, self.k_frag, axis=1, fill_value='extrapolate'
         )
-        radii = self.psd / 2.0
+        release_radii = self.release_radii
         eps = 1e-30
         release_cache = {}
 
@@ -696,7 +711,7 @@ class FragmentMNP():
                     if spec['model'] == 'analytical':
                         rel = np.array([
                             self._analytical_additive_release_fraction(
-                                radius_m=float(radii[i]),
+                                radius_m=float(release_radii[i]),
                                 dt=dt_i,
                                 params=self._release_params_for_size(evaluated_release_params, i),
                             ) for i in range(N)
@@ -704,7 +719,7 @@ class FragmentMNP():
                     elif spec['model'] == 'numerical':
                         rel = np.array([
                             self._numerical_additive_release_fraction(
-                                radius_m=float(radii[i]),
+                                radius_m=float(release_radii[i]),
                                 dt=dt_i,
                                 params=self._release_params_for_size(evaluated_release_params, i),
                             ) for i in range(N)
@@ -1138,14 +1153,28 @@ class FragmentMNP():
         K_pw = float(params.get("K_pw"))
         n_terms = int(params.get("n_terms", 50))
 
-        F_remain = self._analytical_additive_remaining_fraction(
-            t=float(dt),
-            r=float(radius_m),
-            D_p=D_p,
-            D_w=D_w,
-            K_pw=K_pw,
-            n_terms=n_terms
-        )
+        if self.geometry.release_geometry == 'sphere':
+            F_remain = self._analytical_additive_remaining_fraction(
+                t=float(dt),
+                r=float(radius_m),
+                D_p=D_p,
+                D_w=D_w,
+                K_pw=K_pw,
+                n_terms=n_terms
+            )
+        elif self.geometry.release_geometry == 'cylinder':
+            F_remain = self._analytical_cylindrical_remaining_fraction(
+                t=float(dt),
+                r=float(radius_m),
+                D_p=D_p,
+                D_w=D_w,
+                K_pw=K_pw,
+                n_terms=n_terms
+            )
+        else:
+            raise ValueError(
+                f"Unsupported additive release geometry: {self.geometry.release_geometry}"
+            )
 
         # Release fraction = 1 - remaining fraction (bounded)
         rel = 1.0 - F_remain
@@ -1185,16 +1214,32 @@ class FragmentMNP():
 
         n_substeps = int(params.get("n_substeps", 20))
 
-        F_remain = self._numerical_additive_remaining_fraction(
-            t=float(dt),
-            r=float(radius_m),
-            D_p=D_p,
-            K_pw=K_pw,
-            k_m=k_m,
-            n_r=n_r,
-            n_substeps=n_substeps,
-            theta=theta
-        )
+        if self.geometry.release_geometry == 'sphere':
+            F_remain = self._numerical_additive_remaining_fraction(
+                t=float(dt),
+                r=float(radius_m),
+                D_p=D_p,
+                K_pw=K_pw,
+                k_m=k_m,
+                n_r=n_r,
+                n_substeps=n_substeps,
+                theta=theta
+            )
+        elif self.geometry.release_geometry == 'cylinder':
+            F_remain = self._numerical_cylindrical_remaining_fraction(
+                t=float(dt),
+                r=float(radius_m),
+                D_p=D_p,
+                K_pw=K_pw,
+                k_m=k_m,
+                n_r=n_r,
+                n_substeps=n_substeps,
+                theta=theta
+            )
+        else:
+            raise ValueError(
+                f"Unsupported additive release geometry: {self.geometry.release_geometry}"
+            )
         rel = 1.0 - F_remain
         return float(np.clip(rel, 0.0, 1.0))
      
@@ -1586,25 +1631,15 @@ class FragmentMNP():
                                / np.sum(psd[:-(n-i)] ** beta))
         return fsd
 
-    @staticmethod
-    def surface_area(psd: npt.NDArray[np.float64]) -> \
+    def surface_area(self, psd: npt.NDArray[np.float64]) -> \
             npt.NDArray[np.float64]:
-        """
-        Return the surface area of the particles, presuming they are
-        spheres. This function can be overloaded to account for different
-        shaped particles.
-        """
-        return 4.0 * np.pi * (psd / 2.0) ** 2
+        """Return particle surface area using the configured geometry."""
+        return self.geometry.surface_area(psd)
 
-    @staticmethod
-    def volume(psd: npt.NDArray[np.float64]) -> \
+    def volume(self, psd: npt.NDArray[np.float64]) -> \
             npt.NDArray[np.float64]:
-        """
-        Return the volume of the particles, presuming they are spheres.
-        This function can be overloaded to account for different shaped
-        particles.
-        """
-        return (4.0/3.0) * np.pi * (psd / 2.0) ** 3
+        """Return particle volume using the configured geometry."""
+        return self.geometry.volume(psd)
 
     @staticmethod
     def _assign_regression_params(params: dict,
@@ -1686,56 +1721,24 @@ class FragmentMNP():
         # Return the list of regressions for each dimension
         return X
 
-    @staticmethod
-    def _f_surface_area(psd: npt.NDArray[np.float64],
+    def _f_surface_area(self,
+                        psd: npt.NDArray[np.float64],
                         gamma: float = 1.0) -> npt.NDArray[np.float64]:
         r"""
-        Calculate the scaling factor for surface area, which is defined
-        as the ratio of the surface area to volume ratio of the polymer
-        for each size class to the median size class, such that ``f`` is
-        1 for the median size class, larger for the smaller size classes
-        (because there are more particles per unit volume), and smaller
-        for larger size classes. An empirical parameter ``gamma`` linearly
-        scales the factor by :math:`f^\gamma`.
+        Geometry-aware surface-area-to-volume scaling factor.
 
-        Parameters
-        ----------
-        psd : np.ndarray
-            The particle size distribution
-        gamma: float
-            Empirical scaling factor that scales ``f`` as :math:`s^\gamma`,
-            where ``s`` is the surface area to volume ratio of each size
-            class. Therefore, if ``gamma`` is 1, then ``k_diss`` scales
-            directly with ``s``.
-
-        Returns
-        -------
-        np.ndarray
-            Surface area scaling factor
-
-        Notes
-        -----
-        By assuming spherical particles, calculating their volumes and
-        surface areas and simplifying the algebra, ``f`` can be defined as
-
-        .. math::
-            f_\text{s} = \left(\frac{s}{\hat{s}}\right)^\gamma
-
-        where :math:`s` is the surface area to volume ratio, and
-        :math:`\hat{s}` is the median of :math:`s`:
-
-        .. math::
-            s = \frac{4 \pi r_\text{max}}{\textbf{r}}
-
-        Here, :math:`r_\text{max}` is the radius of the largest particle size
-        class, and :math:`\textbf{r}` is an array of the particle size class
-        radii.
+        The factor is the particle surface-area-to-volume ratio normalized to
+        the median size class and raised to ``gamma``.  For the default sphere
+        geometry this is exactly the legacy FRAGMENT-MNP result.  For fibres
+        it uses cylindrical surface area and volume, including endcaps when
+        requested in ``particle_geometry``.
         """
-        # Calculate ratio of surface area to the largest volume and scale
-        # to the median (so f = 1 for the median size class)
-        surface_area_volume_ratio = (4 * np.pi * (psd.max() / 2) ** 3) / psd
-        f = surface_area_volume_ratio / np.median(surface_area_volume_ratio)
-        return f ** gamma
+        psd = np.asarray(psd, dtype=float)
+        ratio = self.geometry.surface_area_to_volume(psd)
+        med = float(np.median(ratio))
+        if med <= 0.0:
+            return np.ones_like(ratio)
+        return (ratio / med) ** gamma
 
     @staticmethod
     def _validate_inputs(config: dict, data: dict) -> Tuple[dict, dict]:
@@ -1873,6 +1876,130 @@ class FragmentMNP():
         F = float(np.sum(terms))
         return float(np.clip(F, 0.0, 1.0))
     
+    @staticmethod
+    @lru_cache(maxsize=512)
+    def _cylindrical_robin_eigenvalues(Bi: float, n_terms: int) -> tuple[float, ...]:
+        """
+        Eigenvalues for radial diffusion in a cylinder with a Robin boundary.
+
+        Roots satisfy
+
+            alpha * J1(alpha) = Bi * J0(alpha)
+
+        where J0 and J1 are Bessel functions of the first kind.
+        """
+        Bi = float(Bi)
+        n_terms = int(n_terms)
+        if Bi <= 0.0:
+            return tuple()
+        if n_terms < 1:
+            raise ValueError("n_terms must be >= 1.")
+
+        z0 = jn_zeros(0, n_terms)
+
+        # At very large Bi the Robin roots are indistinguishable from J0
+        # zeros at double precision. Returning the limiting roots is both
+        # numerically robust and physically exact for this regime.
+        if Bi >= 1e8:
+            return tuple(float(x) for x in z0)
+
+        z1 = jn_zeros(1, max(n_terms - 1, 1))
+        roots = []
+
+        def eigen_eq(x):
+            return x * j1(x) - Bi * j0(x)
+
+        # First root lies between zero and the first J0 zero. Keep the upper
+        # endpoint slightly inside the zero so roundoff in J0 is not amplified
+        # by Bi.
+        lo = np.finfo(float).eps
+        hi = float(z0[0]) * (1.0 - 1e-12)
+        roots.append(float(brentq(eigen_eq, lo, hi, xtol=1e-13, rtol=1e-12)))
+
+        # Root n>=2 lies between J1 zero n-1 and J0 zero n.
+        for n in range(1, n_terms):
+            lo = float(z1[n - 1]) * (1.0 + 1e-12)
+            hi = float(z0[n]) * (1.0 - 1e-12)
+            roots.append(float(brentq(eigen_eq, lo, hi, xtol=1e-13, rtol=1e-12)))
+
+        return tuple(roots)
+
+    @staticmethod
+    def _analytical_cylindrical_remaining_fraction(
+        t: float,
+        r: float,
+        D_p: float,
+        D_w: float,
+        K_pw: float,
+        n_terms: int = 50,
+    ) -> float:
+        r"""
+        Additive remaining fraction for radial diffusion from a long cylinder.
+
+        This is the fibre analytical release kernel.  The fibre is represented
+        as an infinitely long circular cylinder for release, so ``r`` is the
+        fibre radius, not half the fibre length.  Axial/end diffusion is
+        intentionally neglected in this first fibre implementation.
+
+        Governing equation
+        ------------------
+
+        .. math::
+            \frac{\partial C}{\partial t}
+            = D_p\frac{1}{r}\frac{\partial}{\partial r}
+              \left(r\frac{\partial C}{\partial r}\right)
+
+        with symmetry at the centre and a Robin surface boundary.  With the
+        same FRAGMENT-MNP external-transfer convention used by the spherical
+        release model,
+
+        .. math::
+            Fo = \frac{D_p t}{R^2},\qquad
+            Bi = \frac{K_{pw}D_w}{D_p}.
+
+        The volume-averaged remaining fraction is
+
+        .. math::
+            F(t)=\sum_n A_n\exp(-\alpha_n^2 Fo),
+
+        where
+
+        .. math::
+            \alpha_n J_1(\alpha_n)=Bi J_0(\alpha_n)
+
+        and
+
+        .. math::
+            A_n=\frac{4}{\alpha_n^2\left[1+(\alpha_n/Bi)^2\right]}.
+
+        In the perfect-sink/high-Bi limit this reduces to the standard
+        cylindrical Bessel series with J0 zeros and coefficients 4/alpha^2.
+        """
+        if t <= 0.0:
+            return 1.0
+        if r <= 0.0:
+            return 0.0
+        if D_p <= 0.0 or D_w <= 0.0 or K_pw <= 0.0:
+            raise ValueError("D_p, D_w, and K_pw must be > 0 for analytical release model.")
+        if n_terms < 1:
+            raise ValueError("n_terms must be >= 1.")
+
+        Fo = D_p * float(t) / (float(r) ** 2)
+        Bi = (K_pw * D_w) / D_p
+
+        # Very small Bi is accurately represented by the cylindrical lumped
+        # capacitance limit, avoiding a poorly conditioned first root near zero.
+        if Bi < 1e-8:
+            return float(np.clip(np.exp(-2.0 * Bi * Fo), 0.0, 1.0))
+
+        roots = np.asarray(
+            FragmentMNP._cylindrical_robin_eigenvalues(float(Bi), int(n_terms)),
+            dtype=float,
+        )
+        coeff = 4.0 / (roots**2 * (1.0 + (roots / Bi) ** 2))
+        F = float(np.sum(coeff * np.exp(-(roots**2) * Fo)))
+        return float(np.clip(F, 0.0, 1.0))
+
     #############################
     # Additive numerical 
     #############################
@@ -2098,6 +2225,115 @@ class FragmentMNP():
         M1 = float(np.sum(V * C))        # mass-weighted remaining
         return float(np.clip(M1 / M0, 0.0, 1.0))
     
+    @staticmethod
+    def _numerical_cylindrical_remaining_fraction(
+        t: float,
+        r: float,
+        D_p: float,
+        K_pw: float,
+        k_m: float,
+        n_r: int = 60,
+        n_substeps: int = 20,
+        theta: float = 1.0,
+    ) -> float:
+        r"""
+        Numerical radial diffusion from a long cylindrical fibre.
+
+        The finite-volume and theta-scheme structure mirrors the established
+        spherical numerical release solver.  Only the radial geometry factors
+        change:
+
+        - cylindrical cell volume weight: integral r dr
+        - cylindrical face area weight: r
+
+        The external boundary convention is deliberately identical to the
+        existing spherical implementation: ``k_m`` is the effective surface
+        loss velocity used in the Robin sink.  When ``D_w`` is supplied by the
+        calling release wrapper, ``k_m = K_pw * D_w / R``.
+        """
+        if t <= 0.0:
+            return 1.0
+        if r <= 0.0:
+            return 0.0
+        if D_p <= 0.0:
+            raise ValueError("D_p must be > 0.")
+        if K_pw <= 0.0:
+            raise ValueError("K_pw must be > 0.")
+        if k_m < 0.0:
+            raise ValueError("k_m must be >= 0.")
+        if n_r < 5:
+            raise ValueError("n_r should be >= 5 for a meaningful radial grid.")
+        if n_substeps < 1:
+            raise ValueError("n_substeps must be >= 1.")
+        if not (0.0 <= theta <= 1.0):
+            raise ValueError("theta must be in [0, 1].")
+
+        if r < 1e-8:
+            return 1.0 if k_m == 0.0 else 0.0
+
+        dr = r / n_r
+        r_faces = np.arange(n_r + 1, dtype=float) * dr
+
+        # Circular-cylinder geometry; common 2*pi*L factors cancel.
+        V = (r_faces[1:]**2 - r_faces[:-1]**2) / 2.0
+        A = r_faces.copy()
+
+        C = np.ones(n_r, dtype=float)
+        dt = float(t) / float(n_substeps)
+
+        beta = D_p / dr
+        L_lower = np.zeros(n_r, dtype=float)
+        L_diag = np.zeros(n_r, dtype=float)
+        L_upper = np.zeros(n_r, dtype=float)
+
+        for i in range(n_r):
+            Vi = V[i]
+            A_L = A[i]
+            A_R = A[i + 1] if i < n_r - 1 else 0.0
+
+            cL = beta * (A_L / Vi)
+            cR = beta * (A_R / Vi)
+
+            if i > 0:
+                L_lower[i] = cL
+            if i < n_r - 1:
+                L_upper[i] = cR
+            L_diag[i] = -(cL + cR)
+
+        if k_m > 0.0:
+            denom = 1.0 + k_m * (dr / (2.0 * D_p))
+            k_eff = k_m / denom
+        else:
+            k_eff = 0.0
+
+        sink = (A[-1] / V[-1]) * k_eff
+        L_diag[-1] -= sink
+
+        def L_dot(x: np.ndarray) -> np.ndarray:
+            y = L_diag * x
+            y[1:] += L_lower[1:] * x[:-1]
+            y[:-1] += L_upper[:-1] * x[1:]
+            return y
+
+        A_lower = -theta * dt * L_lower
+        A_diag = 1.0 - theta * dt * L_diag
+        A_upper = -theta * dt * L_upper
+
+        A_lower_fact, A_diag_fact, A_upper_fact = FragmentMNP._factor_tridiagonal(
+            A_lower, A_diag, A_upper
+        )
+
+        for _ in range(n_substeps):
+            rhs = C.copy() if theta == 1.0 else C + (1.0 - theta) * dt * L_dot(C)
+            C = FragmentMNP._solve_tridiagonal_factored(
+                A_lower_fact, A_diag_fact, A_upper_fact, rhs
+            )
+            C = np.clip(C, 0.0, None)
+
+        M0 = float(np.sum(V))
+        M1 = float(np.sum(V * C))
+        return float(np.clip(M1 / M0, 0.0, 1.0))
+
     @staticmethod
     def _solve_tridiagonal(lower: np.ndarray,
                            diag: np.ndarray,

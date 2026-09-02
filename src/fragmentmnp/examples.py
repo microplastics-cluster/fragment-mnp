@@ -439,3 +439,96 @@ minimal_data_with_components = {
 }
 """Example data for multilayer packaging with component-specific density,
 fragmentation rates and tracked layer thickness."""
+
+# --------------------------------------------------------------------
+# Optional fibre geometry examples
+# --------------------------------------------------------------------
+# In fibre mode, particle_size_classes are fibre LENGTHS rather than sphere
+# diameters. The cross-sectional fibre diameter is supplied independently.
+minimal_config_with_fibre = {
+    'n_size_classes': 7,
+    'particle_size_classes': [
+        10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3
+    ],
+    'n_timesteps': 100,
+    'dt': 1,
+    'particle_geometry': {
+        'shape': 'fibre',
+        'diameter': 20e-6,
+        'include_endcaps': True,
+    },
+}
+"""Minimal configuration for straight cylindrical fibres.
+The size coordinate is fibre length; diameter is configured separately."""
+
+minimal_data_with_fibre = {
+    'initial_concs': [0.0, 0.0, 0.0, 0.0, 5.0, 15.0, 25.0],
+    'density': 1380.0,
+    'k_frag': 0.01,
+    'k_diss': 0.0,
+    'k_min': 0.0,
+    'fsd_beta': -0.5,
+}
+"""Fragmentation-only fibre example."""
+
+minimal_data_with_fibre_additive_analytical = {
+    **minimal_data_with_fibre,
+    'additives': [
+        {
+            'name': 'Fibre additive',
+            'pools': [
+                {
+                    'name': 'matrix_pool',
+                    'initial_concs': [0.0, 0.0, 0.0, 0.0, 0.2, 0.6, 1.0],
+                    'release': {
+                        'model': 'analytical',
+                        'solver': {'n_terms': 100},
+                        'params': {
+                            'D_p': 1e-16,
+                            'D_w': 1e-9,
+                            'K_pw': 1e4,
+                        },
+                    },
+                    'inheritance': {'mode': 'proportional'},
+                }
+            ],
+            'medium_pools': [
+                {'name': 'medium', 'initial_mass': 0.0, 'fate': {}},
+            ],
+        }
+    ],
+}
+"""Fibre example using the cylindrical analytical additive-release kernel."""
+
+minimal_data_with_fibre_additive_numerical = {
+    **minimal_data_with_fibre,
+    'additives': [
+        {
+            'name': 'Fibre additive',
+            'pools': [
+                {
+                    'name': 'matrix_pool',
+                    'initial_concs': [0.0, 0.0, 0.0, 0.0, 0.2, 0.6, 1.0],
+                    'release': {
+                        'model': 'numerical',
+                        'solver': {
+                            'n_r': 80,
+                            'n_substeps': 30,
+                            'theta': 1.0,
+                        },
+                        'params': {
+                            'D_p': 1e-16,
+                            'D_w': 1e-9,
+                            'K_pw': 1e4,
+                        },
+                    },
+                    'inheritance': {'mode': 'proportional'},
+                }
+            ],
+            'medium_pools': [
+                {'name': 'medium', 'initial_mass': 0.0, 'fate': {}},
+            ],
+        }
+    ],
+}
+"""Fibre example using the cylindrical numerical additive-release kernel."""

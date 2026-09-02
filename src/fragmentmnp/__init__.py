@@ -3,13 +3,21 @@ FRAGMENT-MNP model
 ==================
 Mechanistic model of Micro and NanoPlastic FRAGMentation in the ENvironmenT.
 """
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
-# Populate the package namespace
 from .fragmentmnp import FragmentMNP
+from .geometry import ParticleGeometry, SphereGeometry, FibreGeometry, make_geometry
 
-# Get the version from the installed package metadata
-__version__ = version(__name__)
+try:
+    __version__ = version(__name__)
+except PackageNotFoundError:
+    # Allows the source tree and test suite to run before package installation.
+    __version__ = "0+local"
 
-# Let type checkers know what is part of the package
-__all__ = ['FragmentMNP']
+__all__ = [
+    'FragmentMNP',
+    'ParticleGeometry',
+    'SphereGeometry',
+    'FibreGeometry',
+    'make_geometry',
+]

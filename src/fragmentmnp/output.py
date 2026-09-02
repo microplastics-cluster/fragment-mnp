@@ -64,7 +64,8 @@ class FMNPOutput():
         'c_medium_pool_species', 'medium_pool_names',
         'c_chem_part', 'c_chem_medium', 'A_part', 'A_aq',
         'c_component', 'n_component', 'c_diss_component', 'c_min_component',
-        'component_names', 'layer_thickness_component', 'layer_thickness_by_size'
+        'component_names', 'layer_thickness_component', 'layer_thickness_by_size',
+        'particle_geometry'
     ]
 
     def __init__(self,
@@ -89,7 +90,8 @@ class FMNPOutput():
                  c_min_component=None,
                  component_names=None,
                  layer_thickness_component=None,
-                 layer_thickness_by_size=None) -> None:
+                 layer_thickness_by_size=None,
+                 particle_geometry=None) -> None:
         """
         Initialise the output data object
         """
@@ -121,6 +123,10 @@ class FMNPOutput():
         self.component_names = component_names
         self.layer_thickness_component = layer_thickness_component
         self.layer_thickness_by_size = layer_thickness_by_size
+        self.particle_geometry = (
+            {'shape': 'sphere', 'size_coordinate_name': 'diameter', 'release_geometry': 'sphere'}
+            if particle_geometry is None else dict(particle_geometry)
+        )
 
         # Backward-compatible aliases
         if c_chem_part_total is None:
@@ -229,6 +235,10 @@ class FMNPOutput():
     # ------------------------------------------------------------------
     # Public accessors
     # ------------------------------------------------------------------
+    def get_particle_geometry(self) -> dict:
+        """Return a copy of the particle geometry metadata for this run."""
+        return dict(self.particle_geometry)
+
     def get_species_index(self, name: str) -> int:
         self._require_chemical_outputs()
         return self._resolve_species_index(name)
@@ -468,6 +478,12 @@ class FMNPOutput():
                     'level': level,
                     'name': name,
                     'size_class_index': j,
+                    # Generic geometry-aware fields. The legacy
+                    # size_class_diameter key is retained as an API alias; in
+                    # fibre mode its value is the fibre length because psd is
+                    # the model's generic size coordinate.
+                    'size_coordinate_name': self.particle_geometry.get('size_coordinate_name', 'diameter'),
+                    'size_class_value': float(self.psd[j]),
                     'size_class_diameter': float(self.psd[j]),
                     'initial_particulate': float(part[j, 0]),
                     'final_particulate': float(part[j, -1]),

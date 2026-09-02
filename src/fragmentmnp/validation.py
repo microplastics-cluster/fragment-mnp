@@ -215,6 +215,10 @@ config_schema = Schema({
         'timesteps',
         None
     ),
+    # Optional particle geometry. Legacy behaviour defaults to a sphere.
+    # For fibres, particle_size_classes represent fibre lengths and
+    # particle_geometry.diameter supplies the cross-sectional diameter.
+    Optional('particle_geometry', default=None): Or(None, dict),
     Optional('chemical_release', default=None): Or(
         None,
         chemical_release_config_schema()
@@ -242,6 +246,76 @@ data_schema = Schema({
 })
 
 
+def _validate_particle_geometry_config(config: dict) -> dict:
+    """Validate and canonicalise optional sphere/fibre particle geometry."""
+    cfg = config.get('particle_geometry', None)
+    if cfg is None:
+        config['particle_geometry'] = {'shape': 'sphere'}
+        return config
+    if not isinstance(cfg, dict):
+        raise SchemaError("config.particle_geometry must be a dict or None.")
+
+    shape = str(cfg.get('shape', 'sphere')).lower()
+    if shape == 'fiber':
+        shape = 'fibre'
+    if shape not in {'sphere', 'fibre'}:
+        raise SchemaError(
+            "config.particle_geometry.shape must be 'sphere' or 'fibre' "
+            "(the alias 'fiber' is also accepted)."
+        )
+
+    if shape == 'sphere':
+        # No new geometry inputs are required; preserve exact legacy geometry.
+        config['particle_geometry'] = {'shape': 'sphere'}
+        return config
+
+    if 'diameter' not in cfg:
+        raise SchemaError(
+            "Fibre geometry requires config.particle_geometry.diameter. "
+            "The model size classes represent fibre length."
+        )
+
+    try:
+        d = np.asarray(cfg['diameter'], dtype=float)
+    except Exception as exc:
+        raise SchemaError("Fibre diameter must be numeric.") from exc
+
+    if d.ndim == 0:
+        if not np.isfinite(float(d)) or float(d) <= 0.0:
+            raise SchemaError("Fibre diameter must be finite and > 0.")
+        diameter = float(d)
+    elif d.ndim == 1:
+        if d.size != config['n_size_classes']:
+            raise SchemaError(
+                "A fibre diameter vector must have the same length as "
+                f"n_size_classes ({config['n_size_classes']})."
+            )
+        if np.any(~np.isfinite(d)) or np.any(d <= 0.0):
+            raise SchemaError("All fibre diameters must be finite and > 0.")
+        diameter = d.tolist()
+    else:
+        raise SchemaError(
+            "Fibre diameter must be a scalar or a 1-D vector by fibre-length class."
+        )
+
+    include_endcaps = cfg.get('include_endcaps', True)
+    if not isinstance(include_endcaps, (bool, np.bool_)):
+        raise SchemaError("particle_geometry.include_endcaps must be boolean.")
+
+    # If explicit size classes are supplied, fibres must have positive lengths.
+    if 'particle_size_classes' in config:
+        L = np.asarray(config['particle_size_classes'], dtype=float)
+        if np.any(~np.isfinite(L)) or np.any(L <= 0.0):
+            raise SchemaError("Fibre length classes must all be finite and > 0.")
+
+    config['particle_geometry'] = {
+        'shape': 'fibre',
+        'diameter': diameter,
+        'include_endcaps': bool(include_endcaps),
+    }
+    return config
+
+
 def _validate_config_cross_checks(config: dict) -> dict:
     """
     Additional config validation that depends on combinations of fields,
@@ -255,6 +329,8 @@ def _validate_config_cross_checks(config: dict) -> dict:
             "Model config must contain either 'particle_size_classes' "
             "or 'particle_size_range'."
         )
+
+    config = _validate_particle_geometry_config(config)
 
     chem_cfg = config.get('chemical_release', None)
     if chem_cfg is not None:
