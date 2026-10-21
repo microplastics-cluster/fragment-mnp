@@ -6,7 +6,7 @@ Mechanistic model of Micro and NanoPlastic FRAGMentation in the ENvironmenT.
 from importlib.metadata import PackageNotFoundError, version
 
 from .fragmentmnp import FragmentMNP
-from .geometry import ParticleGeometry, SphereGeometry, FibreGeometry, make_geometry
+from .geometry import ParticleGeometry, SphereGeometry, FibreGeometry, FilmGeometry, make_geometry
 
 try:
     __version__ = version(__name__)
@@ -19,5 +19,6 @@ __all__ = [
     'ParticleGeometry',
     'SphereGeometry',
     'FibreGeometry',
+    'FilmGeometry',
     'make_geometry',
 ]

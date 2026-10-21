@@ -45,8 +45,7 @@ class FMNPOutput():
         The solution to the model ODE, passed directly from the
         scipy.integrate.solve_ivp method
     psd : np.ndarray, shape (n_size_classes, )
-        Particle size distribution - the average diameters of
-        each of the particle size classes
+        Particle size coordinate: sphere diameter or fibre/film fragment length.
     c_chem_part : np.ndarray, shape (n_size_classes, n_timesteps), optional
         Additive mass concentration in particulate phase, per size class
     c_chem_medium : np.ndarray, shape (n_timesteps,), optional
@@ -480,7 +479,7 @@ class FMNPOutput():
                     'size_class_index': j,
                     # Generic geometry-aware fields. The legacy
                     # size_class_diameter key is retained as an API alias; in
-                    # fibre mode its value is the fibre length because psd is
+                    # fibre/film mode its value is length because psd is
                     # the model's generic size coordinate.
                     'size_coordinate_name': self.particle_geometry.get('size_coordinate_name', 'diameter'),
                     'size_class_value': float(self.psd[j]),

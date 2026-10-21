@@ -247,72 +247,72 @@ data_schema = Schema({
 
 
 def _validate_particle_geometry_config(config: dict) -> dict:
-    """Validate and canonicalise optional sphere/fibre particle geometry."""
+    """Strictly validate optional sphere, finite fibre, or planar film geometry.
+
+    Shape-specific input is canonicalised and unknown keys are rejected so that
+    typos (e.g. film `thikness`) never silently change the physical result.
+    """
     cfg = config.get('particle_geometry', None)
     if cfg is None:
         config['particle_geometry'] = {'shape': 'sphere'}
         return config
     if not isinstance(cfg, dict):
-        raise SchemaError("config.particle_geometry must be a dict or None.")
-
+        raise SchemaError('config.particle_geometry must be a dict or None.')
     shape = str(cfg.get('shape', 'sphere')).lower()
-    if shape == 'fiber':
-        shape = 'fibre'
-    if shape not in {'sphere', 'fibre'}:
-        raise SchemaError(
-            "config.particle_geometry.shape must be 'sphere' or 'fibre' "
-            "(the alias 'fiber' is also accepted)."
-        )
-
+    shape = {'fiber': 'fibre', 'mulch': 'film', 'mulch_film': 'film'}.get(shape, shape)
+    if shape not in {'sphere', 'fibre', 'film'}:
+        raise SchemaError("particle_geometry.shape must be 'sphere', 'fibre', or 'film'.")
     if shape == 'sphere':
-        # No new geometry inputs are required; preserve exact legacy geometry.
+        if set(cfg) - {'shape'}:
+            raise SchemaError('Sphere geometry does not accept fibre or film dimensions.')
         config['particle_geometry'] = {'shape': 'sphere'}
         return config
 
-    if 'diameter' not in cfg:
-        raise SchemaError(
-            "Fibre geometry requires config.particle_geometry.diameter. "
-            "The model size classes represent fibre length."
-        )
+    def check_dimension(key):
+        if key not in cfg:
+            raise SchemaError(f"{shape} geometry requires config.particle_geometry.{key}.")
+        try:
+            arr = np.asarray(cfg[key], dtype=float)
+        except Exception as exc:
+            raise SchemaError(f'{shape} {key} must be numeric.') from exc
+        if arr.ndim not in (0, 1):
+            raise SchemaError(f'{shape} {key} must be scalar or size-vector.')
+        if arr.ndim == 1 and len(arr) != config['n_size_classes']:
+            raise SchemaError(f'{shape} {key} vector must have n_size_classes elements.')
+        if np.any(~np.isfinite(arr)) or np.any(arr <= 0):
+            raise SchemaError(f'{shape} {key} must be finite and strictly positive.')
+        return float(arr) if arr.ndim == 0 else arr.tolist()
 
-    try:
-        d = np.asarray(cfg['diameter'], dtype=float)
-    except Exception as exc:
-        raise SchemaError("Fibre diameter must be numeric.") from exc
-
-    if d.ndim == 0:
-        if not np.isfinite(float(d)) or float(d) <= 0.0:
-            raise SchemaError("Fibre diameter must be finite and > 0.")
-        diameter = float(d)
-    elif d.ndim == 1:
-        if d.size != config['n_size_classes']:
-            raise SchemaError(
-                "A fibre diameter vector must have the same length as "
-                f"n_size_classes ({config['n_size_classes']})."
-            )
-        if np.any(~np.isfinite(d)) or np.any(d <= 0.0):
-            raise SchemaError("All fibre diameters must be finite and > 0.")
-        diameter = d.tolist()
+    if shape == 'fibre':
+        unknown = set(cfg) - {'shape', 'diameter', 'include_endcaps', 'end_diffusion'}
+        if unknown:
+            raise SchemaError(f'Unknown fibre geometry keys: {sorted(unknown)}')
+        caps = cfg.get('include_endcaps', True)
+        ends = cfg.get('end_diffusion', False)
+        if not isinstance(caps, (bool, np.bool_)) or not isinstance(ends, (bool, np.bool_)):
+            raise SchemaError('Fibre include_endcaps and end_diffusion must be booleans.')
+        if ends and not caps:
+            raise SchemaError('Fibre end_diffusion=True requires include_endcaps=True.')
+        validated = {'shape': 'fibre', 'diameter': check_dimension('diameter'),
+                     'include_endcaps': bool(caps), 'end_diffusion': bool(ends)}
     else:
-        raise SchemaError(
-            "Fibre diameter must be a scalar or a 1-D vector by fibre-length class."
-        )
-
-    include_endcaps = cfg.get('include_endcaps', True)
-    if not isinstance(include_endcaps, (bool, np.bool_)):
-        raise SchemaError("particle_geometry.include_endcaps must be boolean.")
-
-    # If explicit size classes are supplied, fibres must have positive lengths.
+        unknown = set(cfg) - {'shape', 'width', 'thickness', 'exposed_faces', 'include_edges'}
+        if unknown:
+            raise SchemaError(f'Unknown film geometry keys: {sorted(unknown)}')
+        face = cfg.get('exposed_faces', 2)
+        edges = cfg.get('include_edges', True)
+        if type(face) is not int or face not in (1, 2):
+            raise SchemaError('Film exposed_faces must be exactly 1 or 2.')
+        if not isinstance(edges, (bool, np.bool_)):
+            raise SchemaError('Film include_edges must be boolean.')
+        validated = {'shape': 'film', 'width': check_dimension('width'),
+                     'thickness': check_dimension('thickness'),
+                     'exposed_faces': face, 'include_edges': bool(edges)}
     if 'particle_size_classes' in config:
-        L = np.asarray(config['particle_size_classes'], dtype=float)
-        if np.any(~np.isfinite(L)) or np.any(L <= 0.0):
-            raise SchemaError("Fibre length classes must all be finite and > 0.")
-
-    config['particle_geometry'] = {
-        'shape': 'fibre',
-        'diameter': diameter,
-        'include_endcaps': bool(include_endcaps),
-    }
+        sizes = np.asarray(config['particle_size_classes'], dtype=float)
+        if np.any(~np.isfinite(sizes)) or np.any(sizes <= 0):
+            raise SchemaError(f'{shape} length classes must be positive and finite.')
+    config['particle_geometry'] = validated
     return config
 
 

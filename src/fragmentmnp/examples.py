@@ -532,3 +532,62 @@ minimal_data_with_fibre_additive_numerical = {
     ],
 }
 """Fibre example using the cylindrical numerical additive-release kernel."""
+
+# ---------------------------------------------------------------------------
+# Optional finite-fibre end diffusion + planar mulch-film fragment examples
+# ---------------------------------------------------------------------------
+minimal_config_with_finite_fibre = {
+    **minimal_config_with_fibre,
+    'particle_geometry': {'shape': 'fibre', 'diameter': 20e-6,
+                          'include_endcaps': True, 'end_diffusion': True},
+}
+
+minimal_config_with_film = {
+    'n_size_classes': 7,
+    # The size coordinate is the planar film-fragment LENGTH, not diameter.
+    'particle_size_classes': [100e-6, 200e-6, 400e-6, 800e-6, 1.6e-3, 3.2e-3, 6.4e-3],
+    'n_timesteps': 50,
+    'dt': 1,
+    'particle_geometry': {
+        'shape': 'film',
+        'width': 1e-3,         # independent transverse fragment dimension [m]
+        'thickness': 20e-6,   # polymer slab thickness [m]
+        'exposed_faces': 2,   # both broad faces releasing to same sink
+        'include_edges': True,
+    },
+}
+
+minimal_data_with_film_additive_analytical = {
+    'initial_concs': [0., 0., 0., 10., 20., 30., 40.],
+    'density': 920.,
+    'k_frag': 0.01,
+    'k_diss': 0., 'k_min': 0.,
+    'additives': [{
+        'name': 'Film additive',
+        'pools': [{
+            'name': 'matrix',
+            'initial_concs': [0., 0., 0., 0.1, 0.2, 0.3, 0.4],
+            'release': {
+                'model': 'analytical',
+                'solver': {'n_terms': 90},
+                'params': {'D_p': 1e-16, 'D_w': 1e-9, 'K_pw': 1e4},
+            },
+        }],
+        'medium_pools': [{'name': 'medium', 'initial_mass': 0., 'fate': {}}],
+    }],
+}
+
+minimal_data_with_film_additive_numerical = {
+    **minimal_data_with_film_additive_analytical,
+    'additives': [{
+        **minimal_data_with_film_additive_analytical['additives'][0],
+        'pools': [{
+            **minimal_data_with_film_additive_analytical['additives'][0]['pools'][0],
+            'release': {
+                'model': 'numerical',
+                'solver': {'n_r': 50, 'n_substeps': 20, 'theta': 1.0},
+                'params': {'D_p': 1e-16, 'D_w': 1e-9, 'K_pw': 1e4},
+            },
+        }],
+    }],
+}

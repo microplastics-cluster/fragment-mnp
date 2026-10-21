@@ -94,9 +94,9 @@ class FragmentMNP():
             else self.config['solver_t_eval']
 
         # Particle geometry shared by all components.  The legacy/default
-        # geometry is a sphere, where psd values are particle diameters.  When
-        # shape='fibre', the same size coordinate is interpreted as fibre
-        # length and a separate fibre diameter defines the cross-section.
+        # geometry is a sphere, where psd values are particle diameters. For
+        # fibres and rectangular films, psd is fragment LENGTH; fibre diameter
+        # or film width/thickness is supplied independently.
         self.psd = self._set_psd()
         self.geometry = make_geometry(
             self.config.get('particle_geometry', {'shape': 'sphere'}),
@@ -713,6 +713,7 @@ class FragmentMNP():
                             self._analytical_additive_release_fraction(
                                 radius_m=float(release_radii[i]),
                                 dt=dt_i,
+                                size_index=i,
                                 params=self._release_params_for_size(evaluated_release_params, i),
                             ) for i in range(N)
                         ], dtype=float)
@@ -721,6 +722,7 @@ class FragmentMNP():
                             self._numerical_additive_release_fraction(
                                 radius_m=float(release_radii[i]),
                                 dt=dt_i,
+                                size_index=i,
                                 params=self._release_params_for_size(evaluated_release_params, i),
                             ) for i in range(N)
                         ], dtype=float)
@@ -1128,121 +1130,99 @@ class FragmentMNP():
 
         return np.clip(A_out, 0.0, None), transfer_out
 
-    def _analytical_additive_release_fraction(self, radius_m: float, dt: float, params: dict) -> float:
+    def _geometry_release_dimensions(self, size_index: int | None) -> tuple[float, float]:
+        """Lateral film width and length for a given size bin."""
+        i = 0 if size_index is None else int(size_index)
+        if not 0 <= i < self.n_size_classes:
+            raise IndexError('size_index outside configured particle-size classes')
+        sizes = self.psd
+        return float(self.geometry.width_for_sizes(sizes)[i]), float(sizes[i])
+
+    def _analytical_additive_release_fraction(
+        self, radius_m: float, dt: float, params: dict, size_index: int | None = None
+    ) -> float:
+        """Geometry-aware analytical release operator for one size class.
+
+        ``radius_m`` is the primary diffusion half-distance (a legacy argument
+        name): sphere radius, fibre radius or film half-thickness.  A film with
+        only one exposed face uses full thickness as the diffusion distance.
+        For finite fibres and finite film edges, independent eigenfunction
+        solutions factorise for the uniform initial state and separable Robin
+        surface conditions: F_total = product(F_axis).
         """
-        Return the fraction of additive released from a particle of radius_m
-        over timestep dt.
-
-        This is what your post-solve bookkeeping loop calls.
-
-        Required params in params dict after time evaluation:
-            - "D_p" : polymer diffusivity at this timestep [m^2/s]
-            - "D_w" : water diffusivity at this timestep [m^2/s]
-            - "K_pw": polymer-water partition coefficient at this timestep [-]
-
-        Optional:
-            - "n_terms": int number of series terms (Bi>=100)
-
-        Returns
-        -------
-        float
-            Release fraction in [0,1]
-        """
-        D_p = float(params.get("D_p"))
-        D_w = float(params.get("D_w"))
-        K_pw = float(params.get("K_pw"))
-        n_terms = int(params.get("n_terms", 50))
-
-        if self.geometry.release_geometry == 'sphere':
-            F_remain = self._analytical_additive_remaining_fraction(
-                t=float(dt),
-                r=float(radius_m),
-                D_p=D_p,
-                D_w=D_w,
-                K_pw=K_pw,
-                n_terms=n_terms
+        D_p = float(params['D_p'])
+        D_w = float(params['D_w'])
+        K_pw = float(params['K_pw'])
+        n_terms = int(params.get('n_terms', 50))
+        r = float(radius_m)
+        shape = self.geometry.release_geometry
+        if shape == 'sphere':
+            remaining = self._analytical_additive_remaining_fraction(
+                t=dt, r=r, D_p=D_p, D_w=D_w, K_pw=K_pw, n_terms=n_terms
             )
-        elif self.geometry.release_geometry == 'cylinder':
-            F_remain = self._analytical_cylindrical_remaining_fraction(
-                t=float(dt),
-                r=float(radius_m),
-                D_p=D_p,
-                D_w=D_w,
-                K_pw=K_pw,
-                n_terms=n_terms
+        elif shape == 'cylinder':
+            remaining = self._analytical_cylindrical_remaining_fraction(
+                t=dt, r=r, D_p=D_p, D_w=D_w, K_pw=K_pw, n_terms=n_terms
             )
+            if self.geometry.end_diffusion:
+                i = 0 if size_index is None else int(size_index)
+                a = float(self.psd[i]) / 2.0
+                # Same effective Robin surface transfer velocity on the
+                # lateral and end faces; consistent with the radial kernel.
+                k_m = K_pw * D_w / r
+                remaining *= self._analytical_slab_remaining_fraction(
+                    t=dt, a=a, D_p=D_p, k_m=k_m, n_terms=n_terms
+                )
+        elif shape == 'slab':
+            k_m = K_pw * D_w / r
+            remaining = self._analytical_slab_remaining_fraction(
+                t=dt, a=r, D_p=D_p, k_m=k_m, n_terms=n_terms
+            )
+            if self.geometry.include_edges:
+                width, length = self._geometry_release_dimensions(size_index)
+                for half_span in (width / 2.0, length / 2.0):
+                    remaining *= self._analytical_slab_remaining_fraction(
+                        t=dt, a=half_span, D_p=D_p, k_m=k_m, n_terms=n_terms
+                    )
         else:
-            raise ValueError(
-                f"Unsupported additive release geometry: {self.geometry.release_geometry}"
-            )
+            raise ValueError(f'Unsupported additive release geometry: {shape}')
+        return float(np.clip(1.0 - remaining, 0.0, 1.0))
 
-        # Release fraction = 1 - remaining fraction (bounded)
-        rel = 1.0 - F_remain
-        return float(np.clip(rel, 0.0, 1.0))
-    
-    
-    def _numerical_additive_release_fraction(self, radius_m: float, dt: float, params: dict) -> float:
-        """
-        Release fraction computed by numerically solving diffusion in a sphere.
-
-        Required after time evaluation:
-            D_p, K_pw
-        Either after time evaluation:
-            k_m directly
-        OR:
-            D_w (and we compute k_m = K_pw * D_w / r for consistency with analytical assumptions)
-
-        Optional:
-            n_r (radial resolution, default 40)
-        """
-        D_p = float(params.get("D_p"))
-        K_pw = float(params.get("K_pw"))
-        n_r = int(params.get("n_r", 60))
-        n_substeps = int(params.get("n_substeps", 20))
-        theta = float(params.get("theta", 1.0))
-
-        # Preferred: k_m explicitly supplied
-        k_m = params.get("k_m", None)
-
-        if k_m is None:
-            # Backward-compatible derivation from your previous notes:
-            # k_m = K_pw * D_w / r
-            D_w = float(params.get("D_w"))
-            k_m = K_pw * D_w / max(radius_m, 1e-30)
+    def _numerical_additive_release_fraction(
+        self, radius_m: float, dt: float, params: dict, size_index: int | None = None
+    ) -> float:
+        """Finite-volume release operator; extra axes use planar FV solvers."""
+        D_p = float(params['D_p'])
+        K_pw = float(params['K_pw'])
+        n_r = int(params.get('n_r', 60))
+        n_substeps = int(params.get('n_substeps', 20))
+        theta = float(params.get('theta', 1.0))
+        r = float(radius_m)
+        k_m = params.get('k_m', None)
+        # This convention is retained for backward compatibility with the
+        # existing radial solver. k_m denotes effective polymer-side velocity.
+        k_m = K_pw * float(params['D_w']) / r if k_m is None else float(k_m)
+        kwargs = dict(t=dt, D_p=D_p, K_pw=K_pw, k_m=k_m,
+                      n_r=n_r, n_substeps=n_substeps, theta=theta)
+        shape = self.geometry.release_geometry
+        if shape == 'sphere':
+            remaining = self._numerical_additive_remaining_fraction(r=r, **kwargs)
+        elif shape == 'cylinder':
+            remaining = self._numerical_cylindrical_remaining_fraction(r=r, **kwargs)
+            if self.geometry.end_diffusion:
+                i = 0 if size_index is None else int(size_index)
+                remaining *= self._numerical_slab_remaining_fraction(
+                    a=float(self.psd[i]) / 2.0, **kwargs
+                )
+        elif shape == 'slab':
+            remaining = self._numerical_slab_remaining_fraction(a=r, **kwargs)
+            if self.geometry.include_edges:
+                width, length = self._geometry_release_dimensions(size_index)
+                for a in (width / 2.0, length / 2.0):
+                    remaining *= self._numerical_slab_remaining_fraction(a=a, **kwargs)
         else:
-            k_m = float(k_m)
-
-        n_substeps = int(params.get("n_substeps", 20))
-
-        if self.geometry.release_geometry == 'sphere':
-            F_remain = self._numerical_additive_remaining_fraction(
-                t=float(dt),
-                r=float(radius_m),
-                D_p=D_p,
-                K_pw=K_pw,
-                k_m=k_m,
-                n_r=n_r,
-                n_substeps=n_substeps,
-                theta=theta
-            )
-        elif self.geometry.release_geometry == 'cylinder':
-            F_remain = self._numerical_cylindrical_remaining_fraction(
-                t=float(dt),
-                r=float(radius_m),
-                D_p=D_p,
-                K_pw=K_pw,
-                k_m=k_m,
-                n_r=n_r,
-                n_substeps=n_substeps,
-                theta=theta
-            )
-        else:
-            raise ValueError(
-                f"Unsupported additive release geometry: {self.geometry.release_geometry}"
-            )
-        rel = 1.0 - F_remain
-        return float(np.clip(rel, 0.0, 1.0))
-     
+            raise ValueError(f'Unsupported additive release geometry: {shape}')
+        return float(np.clip(1.0 - remaining, 0.0, 1.0))
 
     def mass_to_particle_number(self, mass):
         """
@@ -1728,10 +1708,10 @@ class FragmentMNP():
         Geometry-aware surface-area-to-volume scaling factor.
 
         The factor is the particle surface-area-to-volume ratio normalized to
-        the median size class and raised to ``gamma``.  For the default sphere
-        geometry this is exactly the legacy FRAGMENT-MNP result.  For fibres
-        it uses cylindrical surface area and volume, including endcaps when
-        requested in ``particle_geometry``.
+        the median size class and raised to ``gamma``. For the default sphere
+        geometry this is exactly the legacy FRAGMENT-MNP result. For fibres
+        and films it uses the geometry-specific exposed area and volume.
+        Exposed film edges are included only when `include_edges=True`.
         """
         psd = np.asarray(psd, dtype=float)
         ratio = self.geometry.surface_area_to_volume(psd)
@@ -1999,6 +1979,103 @@ class FragmentMNP():
         coeff = 4.0 / (roots**2 * (1.0 + (roots / Bi) ** 2))
         F = float(np.sum(coeff * np.exp(-(roots**2) * Fo)))
         return float(np.clip(F, 0.0, 1.0))
+
+    @staticmethod
+    @lru_cache(maxsize=512)
+    def _slab_robin_eigenvalues(Bi: float, n_terms: int) -> tuple[float, ...]:
+        """Positive roots of mu*tan(mu)=Bi on (n*pi, (n+1/2)*pi)."""
+        if Bi <= 0.0 or n_terms < 1:
+            raise ValueError('Bi and n_terms must be positive.')
+        if Bi >= 1e8:
+            return tuple((np.arange(n_terms) + 0.5) * np.pi)
+        out = []
+        for n in range(n_terms):
+            lo = n * np.pi + 1e-12
+            hi = (n + 0.5) * np.pi - 1e-10
+            # cos/sin form avoids tan() pole overflow at high Bi.
+            root = brentq(lambda mu: mu * np.sin(mu) - Bi * np.cos(mu),
+                          lo, hi, xtol=1e-13, rtol=1e-12)
+            out.append(float(root))
+        return tuple(out)
+
+    @staticmethod
+    def _analytical_slab_remaining_fraction(
+        t: float, a: float, D_p: float, k_m: float, n_terms: int = 50
+    ) -> float:
+        r"""Volume-mean 1-D slab remaining fraction with Robin sink.
+
+        Symmetry/no-flux at x=0, Robin at x=a with effective surface
+        velocity k_m. For a film with two exposed broad faces, a=h/2;
+        for one exposed broad face (other impermeable), a=h. Both exposed
+        edges of a rectangular film use a=W/2 or a=L/2. For fibre end
+        diffusion use a=L/2.  Bi=k_m*a/D_p, Fo=D_p*t/a**2.
+
+        F(t)=sum_n A_n exp(-mu_n**2 Fo), mu_n*tan(mu_n)=Bi,
+        A_n=4*sin(mu_n)**2/(mu_n*(2*mu_n+sin(2*mu_n))).
+        """
+        if t <= 0.0 or k_m == 0.0:
+            return 1.0
+        if a <= 0.0 or D_p <= 0.0 or k_m < 0.0 or n_terms < 1:
+            raise ValueError('Slab a, D_p and n_terms must be positive and k_m >= 0.')
+        Bi = k_m * a / D_p
+        Fo = D_p * t / (a * a)
+        if Bi < 1e-8:
+            return float(np.exp(-Bi * Fo))
+        mu = np.asarray(FragmentMNP._slab_robin_eigenvalues(float(Bi), int(n_terms)))
+        if Bi >= 1e8:
+            coeff = 2.0 / (mu * mu)
+        else:
+            coeff = 4.0 * np.sin(mu)**2 / (mu * (2.0 * mu + np.sin(2.0 * mu)))
+        # Finite truncation has a small mass deficit at t=0, particularly for
+        # high-Bi and short steps. Renormalising removes that artificial loss.
+        remaining = float(np.sum(coeff * np.exp(-(mu * mu) * Fo)) / np.sum(coeff))
+        return float(np.clip(remaining, 0.0, 1.0))
+
+    @staticmethod
+    def _numerical_slab_remaining_fraction(
+        t: float, a: float, D_p: float, K_pw: float, k_m: float,
+        n_r: int = 60, n_substeps: int = 20, theta: float = 1.0
+    ) -> float:
+        """Mass-conserving 1-D slab finite volumes with Robin outer face.
+
+        ``K_pw`` is accepted for compatibility with radial numerical APIs;
+        k_m is the effective polymer-side velocity, already accounting for
+        the partition convention used by the original FRAGMENT-MNP solver.
+        """
+        if t <= 0 or k_m == 0:
+            return 1.0
+        if a <= 0 or D_p <= 0 or K_pw <= 0 or k_m < 0:
+            raise ValueError('Invalid slab diffusion parameters.')
+        if n_r < 5 or n_substeps < 1 or not 0 <= theta <= 1:
+            raise ValueError('Invalid finite-volume solver controls.')
+        dx = a / n_r
+        step = t / n_substeps
+        beta = D_p / (dx * dx)
+        lower = np.full(n_r, beta)
+        upper = np.full(n_r, beta)
+        lower[0] = 0.0
+        upper[-1] = 0.0
+        diag = -(lower + upper)
+        # The centre face has zero flux. The outer-face resistance includes
+        # half of the last FV cell plus the external Robin resistance.
+        k_eff = k_m / (1.0 + k_m * dx / (2.0 * D_p))
+        diag[-1] -= k_eff / dx
+        def apply(x):
+            y = diag * x
+            y[1:] += lower[1:] * x[:-1]
+            y[:-1] += upper[:-1] * x[1:]
+            return y
+        aa, bb, cc = FragmentMNP._factor_tridiagonal(
+            -theta * step * lower,
+            1.0 - theta * step * diag,
+            -theta * step * upper,
+        )
+        C = np.ones(n_r)
+        for _ in range(n_substeps):
+            rhs = C if theta == 1.0 else C + (1.0-theta) * step * apply(C)
+            C = FragmentMNP._solve_tridiagonal_factored(aa, bb, cc, rhs)
+            C = np.clip(C, 0.0, None)
+        return float(np.clip(np.mean(C), 0.0, 1.0))
 
     #############################
     # Additive numerical 
